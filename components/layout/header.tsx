@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import Link from "next/link"
 import { Home, Globe, Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -19,40 +21,72 @@ interface HeaderProps {
 export default function Header({ t, currentLanguage, setCurrentLanguage, isLanguageLoading = false }: HeaderProps) {
   const [isOpen, setIsOpen] = useState(false)
 
+  const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
+    e.preventDefault()
+    const targetElement = document.getElementById(targetId.replace("#", ""))
+    if (targetElement) {
+      const headerOffset = 80 // Account for fixed header height
+      const elementPosition = targetElement.getBoundingClientRect().top
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth",
+      })
+    }
+    // Close mobile menu if open
+    setIsOpen(false)
+  }
+
   const NavLinks = ({ mobile = false, onLinkClick = () => {} }) => (
     <>
       <Link
         href="#guest-houses"
         className={`${mobile ? "block py-2 px-4 text-base" : ""} text-sm font-medium hover:underline underline-offset-4`}
-        onClick={onLinkClick}
+        onClick={(e) => {
+          handleSmoothScroll(e, "#guest-houses")
+          onLinkClick()
+        }}
       >
         {t.guestHouses}
       </Link>
       <Link
         href="#car-rental"
         className={`${mobile ? "block py-2 px-4 text-base" : ""} text-sm font-medium hover:underline underline-offset-4`}
-        onClick={onLinkClick}
+        onClick={(e) => {
+          handleSmoothScroll(e, "#car-rental")
+          onLinkClick()
+        }}
       >
         {t.carRental}
       </Link>
       <Link
         href="#marketing-section"
         className={`${mobile ? "block py-2 px-4 text-base" : ""} text-sm font-medium hover:underline underline-offset-4`}
-        onClick={onLinkClick}
+        onClick={(e) => {
+          handleSmoothScroll(e, "#marketing-section")
+          onLinkClick()
+        }}
       >
         {t.whyChooseUs}
       </Link>
       <Link
         href="#about-us"
         className={`${mobile ? "block py-2 px-4 text-base" : ""} text-sm font-medium hover:underline underline-offset-4`}
-        onClick={onLinkClick}
+        onClick={(e) => {
+          handleSmoothScroll(e, "#about-us")
+          onLinkClick()
+        }}
       >
         {t.aboutUs}
       </Link>
       <Link
         href="#contact-form"
         className={`${mobile ? "block py-2 px-4 text-base" : ""} text-sm font-medium hover:underline underline-offset-4`}
-        onClick={onLinkClick}
+        onClick={(e) => {
+          handleSmoothScroll(e, "#contact-form")
+          onLinkClick()
+        }}
       >
         {t.contact}
       </Link>

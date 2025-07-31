@@ -10,7 +10,7 @@ interface HeroSectionProps {
 
 export default function HeroSection({ t }: HeroSectionProps) {
   return (
-    <section className="relative w-full py-16 sm:py-24 md:py-32 lg:py-48 bg-gradient-to-r from-gray-900 to-gray-800 text-white">
+    <section className="section-container relative w-full py-16 sm:py-24 md:py-32 lg:py-48 bg-gradient-to-r from-gray-900 to-gray-800 text-white">
       <Image
         src="/placeholder.svg?height=1080&width=1920"
         width={1920}
@@ -18,7 +18,7 @@ export default function HeroSection({ t }: HeroSectionProps) {
         alt="Hero Background"
         className="absolute inset-0 object-cover w-full h-full opacity-30"
       />
-      <div className="container px-4 md:px-6 relative z-10 text-center">
+      <div className="section-content relative z-10 text-center">
         <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
           <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tighter text-gray-200 leading-tight">
             {t.heroTitle}

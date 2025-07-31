@@ -11,19 +11,22 @@ interface MarketingSectionProps {
 
 export default function MarketingSection({ t }: MarketingSectionProps) {
   return (
-    <section id="marketing-section" className="w-full py-12 md:py-16 lg:py-24 xl:py-32 bg-gray-100 dark:bg-gray-800">
-      <div className="container px-4 md:px-6">
+    <section
+      id="marketing-section"
+      className="section-container w-full py-12 md:py-16 lg:py-24 xl:py-32 bg-gray-100 dark:bg-gray-800"
+    >
+      <div className="section-content">
         <div className="flex flex-col items-center justify-center space-y-4 text-center mb-8 md:mb-12">
-          <div className="space-y-2">
+          <div className="space-y-2 max-w-4xl mx-auto">
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tighter text-gray-700">
               {t.whyChooseV0Booking}
             </h2>
-            <p className="max-w-[900px] text-muted-foreground text-sm sm:text-base md:text-lg lg:text-xl leading-relaxed">
+            <p className="max-w-[900px] mx-auto text-muted-foreground text-sm sm:text-base md:text-lg lg:text-xl leading-relaxed">
               {t.whyChooseV0BookingSubtitle}
             </p>
           </div>
         </div>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
           <Card className="flex flex-col items-center text-center p-4 sm:p-6">
             <Image
               src="/placeholder.svg?height=150&width=150"
