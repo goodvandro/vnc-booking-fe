@@ -1,7 +1,27 @@
-import type { GuestHouse, Car, Booking, BookingStatus } from "./types"
+// Re-export Strapi data functions
+export {
+  getGuestHousesData,
+  getGuestHouseByIdData,
+  createGuestHouseData,
+  updateGuestHouseData,
+  deleteGuestHouseData,
+  getCarsData,
+  getCarByIdData,
+  createCarData,
+  updateCarData,
+  deleteCarData,
+  getBookingsData,
+  getBookingByIdData,
+  updateBookingStatusData,
+  createBookingData,
+  getDashboardStatsData,
+} from "./strapi-data"
 
-// Mock Data - In a real application, this would come from a database
-let guestHouses: GuestHouse[] = [
+// Keep mock data as fallback for development
+import type { GuestHouse, Car, Booking } from "./types"
+
+// Mock Data - Fallback for development when Strapi is not available
+const mockGuestHouses: GuestHouse[] = [
   {
     id: "gh1",
     images: [
@@ -63,7 +83,7 @@ let guestHouses: GuestHouse[] = [
   },
 ]
 
-let cars: Car[] = [
+const mockCars: Car[] = [
   {
     id: "car1",
     images: [
@@ -124,7 +144,7 @@ let cars: Car[] = [
   },
 ]
 
-const bookings: Booking[] = [
+const mockBookings: Booking[] = [
   {
     id: "b1",
     type: "guestHouse",
@@ -161,136 +181,5 @@ const bookings: Booking[] = [
   },
 ]
 
-// Helper to generate unique IDs
-const generateId = () => Math.random().toString(36).substring(2, 11)
-
-// Guest House CRUD
-export async function getGuestHousesData(): Promise<GuestHouse[]> {
-  return new Promise((resolve) => setTimeout(() => resolve([...guestHouses]), 100))
-}
-
-export async function getGuestHouseByIdData(id: string): Promise<GuestHouse | undefined> {
-  return new Promise((resolve) => setTimeout(() => resolve(guestHouses.find((gh) => gh.id === id)), 100))
-}
-
-export async function createGuestHouseData(newGh: Omit<GuestHouse, "id">): Promise<GuestHouse> {
-  return new Promise((resolve) => {
-    const gh = { id: generateId(), ...newGh }
-    guestHouses.push(gh)
-    setTimeout(() => resolve(gh), 100)
-  })
-}
-
-export async function updateGuestHouseData(id: string, updatedGh: Partial<GuestHouse>): Promise<GuestHouse | null> {
-  return new Promise((resolve) => {
-    const index = guestHouses.findIndex((gh) => gh.id === id)
-    if (index > -1) {
-      guestHouses[index] = { ...guestHouses[index], ...updatedGh }
-      setTimeout(() => resolve(guestHouses[index]), 100)
-    } else {
-      setTimeout(() => resolve(null), 100)
-    }
-  })
-}
-
-export async function deleteGuestHouseData(id: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    const initialLength = guestHouses.length
-    guestHouses = guestHouses.filter((gh) => gh.id !== id)
-    setTimeout(() => resolve(guestHouses.length < initialLength), 100)
-  })
-}
-
-// Car CRUD
-export async function getCarsData(): Promise<Car[]> {
-  return new Promise((resolve) => setTimeout(() => resolve([...cars]), 100))
-}
-
-export async function getCarByIdData(id: string): Promise<Car | undefined> {
-  return new Promise((resolve) => setTimeout(() => resolve(cars.find((car) => car.id === id)), 100))
-}
-
-export async function createCarData(newCar: Omit<Car, "id">): Promise<Car> {
-  return new Promise((resolve) => {
-    const car = { id: generateId(), ...newCar }
-    cars.push(car)
-    setTimeout(() => resolve(car), 100)
-  })
-}
-
-export async function updateCarData(id: string, updatedCar: Partial<Car>): Promise<Car | null> {
-  return new Promise((resolve) => {
-    const index = cars.findIndex((car) => car.id === id)
-    if (index > -1) {
-      cars[index] = { ...cars[index], ...updatedCar }
-      setTimeout(() => resolve(cars[index]), 100)
-    } else {
-      setTimeout(() => resolve(null), 100)
-    }
-  })
-}
-
-export async function deleteCarData(id: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    const initialLength = cars.length
-    cars = cars.filter((car) => car.id !== id)
-    setTimeout(() => resolve(cars.length < initialLength), 100)
-  })
-}
-
-// Booking Management
-export async function getBookingsData(): Promise<Booking[]> {
-  return new Promise((resolve) => setTimeout(() => resolve([...bookings]), 100))
-}
-
-export async function getBookingByIdData(id: string): Promise<Booking | undefined> {
-  return new Promise((resolve) => setTimeout(() => resolve(bookings.find((b) => b.id === id)), 100))
-}
-
-export async function updateBookingStatusData(id: string, status: BookingStatus): Promise<Booking | null> {
-  return new Promise((resolve) => {
-    const index = bookings.findIndex((b) => b.id === id)
-    if (index > -1) {
-      bookings[index].status = status
-      setTimeout(() => resolve(bookings[index]), 100)
-    } else {
-      setTimeout(() => resolve(null), 100)
-    }
-  })
-}
-
-export async function createBookingData(newBooking: Omit<Booking, "id" | "createdAt" | "status">): Promise<Booking> {
-  return new Promise((resolve) => {
-    const booking = {
-      id: generateId(),
-      createdAt: new Date().toISOString(),
-      status: "pending" as BookingStatus, // Default status
-      ...newBooking,
-    }
-    bookings.push(booking)
-    setTimeout(() => resolve(booking), 100)
-  })
-}
-
-// Dashboard Stats
-export async function getDashboardStatsData(): Promise<{
-  totalGuestHouses: number
-  totalCars: number
-  totalBookings: number
-  pendingBookings: number
-  confirmedBookings: number
-}> {
-  return new Promise((resolve) =>
-    setTimeout(
-      () =>
-        resolve({
-          totalGuestHouses: guestHouses.length,
-          totalCars: cars.length,
-          totalBookings: bookings.length,
-          pendingBookings: bookings.filter((b) => b.status === "pending").length,
-          confirmedBookings: bookings.filter((b) => b.status === "confirmed").length,
-        }),
-      100,
-    ),
-  )
-}
+// Export mock data for development
+export { mockGuestHouses, mockCars, mockBookings }
