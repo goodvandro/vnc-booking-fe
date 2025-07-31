@@ -3,8 +3,8 @@ import { strapiAPI } from "@/lib/strapi-api"
 
 export async function GET() {
   try {
-    const health = await strapiAPI.healthCheck()
-    return NextResponse.json(health)
+    const healthStatus = await strapiAPI.healthCheck()
+    return NextResponse.json(healthStatus)
   } catch (error) {
     console.error("Strapi health check failed:", error)
     return NextResponse.json(

@@ -1,28 +1,25 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { RefreshCw, CheckCircle, XCircle, AlertCircle } from "lucide-react"
 
 interface StrapiStatus {
-  status: "connected" | "error" | "checking"
+  status: "connected" | "error" | "loading"
   timestamp: string
   error?: string
 }
 
-export default function StrapiStatus() {
+export function StrapiStatus() {
   const [status, setStatus] = useState<StrapiStatus>({
-    status: "checking",
+    status: "loading",
     timestamp: new Date().toISOString(),
   })
   const [isRefreshing, setIsRefreshing] = useState(false)
 
   const checkStrapiHealth = async () => {
     setIsRefreshing(true)
-    setStatus((prev) => ({ ...prev, status: "checking" }))
-
     try {
       const response = await fetch("/api/strapi-health")
       const data = await response.json()
@@ -35,7 +32,7 @@ export default function StrapiStatus() {
       } else {
         setStatus({
           status: "error",
-          timestamp: data.timestamp || new Date().toISOString(),
+          timestamp: data.timestamp,
           error: data.error || "Connection failed",
         })
       }
@@ -57,22 +54,22 @@ export default function StrapiStatus() {
   const getStatusIcon = () => {
     switch (status.status) {
       case "connected":
-        return <CheckCircle className="h-4 w-4 text-green-600" />
+        return <CheckCircle className="h-4 w-4" />
       case "error":
-        return <XCircle className="h-4 w-4 text-red-600" />
-      case "checking":
-        return <AlertCircle className="h-4 w-4 text-yellow-600" />
+        return <XCircle className="h-4 w-4" />
+      case "loading":
+        return <AlertCircle className="h-4 w-4" />
     }
   }
 
-  const getStatusColor = () => {
+  const getStatusVariant = () => {
     switch (status.status) {
       case "connected":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+        return "default" as const
       case "error":
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
-      case "checking":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
+        return "destructive" as const
+      case "loading":
+        return "secondary" as const
     }
   }
 
@@ -82,34 +79,35 @@ export default function StrapiStatus() {
         return "Connected"
       case "error":
         return "Disconnected"
-      case "checking":
+      case "loading":
         return "Checking..."
     }
   }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <div>
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
-            {getStatusIcon()}
-            Strapi Backend Status
-          </CardTitle>
-          <CardDescription>Connection status to your Strapi CMS</CardDescription>
+    <div className="flex items-center gap-2">
+      <Badge variant={getStatusVariant()} className="flex items-center gap-1">
+        {getStatusIcon()}
+        Strapi: {getStatusText()}
+      </Badge>
+
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={checkStrapiHealth}
+        disabled={isRefreshing}
+        className="h-6 px-2 bg-transparent"
+      >
+        <RefreshCw className={`h-3 w-3 ${isRefreshing ? "animate-spin" : ""}`} />
+      </Button>
+
+      {status.error && (
+        <div className="text-xs text-muted-foreground max-w-xs truncate" title={status.error}>
+          Error: {status.error}
         </div>
-        <div className="flex items-center gap-2">
-          <Badge className={getStatusColor()}>{getStatusText()}</Badge>
-          <Button variant="outline" size="sm" onClick={checkStrapiHealth} disabled={isRefreshing}>
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="text-xs text-muted-foreground">
-          Last checked: {new Date(status.timestamp).toLocaleString()}
-          {status.error && <div className="mt-1 text-red-600">Error: {status.error}</div>}
-        </div>
-      </CardContent>
-    </Card>
+      )}
+
+      <div className="text-xs text-muted-foreground">Last check: {new Date(status.timestamp).toLocaleTimeString()}</div>
+    </div>
   )
 }

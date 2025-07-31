@@ -49,6 +49,7 @@ export async function createGuestHouse(formData: FormData) {
   const images = extractImagesFromFormData(formData)
 
   const newGh: Omit<GuestHouse, "id"> = {
+    guestHouseId: `gh-${Date.now()}`,
     images,
     title: formData.get("title") as string,
     location: formData.get("location") as string,
@@ -95,6 +96,7 @@ export async function createCar(formData: FormData) {
   const images = extractImagesFromFormData(formData)
 
   const newCar: Omit<Car, "id"> = {
+    carId: `car-${Date.now()}`,
     images,
     title: formData.get("title") as string,
     seats: Number.parseInt(formData.get("seats") as string),

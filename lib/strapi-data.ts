@@ -1,5 +1,5 @@
 import { strapiAPI } from "./strapi-api"
-import type { GuestHouse, Car, Booking, BookingStatus } from "./types"
+import type { GuestHouse, Car, Booking, BookingStatus, CarRentalBooking, GuestHouseBooking } from "./types"
 
 // Helper function to transform Strapi entity to our types
 function transformStrapiEntity<T>(entity: any): T & { id: string } {
@@ -56,6 +56,7 @@ export async function getGuestHouseByIdData(id: string): Promise<GuestHouse | un
 export async function createGuestHouseData(newGh: Omit<GuestHouse, "id">): Promise<GuestHouse> {
   try {
     const response = await strapiAPI.createGuestHouse({
+      guestHouseId: newGh.guestHouseId || `gh-${Date.now()}`,
       title: newGh.title,
       location: newGh.location,
       rating: newGh.rating,
@@ -77,6 +78,7 @@ export async function createGuestHouseData(newGh: Omit<GuestHouse, "id">): Promi
 export async function updateGuestHouseData(id: string, updatedGh: Partial<GuestHouse>): Promise<GuestHouse | null> {
   try {
     const response = await strapiAPI.updateGuestHouse(id, {
+      guestHouseId: updatedGh.guestHouseId,
       title: updatedGh.title,
       location: updatedGh.location,
       rating: updatedGh.rating,
@@ -134,6 +136,7 @@ export async function getCarByIdData(id: string): Promise<Car | undefined> {
 export async function createCarData(newCar: Omit<Car, "id">): Promise<Car> {
   try {
     const response = await strapiAPI.createCar({
+      carId: newCar.carId || `car-${Date.now()}`,
       title: newCar.title,
       seats: newCar.seats,
       transmission: newCar.transmission,
@@ -154,6 +157,7 @@ export async function createCarData(newCar: Omit<Car, "id">): Promise<Car> {
 export async function updateCarData(id: string, updatedCar: Partial<Car>): Promise<Car | null> {
   try {
     const response = await strapiAPI.updateCar(id, {
+      carId: updatedCar.carId,
       title: updatedCar.title,
       seats: updatedCar.seats,
       transmission: updatedCar.transmission,
@@ -181,14 +185,119 @@ export async function deleteCarData(id: string): Promise<boolean> {
   }
 }
 
-// Booking Management
+// Car Rental Booking Management
+export async function getCarRentalBookingsData(): Promise<CarRentalBooking[]> {
+  try {
+    const response = await strapiAPI.getCarRentalBookings()
+    return response.data.map((entity) => ({
+      ...transformStrapiEntity<Omit<CarRentalBooking, "id">>(entity),
+      createdAt: entity.attributes.createdAt || new Date().toISOString(),
+      car: entity.attributes.car?.data ? transformStrapiEntity(entity.attributes.car.data) : undefined,
+    }))
+  } catch (error) {
+    console.error("Failed to fetch car rental bookings:", error)
+    return []
+  }
+}
+
+export async function getCarRentalBookingByIdData(id: string): Promise<CarRentalBooking | undefined> {
+  try {
+    const response = await strapiAPI.getCarRentalBooking(id)
+    return {
+      ...transformStrapiEntity<Omit<CarRentalBooking, "id">>(response.data),
+      createdAt: response.data.attributes.createdAt || new Date().toISOString(),
+      car: response.data.attributes.car?.data ? transformStrapiEntity(response.data.attributes.car.data) : undefined,
+    }
+  } catch (error) {
+    console.error("Failed to fetch car rental booking:", error)
+    return undefined
+  }
+}
+
+// Guest House Booking Management
+export async function getGuestHouseBookingsData(): Promise<GuestHouseBooking[]> {
+  try {
+    const response = await strapiAPI.getGuestHouseBookings()
+    return response.data.map((entity) => ({
+      ...transformStrapiEntity<Omit<GuestHouseBooking, "id">>(entity),
+      createdAt: entity.attributes.createdAt || new Date().toISOString(),
+      guest_house: entity.attributes.guest_house?.data
+        ? transformStrapiEntity(entity.attributes.guest_house.data)
+        : undefined,
+    }))
+  } catch (error) {
+    console.error("Failed to fetch guest house bookings:", error)
+    return []
+  }
+}
+
+export async function getGuestHouseBookingByIdData(id: string): Promise<GuestHouseBooking | undefined> {
+  try {
+    const response = await strapiAPI.getGuestHouseBooking(id)
+    return {
+      ...transformStrapiEntity<Omit<GuestHouseBooking, "id">>(response.data),
+      createdAt: response.data.attributes.createdAt || new Date().toISOString(),
+      guest_house: response.data.attributes.guest_house?.data
+        ? transformStrapiEntity(response.data.attributes.guest_house.data)
+        : undefined,
+    }
+  } catch (error) {
+    console.error("Failed to fetch guest house booking:", error)
+    return undefined
+  }
+}
+
+// Combined Booking Management (for backward compatibility)
 export async function getBookingsData(): Promise<Booking[]> {
   try {
-    const response = await strapiAPI.getBookings()
-    return response.data.map((entity) => ({
-      ...transformStrapiEntity<Omit<Booking, "id">>(entity),
-      createdAt: entity.attributes.createdAt || new Date().toISOString(),
+    const [carBookings, guestHouseBookings] = await Promise.all([
+      getCarRentalBookingsData(),
+      getGuestHouseBookingsData(),
+    ])
+
+    // Transform car bookings to legacy format
+    const transformedCarBookings: Booking[] = carBookings.map((booking) => ({
+      id: booking.id,
+      type: "car" as const,
+      itemId: booking.car?.id || "",
+      itemName: booking.car?.title || "Unknown Car",
+      firstName: booking.firstName,
+      lastName: booking.lastName,
+      email: booking.email,
+      phone: booking.phone,
+      startDate: booking.startDate,
+      endDate: booking.endDate,
+      guestsOrSeats: undefined,
+      pickupLocation: booking.driverLicense,
+      specialRequests: "",
+      totalPrice: booking.totalPrice,
+      status: booking.bookingStatus,
+      createdAt: booking.createdAt,
     }))
+
+    // Transform guest house bookings to legacy format
+    const transformedGuestHouseBookings: Booking[] = guestHouseBookings.map((booking) => ({
+      id: booking.id,
+      type: "guestHouse" as const,
+      itemId: booking.guest_house?.id || "",
+      itemName: booking.guest_house?.title || "Unknown Guest House",
+      firstName: booking.firstName,
+      lastName: booking.lastName,
+      email: booking.email,
+      phone: booking.phone,
+      startDate: booking.checkIn,
+      endDate: booking.checkOut,
+      guestsOrSeats: booking.guests,
+      pickupLocation: undefined,
+      specialRequests: booking.specialRequests || "",
+      totalPrice: booking.totalPrice,
+      status: booking.bookingStatus,
+      createdAt: booking.createdAt,
+    }))
+
+    return [...transformedCarBookings, ...transformedGuestHouseBookings].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    )
   } catch (error) {
     console.error("Failed to fetch bookings:", error)
     return []
@@ -197,11 +306,53 @@ export async function getBookingsData(): Promise<Booking[]> {
 
 export async function getBookingByIdData(id: string): Promise<Booking | undefined> {
   try {
-    const response = await strapiAPI.getBooking(id)
-    return {
-      ...transformStrapiEntity<Omit<Booking, "id">>(response.data),
-      createdAt: response.data.attributes.createdAt || new Date().toISOString(),
+    // Try to find in car bookings first
+    const carBooking = await getCarRentalBookingByIdData(id)
+    if (carBooking) {
+      return {
+        id: carBooking.id,
+        type: "car" as const,
+        itemId: carBooking.car?.id || "",
+        itemName: carBooking.car?.title || "Unknown Car",
+        firstName: carBooking.firstName,
+        lastName: carBooking.lastName,
+        email: carBooking.email,
+        phone: carBooking.phone,
+        startDate: carBooking.startDate,
+        endDate: carBooking.endDate,
+        guestsOrSeats: undefined,
+        pickupLocation: carBooking.driverLicense,
+        specialRequests: "",
+        totalPrice: carBooking.totalPrice,
+        status: carBooking.bookingStatus,
+        createdAt: carBooking.createdAt,
+      }
     }
+
+    // Try guest house bookings
+    const guestHouseBooking = await getGuestHouseBookingByIdData(id)
+    if (guestHouseBooking) {
+      return {
+        id: guestHouseBooking.id,
+        type: "guestHouse" as const,
+        itemId: guestHouseBooking.guest_house?.id || "",
+        itemName: guestHouseBooking.guest_house?.title || "Unknown Guest House",
+        firstName: guestHouseBooking.firstName,
+        lastName: guestHouseBooking.lastName,
+        email: guestHouseBooking.email,
+        phone: guestHouseBooking.phone,
+        startDate: guestHouseBooking.checkIn,
+        endDate: guestHouseBooking.checkOut,
+        guestsOrSeats: guestHouseBooking.guests,
+        pickupLocation: undefined,
+        specialRequests: guestHouseBooking.specialRequests || "",
+        totalPrice: guestHouseBooking.totalPrice,
+        status: guestHouseBooking.bookingStatus,
+        createdAt: guestHouseBooking.createdAt,
+      }
+    }
+
+    return undefined
   } catch (error) {
     console.error("Failed to fetch booking:", error)
     return undefined
@@ -210,10 +361,58 @@ export async function getBookingByIdData(id: string): Promise<Booking | undefine
 
 export async function updateBookingStatusData(id: string, status: BookingStatus): Promise<Booking | null> {
   try {
-    const response = await strapiAPI.updateBooking(id, { status })
-    return {
-      ...transformStrapiEntity<Omit<Booking, "id">>(response.data),
-      createdAt: response.data.attributes.createdAt || new Date().toISOString(),
+    // Try to update car booking first
+    try {
+      const response = await strapiAPI.updateCarRentalBooking(id, { bookingStatus: status })
+      const carBooking = {
+        ...transformStrapiEntity<Omit<CarRentalBooking, "id">>(response.data),
+        createdAt: response.data.attributes.createdAt || new Date().toISOString(),
+      }
+
+      return {
+        id: carBooking.id,
+        type: "car" as const,
+        itemId: "",
+        itemName: "Car Rental",
+        firstName: carBooking.firstName,
+        lastName: carBooking.lastName,
+        email: carBooking.email,
+        phone: carBooking.phone,
+        startDate: carBooking.startDate,
+        endDate: carBooking.endDate,
+        guestsOrSeats: undefined,
+        pickupLocation: carBooking.driverLicense,
+        specialRequests: "",
+        totalPrice: carBooking.totalPrice,
+        status: carBooking.bookingStatus,
+        createdAt: carBooking.createdAt,
+      }
+    } catch (carError) {
+      // Try guest house booking
+      const response = await strapiAPI.updateGuestHouseBooking(id, { bookingStatus: status })
+      const guestHouseBooking = {
+        ...transformStrapiEntity<Omit<GuestHouseBooking, "id">>(response.data),
+        createdAt: response.data.attributes.createdAt || new Date().toISOString(),
+      }
+
+      return {
+        id: guestHouseBooking.id,
+        type: "guestHouse" as const,
+        itemId: "",
+        itemName: "Guest House",
+        firstName: guestHouseBooking.firstName,
+        lastName: guestHouseBooking.lastName,
+        email: guestHouseBooking.email,
+        phone: guestHouseBooking.phone,
+        startDate: guestHouseBooking.checkIn,
+        endDate: guestHouseBooking.checkOut,
+        guestsOrSeats: guestHouseBooking.guests,
+        pickupLocation: undefined,
+        specialRequests: guestHouseBooking.specialRequests || "",
+        totalPrice: guestHouseBooking.totalPrice,
+        status: guestHouseBooking.bookingStatus,
+        createdAt: guestHouseBooking.createdAt,
+      }
     }
   } catch (error) {
     console.error("Failed to update booking status:", error)
@@ -223,14 +422,79 @@ export async function updateBookingStatusData(id: string, status: BookingStatus)
 
 export async function createBookingData(newBooking: Omit<Booking, "id" | "createdAt" | "status">): Promise<Booking> {
   try {
-    const response = await strapiAPI.createBooking({
-      ...newBooking,
-      status: "pending", // Default status
-    })
+    if (newBooking.type === "car") {
+      const carBookingData = {
+        bookingId: `car-${Date.now()}`,
+        firstName: newBooking.firstName,
+        lastName: newBooking.lastName,
+        email: newBooking.email,
+        phone: newBooking.phone,
+        driverLicense: newBooking.pickupLocation,
+        startDate: newBooking.startDate,
+        endDate: newBooking.endDate,
+        totalPrice: newBooking.totalPrice,
+        bookingStatus: "pending" as BookingStatus,
+        car: newBooking.itemId,
+      }
 
-    return {
-      ...transformStrapiEntity<Omit<Booking, "id">>(response.data),
-      createdAt: response.data.attributes.createdAt || new Date().toISOString(),
+      const response = await strapiAPI.createCarRentalBooking(carBookingData)
+      const booking = transformStrapiEntity<Omit<CarRentalBooking, "id">>(response.data)
+
+      return {
+        id: booking.id,
+        type: "car",
+        itemId: newBooking.itemId,
+        itemName: newBooking.itemName,
+        firstName: booking.firstName,
+        lastName: booking.lastName,
+        email: booking.email,
+        phone: booking.phone,
+        startDate: booking.startDate,
+        endDate: booking.endDate,
+        guestsOrSeats: undefined,
+        pickupLocation: booking.driverLicense,
+        specialRequests: "",
+        totalPrice: booking.totalPrice,
+        status: booking.bookingStatus,
+        createdAt: response.data.attributes.createdAt || new Date().toISOString(),
+      }
+    } else {
+      const guestHouseBookingData = {
+        bookingId: `gh-${Date.now()}`,
+        firstName: newBooking.firstName,
+        lastName: newBooking.lastName,
+        email: newBooking.email,
+        phone: newBooking.phone,
+        guests: newBooking.guestsOrSeats || 1,
+        specialRequests: newBooking.specialRequests,
+        checkIn: newBooking.startDate,
+        checkOut: newBooking.endDate,
+        totalPrice: newBooking.totalPrice,
+        bookingStatus: "pending" as BookingStatus,
+        guest_house: newBooking.itemId,
+      }
+
+      const response = await strapiAPI.createGuestHouseBooking(guestHouseBookingData)
+      const booking = transformStrapiEntity<Omit<GuestHouseBooking, "id">>(response.data)
+
+      return {
+        id: booking.id,
+        type: "guestHouse",
+        itemId: newBooking.itemId,
+        itemName: newBooking.itemName,
+        firstName: booking.firstName,
+        lastName: booking.lastName,
+        email: booking.email,
+        phone: booking.phone,
+        startDate: booking.checkIn,
+        endDate: booking.checkOut,
+        guestsOrSeats: booking.guests,
+        pickupLocation: undefined,
+        specialRequests: booking.specialRequests || "",
+        totalPrice: booking.totalPrice,
+        status: booking.bookingStatus,
+        createdAt: response.data.attributes.createdAt || new Date().toISOString(),
+      }
     }
   } catch (error) {
     console.error("Failed to create booking:", error)
@@ -247,14 +511,25 @@ export async function getDashboardStatsData(): Promise<{
   confirmedBookings: number
 }> {
   try {
-    const [guestHouses, cars, bookings] = await Promise.all([getGuestHousesData(), getCarsData(), getBookingsData()])
+    const [guestHouses, cars, carBookings, guestHouseBookings] = await Promise.all([
+      getGuestHousesData(),
+      getCarsData(),
+      getCarRentalBookingsData(),
+      getGuestHouseBookingsData(),
+    ])
+
+    const totalBookings = carBookings.length + guestHouseBookings.length
+    const pendingBookings = [...carBookings, ...guestHouseBookings].filter((b) => b.bookingStatus === "pending").length
+    const confirmedBookings = [...carBookings, ...guestHouseBookings].filter(
+      (b) => b.bookingStatus === "confirmed",
+    ).length
 
     return {
       totalGuestHouses: guestHouses.length,
       totalCars: cars.length,
-      totalBookings: bookings.length,
-      pendingBookings: bookings.filter((b) => b.status === "pending").length,
-      confirmedBookings: bookings.filter((b) => b.status === "confirmed").length,
+      totalBookings,
+      pendingBookings,
+      confirmedBookings,
     }
   } catch (error) {
     console.error("Failed to fetch dashboard stats:", error)

@@ -129,31 +129,60 @@ class StrapiAPI {
     })
   }
 
-  // Bookings
-  async getBookings(): Promise<StrapiCollection<StrapiEntity>> {
-    return this.request("/bookings?sort=createdAt:desc")
+  // Car Rental Bookings
+  async getCarRentalBookings(): Promise<StrapiCollection<StrapiEntity>> {
+    return this.request("/car-rental-bookings?populate=car&sort=createdAt:desc")
   }
 
-  async getBooking(id: string): Promise<StrapiResponse<StrapiEntity>> {
-    return this.request(`/bookings/${id}`)
+  async getCarRentalBooking(id: string): Promise<StrapiResponse<StrapiEntity>> {
+    return this.request(`/car-rental-bookings/${id}?populate=car`)
   }
 
-  async createBooking(data: any): Promise<StrapiResponse<StrapiEntity>> {
-    return this.request("/bookings", {
+  async createCarRentalBooking(data: any): Promise<StrapiResponse<StrapiEntity>> {
+    return this.request("/car-rental-bookings", {
       method: "POST",
       body: JSON.stringify({ data }),
     })
   }
 
-  async updateBooking(id: string, data: any): Promise<StrapiResponse<StrapiEntity>> {
-    return this.request(`/bookings/${id}`, {
+  async updateCarRentalBooking(id: string, data: any): Promise<StrapiResponse<StrapiEntity>> {
+    return this.request(`/car-rental-bookings/${id}`, {
       method: "PUT",
       body: JSON.stringify({ data }),
     })
   }
 
-  async deleteBooking(id: string): Promise<StrapiResponse<StrapiEntity>> {
-    return this.request(`/bookings/${id}`, {
+  async deleteCarRentalBooking(id: string): Promise<StrapiResponse<StrapiEntity>> {
+    return this.request(`/car-rental-bookings/${id}`, {
+      method: "DELETE",
+    })
+  }
+
+  // Guest House Bookings
+  async getGuestHouseBookings(): Promise<StrapiCollection<StrapiEntity>> {
+    return this.request("/guest-house-bookings?populate=guest_house&sort=createdAt:desc")
+  }
+
+  async getGuestHouseBooking(id: string): Promise<StrapiResponse<StrapiEntity>> {
+    return this.request(`/guest-house-bookings/${id}?populate=guest_house`)
+  }
+
+  async createGuestHouseBooking(data: any): Promise<StrapiResponse<StrapiEntity>> {
+    return this.request("/guest-house-bookings", {
+      method: "POST",
+      body: JSON.stringify({ data }),
+    })
+  }
+
+  async updateGuestHouseBooking(id: string, data: any): Promise<StrapiResponse<StrapiEntity>> {
+    return this.request(`/guest-house-bookings/${id}`, {
+      method: "PUT",
+      body: JSON.stringify({ data }),
+    })
+  }
+
+  async deleteGuestHouseBooking(id: string): Promise<StrapiResponse<StrapiEntity>> {
+    return this.request(`/guest-house-bookings/${id}`, {
       method: "DELETE",
     })
   }
