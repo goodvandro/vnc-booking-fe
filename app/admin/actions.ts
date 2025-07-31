@@ -17,7 +17,7 @@ import {
   updateBookingStatusData,
   getDashboardStatsData,
   getBookingByIdData,
-} from "@/lib/data"
+} from "@/lib/strapi-data"
 import type { GuestHouse, Car, BookingStatus } from "@/lib/types"
 
 // Helper function to extract images from form data
