@@ -16,6 +16,7 @@ import {
   getBookingsData,
   updateBookingStatusData,
   getDashboardStatsData,
+  getBookingByIdData,
 } from "@/lib/data"
 import type { GuestHouse, Car, BookingStatus } from "@/lib/types"
 
@@ -146,4 +147,8 @@ export async function getDashboardStats() {
 export async function updateBookingStatusAction(id: string, status: BookingStatus) {
   await updateBookingStatusData(id, status)
   revalidatePath("/admin/bookings")
+}
+
+export async function getBookingById(id: string) {
+  return await getBookingByIdData(id)
 }

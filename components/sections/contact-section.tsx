@@ -10,8 +10,8 @@ interface ContactSectionProps {
 
 export default function ContactSection({ t }: ContactSectionProps) {
   return (
-    <section id="contact-form" className="w-full py-12 md:py-16 lg:py-24 xl:py-32">
-      <div className="container px-4 md:px-6 text-center">
+    <section id="contact-form" className="section-container w-full py-12 md:py-16 lg:py-24 xl:py-32">
+      <div className="section-content text-center">
         <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tighter text-gray-700">
             {t.getInTouchTitle}

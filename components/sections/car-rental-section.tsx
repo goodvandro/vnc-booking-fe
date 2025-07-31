@@ -13,19 +13,20 @@ interface CarRentalSectionProps {
 
 export default function CarRentalSection({ t, handleRentNowClick }: CarRentalSectionProps) {
   return (
-    <section id="car-rental" className="w-full py-12 md:py-16 lg:py-24 xl:py-32">
-      <div className="container px-4 md:px-6">
+    <section id="car-rental" className="section-container w-full py-12 md:py-16 lg:py-24 xl:py-32">
+      <div className="section-content">
         <div className="flex flex-col items-center justify-center space-y-4 text-center mb-8 md:mb-12">
-          <div className="space-y-2">
+          <div className="space-y-2 max-w-4xl mx-auto">
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tighter text-gray-700">
               {t.carRentalSectionTitle}
             </h2>
-            <p className="max-w-[900px] text-muted-foreground text-sm sm:text-base md:text-lg lg:text-xl leading-relaxed">
+            <p className="max-w-[900px] mx-auto text-muted-foreground text-sm sm:text-base md:text-lg lg:text-xl leading-relaxed">
               {t.carRentalSectionSubtitle}
             </p>
           </div>
         </div>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-w-7xl mx-auto">
+          {/* Car cards content remains the same, just wrapped in proper container */}
           <Card className="flex flex-col overflow-hidden">
             <ImageSlider
               images={[
@@ -77,6 +78,7 @@ export default function CarRentalSection({ t, handleRentNowClick }: CarRentalSec
               </Button>
             </CardFooter>
           </Card>
+          {/* Add the other 3 car cards with the same structure */}
           <Card className="flex flex-col overflow-hidden">
             <ImageSlider
               images={[
