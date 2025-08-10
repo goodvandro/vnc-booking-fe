@@ -21,34 +21,29 @@ function absUrl(path?: string | null) {
   return path.startsWith("http") ? path : `${getStrapiUrl()}${path}`
 }
 
-// Strapi returns description as array (e.g., dynamic zone) in your model.
-// We'll normalize for the UI (string to show in textarea) on GET,
-// and convert string back to array on PUT.
-function toDescriptionText(description: unknown): string {
-  if (Array.isArray(description)) {
-    // join blocks as paragraphs when possible; if blocks have 'text' use it, else JSON stringify
-    const parts = description.map((b: any) => {
-      if (b == null) return ""
-      if (typeof b === "string") return b
-      if (typeof b?.text === "string") return b.text
-      return typeof b === "object" ? JSON.stringify(b) : String(b)
-    })
-    return parts.filter(Boolean).join("\n\n")
+// Convert Strapi richtext blocks -> plain text (for textarea)
+function toPlainTextFromRichText(blocks: unknown): string {
+  if (!Array.isArray(blocks)) return typeof blocks === "string" ? blocks : ""
+  const lines: string[] = []
+  for (const node of blocks as any[]) {
+    if (!node || node.type !== "paragraph") continue
+    const children = Array.isArray(node.children) ? node.children : []
+    const text = children.map((ch: any) => (typeof ch?.text === "string" ? ch.text : "")).join("")
+    lines.push(text)
   }
-  if (typeof description === "string") return description
-  return ""
+  return lines.join("\n")
 }
 
-function toDescriptionArray(input: unknown): any[] {
+// Convert textarea string -> Strapi richtext blocks
+function toRichTextBlocksFromString(input: unknown): any[] {
   if (Array.isArray(input)) return input
-  if (typeof input === "string") {
-    const trimmed = input.trim()
-    if (!trimmed) return []
-    // simplest mapping: one block containing text
-    return [{ type: "paragraph", text: trimmed }]
-  }
-  // Default empty array to satisfy the Strapi validator
-  return []
+  const str = typeof input === "string" ? input : ""
+  // Split by newlines to paragraphs, preserve empty lines
+  const paragraphs = str.split(/\r?\n/)
+  return paragraphs.map((line) => ({
+    type: "paragraph",
+    children: [{ type: "text", text: line }],
+  }))
 }
 
 function normalizeNumbers(n: any): number | undefined {
@@ -62,9 +57,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     const res = await fetch(
       `${getStrapiUrl()}/api/cars/${params.id}?populate[images][fields][0]=url&populate[images][fields][1]=name&populate[images][fields][2]=width&populate[images][fields][3]=height&populate[images][fields][4]=mime`,
       {
-        headers: {
-          Authorization: `Bearer ${STRAPI_ADMIN_TOKEN}`,
-        },
+        headers: { Authorization: `Bearer ${STRAPI_ADMIN_TOKEN}` },
         cache: "no-store",
       },
     )
@@ -98,7 +91,8 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       seats: a.seats ?? null,
       transmission: a.transmission ?? "",
       price: a.price ?? null,
-      description: toDescriptionText(a.description),
+      description: toPlainTextFromRichText(a.description),
+      descriptionBlocks: Array.isArray(a.description) ? a.description : [],
       images,
     })
   } catch (err: any) {
@@ -111,15 +105,13 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     const payload = await req.json()
 
     const data: any = {
-      // optional external id
       carId: payload.carId || undefined,
       title: payload.title ?? "",
       seats: normalizeNumbers(payload.seats),
       transmission: payload.transmission ?? "",
       price: normalizeNumbers(payload.price),
-      // Convert textarea string to array to satisfy your Strapi model
-      description: toDescriptionArray(payload.description),
-      // Media many: array of IDs
+      // Convert textarea string to Strapi richtext blocks
+      description: toRichTextBlocksFromString(payload.description),
       images: Array.isArray(payload.images) ? payload.images : [],
     }
 
@@ -131,9 +123,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     const json = await res.json()
     if (!res.ok) {
       return NextResponse.json(
-        {
-          error: `Strapi request failed: ${res.status} ${res.statusText} ${JSON.stringify(json)}`,
-        },
+        { error: `Strapi request failed: ${res.status} ${res.statusText} ${JSON.stringify(json)}` },
         { status: res.status },
       )
     }

@@ -16,14 +16,14 @@ function authHeaders() {
   }
 }
 
-function toDescriptionArray(input: unknown): any[] {
+function toRichTextBlocksFromString(input: unknown): any[] {
   if (Array.isArray(input)) return input
-  if (typeof input === "string") {
-    const trimmed = input.trim()
-    if (!trimmed) return []
-    return [{ type: "paragraph", text: trimmed }]
-  }
-  return []
+  const str = typeof input === "string" ? input : ""
+  const paragraphs = str.split(/\r?\n/)
+  return paragraphs.map((line) => ({
+    type: "paragraph",
+    children: [{ type: "text", text: line }],
+  }))
 }
 
 function normalizeNumbers(n: any): number | undefined {
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
       seats: normalizeNumbers(payload.seats),
       transmission: payload.transmission ?? "",
       price: normalizeNumbers(payload.price),
-      description: toDescriptionArray(payload.description),
+      description: toRichTextBlocksFromString(payload.description),
       images: Array.isArray(payload.images) ? payload.images : [],
     }
 
@@ -53,9 +53,7 @@ export async function POST(req: Request) {
     const json = await res.json()
     if (!res.ok) {
       return NextResponse.json(
-        {
-          error: `Strapi request failed: ${res.status} ${res.statusText} ${JSON.stringify(json)}`,
-        },
+        { error: `Strapi request failed: ${res.status} ${res.statusText} ${JSON.stringify(json)}` },
         { status: res.status },
       )
     }

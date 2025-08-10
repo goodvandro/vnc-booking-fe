@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useEffect, useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -23,7 +22,7 @@ export default function GuestHouseForm({ initialData }: GuestHouseFormProps) {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
 
-  // Hydrate existing media with Strapi IDs for editing
+  // Hydrate existing media and description for editing
   useEffect(() => {
     const documentId = (initialData as any)?.documentId
     if (!isEditing || !documentId) return
@@ -37,6 +36,10 @@ export default function GuestHouseForm({ initialData }: GuestHouseFormProps) {
         if (!active) return
         const next: UploadedMedia[] = Array.isArray(data.images) ? data.images : []
         setMedia(next.length ? next : media)
+        const descEl = document.getElementById("description") as HTMLTextAreaElement | null
+        if (descEl && typeof data.description === "string" && !descEl.value) {
+          descEl.value = data.description
+        }
       } catch {}
     })()
     return () => {
@@ -50,7 +53,7 @@ export default function GuestHouseForm({ initialData }: GuestHouseFormProps) {
     setMessage(null)
     const form = e.currentTarget
     const payload = {
-      guestHouseId: (initialData as any)?.guestHouseId,
+      ghId: (initialData as any)?.ghId,
       title: (form.elements.namedItem("title") as HTMLInputElement)?.value,
       location: (form.elements.namedItem("location") as HTMLInputElement)?.value,
       rating: Number((form.elements.namedItem("rating") as HTMLInputElement)?.value),
@@ -83,9 +86,7 @@ export default function GuestHouseForm({ initialData }: GuestHouseFormProps) {
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
         <CardTitle>{isEditing ? "Edit Guest House" : "Add New Guest House"}</CardTitle>
-        <CardDescription>
-          {isEditing ? "Update the details of this guest house." : "Fill in the details for a new guest house."}
-        </CardDescription>
+        <CardDescription>We convert the description to Strapi Rich Text Blocks automatically.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={onSubmit} className="grid gap-4">
@@ -100,7 +101,7 @@ export default function GuestHouseForm({ initialData }: GuestHouseFormProps) {
 
           <MediaInput
             label="Guest House Images"
-            description="Upload images. These will be saved in Strapi and linked by media IDs."
+            description="Upload images. These are saved in Strapi and linked by media IDs."
             initialMedia={media}
             onChange={setMedia}
             maxFiles={16}
@@ -127,7 +128,13 @@ export default function GuestHouseForm({ initialData }: GuestHouseFormProps) {
           </div>
           <div className="grid gap-2">
             <Label htmlFor="description">Description</Label>
-            <Textarea id="description" name="description" defaultValue={initialData?.description} required />
+            <Textarea
+              id="description"
+              name="description"
+              placeholder={"One paragraph per line.\nUse blank lines for empty paragraphs."}
+              defaultValue={(initialData as any)?.description}
+            />
+            <p className="text-xs text-muted-foreground">Each line becomes a paragraph in Strapi Rich Text.</p>
           </div>
           <Button type="submit" disabled={loading}>
             {loading ? "Saving..." : isEditing ? "Update Guest House" : "Create Guest House"}

@@ -22,7 +22,7 @@ export default function CarForm({ initialData }: CarFormProps) {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
 
-  // Hydrate existing media with Strapi IDs for editing
+  // Hydrate existing media and description for editing
   useEffect(() => {
     const documentId = (initialData as any)?.documentId
     if (!isEditing || !documentId) return
@@ -36,7 +36,6 @@ export default function CarForm({ initialData }: CarFormProps) {
         if (!active) return
         const next: UploadedMedia[] = Array.isArray(data.images) ? data.images : []
         setMedia(next.length ? next : media)
-        // Optionally hydrate description in the UI if needed:
         const descEl = document.getElementById("description") as HTMLTextAreaElement | null
         if (descEl && typeof data.description === "string" && !descEl.value) {
           descEl.value = data.description
@@ -59,7 +58,6 @@ export default function CarForm({ initialData }: CarFormProps) {
       seats: Number((form.elements.namedItem("seats") as HTMLInputElement)?.value),
       transmission: (form.elements.namedItem("transmission") as HTMLInputElement)?.value,
       price: Number((form.elements.namedItem("price") as HTMLInputElement)?.value),
-      // Send as string; server will convert to array to satisfy Strapi schema
       description: (form.elements.namedItem("description") as HTMLTextAreaElement)?.value,
       images: media.filter((m) => typeof m.id === "number").map((m) => m.id) as number[],
     }
@@ -88,9 +86,7 @@ export default function CarForm({ initialData }: CarFormProps) {
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
         <CardTitle>{isEditing ? "Edit Car" : "Add New Car"}</CardTitle>
-        <CardDescription>
-          {isEditing ? "Update the details of this car." : "Fill in the details for a new car."}
-        </CardDescription>
+        <CardDescription>We convert the description to Strapi Rich Text Blocks automatically.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={onSubmit} className="grid gap-4">
@@ -101,7 +97,7 @@ export default function CarForm({ initialData }: CarFormProps) {
 
           <MediaInput
             label="Car Images"
-            description="Upload images. These will be saved in Strapi and linked by media IDs."
+            description="Upload images. These are saved in Strapi and linked by media IDs."
             initialMedia={media}
             onChange={setMedia}
             maxFiles={12}
@@ -131,10 +127,13 @@ export default function CarForm({ initialData }: CarFormProps) {
           </div>
           <div className="grid gap-2">
             <Label htmlFor="description">Description</Label>
-            <Textarea id="description" name="description" defaultValue={(initialData as any)?.description} />
-            <p className="text-xs text-muted-foreground">
-              Tip: We save this as a structured array in Strapi automatically.
-            </p>
+            <Textarea
+              id="description"
+              name="description"
+              placeholder={"One paragraph per line.\nUse blank lines for empty paragraphs."}
+              defaultValue={(initialData as any)?.description}
+            />
+            <p className="text-xs text-muted-foreground">Each line becomes a paragraph in Strapi Rich Text.</p>
           </div>
           <Button type="submit" disabled={loading}>
             {loading ? "Saving..." : isEditing ? "Update Car" : "Create Car"}
