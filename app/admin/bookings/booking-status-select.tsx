@@ -1,29 +1,44 @@
 "use client"
 
+import { useTransition, useState } from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { updateBookingStatusAction } from "../actions"
 import type { BookingStatus } from "@/lib/types"
 
-interface BookingStatusSelectProps {
-  bookingId: string
-  currentStatus: BookingStatus
-}
+const STATUSES: BookingStatus[] = ["pending", "confirmed", "cancelled", "completed"]
 
-export default function BookingStatusSelect({ bookingId, currentStatus }: BookingStatusSelectProps) {
-  const handleStatusChange = async (newStatus: string) => {
-    await updateBookingStatusAction(bookingId, newStatus as BookingStatus)
-  }
+export default function BookingStatusSelect(props: { bookingId: string; currentStatus: BookingStatus }) {
+  const { bookingId, currentStatus } = props
+  const [value, setValue] = useState<BookingStatus>(currentStatus)
+  const [isPending, startTransition] = useTransition()
 
   return (
-    <Select defaultValue={currentStatus} onValueChange={handleStatusChange}>
-      <SelectTrigger className="w-[140px]">
+    <Select
+      value={value}
+      onValueChange={(next) => {
+        const nextStatus = next as BookingStatus
+        setValue(nextStatus)
+        startTransition(async () => {
+          try {
+            await updateBookingStatusAction(bookingId, nextStatus)
+          } catch (e) {
+            // revert on error
+            setValue(currentStatus)
+            console.error("Failed to update booking status:", e)
+          }
+        })
+      }}
+      disabled={isPending}
+    >
+      <SelectTrigger className="w-[160px]">
         <SelectValue placeholder="Status" />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="pending">Pending</SelectItem>
-        <SelectItem value="confirmed">Confirmed</SelectItem>
-        <SelectItem value="cancelled">Cancelled</SelectItem>
-        <SelectItem value="completed">Completed</SelectItem>
+        {STATUSES.map((s) => (
+          <SelectItem key={s} value={s}>
+            {s.charAt(0).toUpperCase() + s.slice(1)}
+          </SelectItem>
+        ))}
       </SelectContent>
     </Select>
   )
