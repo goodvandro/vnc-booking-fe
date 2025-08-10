@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import MediaInput, { type UploadedMedia } from "@/components/common/media-input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { Car } from "@/lib/types"
 import { useRouter } from "next/navigation"
 
@@ -21,6 +22,7 @@ export default function CarForm({ initialData }: CarFormProps) {
   const [media, setMedia] = useState<UploadedMedia[]>((initialData?.images || []).map((url) => ({ url })))
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  const [transmission, setTransmission] = useState<string>(initialData?.transmission || "Manual")
 
   // Hydrate existing media and description for editing
   useEffect(() => {
@@ -36,6 +38,9 @@ export default function CarForm({ initialData }: CarFormProps) {
         if (!active) return
         const next: UploadedMedia[] = Array.isArray(data.images) ? data.images : []
         setMedia(next.length ? next : media)
+        if (data?.transmission) {
+          setTransmission(data.transmission)
+        }
         const descEl = document.getElementById("description") as HTMLTextAreaElement | null
         if (descEl && typeof data.description === "string" && !descEl.value) {
           descEl.value = data.description
@@ -56,7 +61,7 @@ export default function CarForm({ initialData }: CarFormProps) {
       carId: (initialData as any)?.carId,
       title: (form.elements.namedItem("title") as HTMLInputElement)?.value,
       seats: Number((form.elements.namedItem("seats") as HTMLInputElement)?.value),
-      transmission: (form.elements.namedItem("transmission") as HTMLInputElement)?.value,
+      transmission,
       price: Number((form.elements.namedItem("price") as HTMLInputElement)?.value),
       description: (form.elements.namedItem("description") as HTMLTextAreaElement)?.value,
       images: media.filter((m) => typeof m.id === "number").map((m) => m.id) as number[],
@@ -118,7 +123,17 @@ export default function CarForm({ initialData }: CarFormProps) {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="transmission">Transmission</Label>
-              <Input id="transmission" name="transmission" defaultValue={initialData?.transmission} required />
+              <Select value={transmission} onValueChange={setTransmission}>
+                <SelectTrigger id="transmission" aria-label="Transmission">
+                  <SelectValue placeholder="Select transmission" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Manual">Manual</SelectItem>
+                  <SelectItem value="Automatic">Automatic</SelectItem>
+                </SelectContent>
+              </Select>
+              {/* Keep a hidden input so form.elements still has 'transmission' if needed */}
+              <input type="hidden" name="transmission" value={transmission} />
             </div>
           </div>
           <div className="grid gap-2">
