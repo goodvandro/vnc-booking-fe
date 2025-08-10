@@ -4,9 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { getCars, deleteCar } from "../actions"
 import { PlusCircle, Pencil, Trash2 } from "lucide-react"
+import { CarOutputDTO } from "@/lib/types"
 
 export default async function CarsPage() {
   const cars = await getCars()
+  console.log("CarOutputDTO", cars);
 
   return (
     <Card>
@@ -35,10 +37,10 @@ export default async function CarsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {cars.map((car: any) => {
+            {cars.map((car: CarOutputDTO) => {
               const thumb =
                 Array.isArray(car.images) && car.images.length > 0
-                  ? car.images[0]
+                  ? car.images[0].url
                   : "/placeholder.svg?height=56&width=56"
               return (
                 <TableRow key={car.id}>
@@ -62,7 +64,7 @@ export default async function CarsPage() {
                           <span className="sr-only">Edit</span>
                         </Link>
                       </Button>
-                      <form action={deleteCar.bind(null, car.documentId)}>
+                      <form action={deleteCar.bind(null, car.documentId || "")}>
                         <Button variant="destructive" size="icon" type="submit">
                           <Trash2 className="h-4 w-4" />
                           <span className="sr-only">Delete</span>

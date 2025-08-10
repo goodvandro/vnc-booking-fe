@@ -65,6 +65,7 @@ export async function createGuestHouse(formData: FormData) {
   const images = extractImagesFromFormData(formData)
   const newGh: Omit<GuestHouse, "id"> = {
     images,
+    guestHouseId: new Date().getTime().toString(),
     title: String(formData.get("title") || ""),
     location: String(formData.get("location") || ""),
     rating: Number.parseFloat(String(formData.get("rating") || "0")),
@@ -105,6 +106,7 @@ export async function createCar(formData: FormData) {
   const images = extractImagesFromFormData(formData)
   const newCar: Omit<Car, "id"> = {
     images,
+    carId: new Date().getTime().toString(),
     title: String(formData.get("title") || ""),
     seats: Number.parseInt(String(formData.get("seats") || "0")),
     transmission: String(formData.get("transmission") || ""),
