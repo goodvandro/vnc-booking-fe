@@ -9,6 +9,7 @@ interface EditCarPageProps {
 export default async function EditCarPage({ params }: EditCarPageProps) {
   const { id } = await params
 
+  // The id parameter here is actually the documentId from the cars table
   const car = await getCar(id)
 
   if (!car) {

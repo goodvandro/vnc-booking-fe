@@ -8,7 +8,7 @@ import { CarOutputDTO } from "@/lib/types"
 
 export default async function CarsPage() {
   const cars = await getCars()
-  console.log("CarOutputDTO", cars);
+  console.log("cars", cars)
 
   return (
     <Card>

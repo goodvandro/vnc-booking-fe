@@ -141,7 +141,6 @@ export async function getCarsData(): Promise<CarOutputDTO[]> {
 
     const list = (res?.data || []).map((item: any) => {
       const flat = flattenEntity<CarOutputDTO>(item);
-      console.log("flat", flat);
       // Ensure both id (UID or numeric) and documentId (numeric) exist for linking/editing
       const result: any = {
         ...flat,
@@ -167,7 +166,6 @@ export async function getCarByIdData(id: string): Promise<Car | undefined> {
     return {
       ...flat,
       images: getImageUrls((flat as any).images),
-      documentId: Number(res.data.id),
     } as any;
   } catch (e) {
     console.error("Failed to fetch car:", e);
@@ -176,6 +174,7 @@ export async function getCarByIdData(id: string): Promise<Car | undefined> {
 }
 
 export async function createCarData(newCar: Omit<Car, "id">): Promise<Car> {
+  console.log("newCar", newCar)
   const payload: any = {
     carId: (newCar as any).carId || `car-${Date.now()}`,
     title: newCar.title,
