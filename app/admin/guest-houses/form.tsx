@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import ImageInputManager from "@/components/common/image-input-manager"
+import MediaInput, { type UploadedMedia } from "@/components/common/media-input"
 import { createGuestHouse, updateGuestHouse } from "../actions"
 import type { GuestHouse } from "@/lib/types"
 
@@ -16,18 +16,13 @@ interface GuestHouseFormProps {
 
 export default function GuestHouseForm({ initialData }: GuestHouseFormProps) {
   const isEditing = !!initialData
-  const [images, setImages] = useState<string[]>(initialData?.images || [])
+  const [media, setMedia] = useState<UploadedMedia[]>((initialData?.images || []).map((url) => ({ url })))
 
   const action = isEditing ? updateGuestHouse.bind(null, initialData.id) : createGuestHouse
-  const [state, formAction, isPending] = useActionState(action, null)
+  const [state, formAction, isPending] = useActionState(action as any, null)
 
   const handleFormSubmit = (formData: FormData) => {
-    // Add images to form data
-    images.forEach((image, index) => {
-      if (image.trim()) {
-        formData.append(`image-${index}`, image)
-      }
-    })
+    // MediaInput already injects hidden imageId-* and imageUrl-* inputs
     formAction(formData)
   }
 
@@ -49,7 +44,15 @@ export default function GuestHouseForm({ initialData }: GuestHouseFormProps) {
             <Label htmlFor="location">Location</Label>
             <Input id="location" name="location" defaultValue={initialData?.location} required />
           </div>
-          <ImageInputManager initialImages={initialData?.images} onChange={setImages} label="Guest House Images" />
+
+          <MediaInput
+            label="Guest House Images"
+            description="Upload one or more images. You can also add by URL for preview only."
+            initialMedia={media}
+            onChange={setMedia}
+            maxFiles={16}
+          />
+
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="price">Price per Night</Label>
@@ -76,7 +79,7 @@ export default function GuestHouseForm({ initialData }: GuestHouseFormProps) {
           <Button type="submit" disabled={isPending}>
             {isPending ? "Saving..." : isEditing ? "Update Guest House" : "Create Guest House"}
           </Button>
-          {state && <p className="text-sm text-red-500">{state.message}</p>}
+          {state && <p className={`text-sm ${state.success ? "text-green-600" : "text-red-500"}`}>{state.message}</p>}
         </form>
       </CardContent>
     </Card>

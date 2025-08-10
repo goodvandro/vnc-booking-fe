@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import ImageInputManager from "@/components/common/image-input-manager"
+import MediaInput, { type UploadedMedia } from "@/components/common/media-input"
 import { createCar, updateCar } from "../actions"
 import type { Car } from "@/lib/types"
 
@@ -16,18 +16,14 @@ interface CarFormProps {
 
 export default function CarForm({ initialData }: CarFormProps) {
   const isEditing = !!initialData
-  const [images, setImages] = useState<string[]>(initialData?.images || [])
+  const [media, setMedia] = useState<UploadedMedia[]>((initialData?.images || []).map((url) => ({ url })))
 
   const action = isEditing ? updateCar.bind(null, initialData.id) : createCar
-  const [state, formAction, isPending] = useActionState(action, null)
+  const [state, formAction, isPending] = useActionState(action as any, null)
 
   const handleFormSubmit = (formData: FormData) => {
-    // Add images to form data
-    images.forEach((image, index) => {
-      if (image.trim()) {
-        formData.append(`image-${index}`, image)
-      }
-    })
+    // Append uploaded image IDs; the MediaInput already renders hidden inputs imageId-*
+    // so we don't need to append here manually unless customizing.
     formAction(formData)
   }
 
@@ -45,7 +41,15 @@ export default function CarForm({ initialData }: CarFormProps) {
             <Label htmlFor="title">Title</Label>
             <Input id="title" name="title" defaultValue={initialData?.title} required />
           </div>
-          <ImageInputManager initialImages={initialData?.images} onChange={setImages} label="Car Images" />
+
+          <MediaInput
+            label="Car Images"
+            description="Upload one or more images. You can also add by URL for preview only."
+            initialMedia={media}
+            onChange={setMedia}
+            maxFiles={12}
+          />
+
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="seats">Seats</Label>
@@ -75,7 +79,7 @@ export default function CarForm({ initialData }: CarFormProps) {
           <Button type="submit" disabled={isPending}>
             {isPending ? "Saving..." : isEditing ? "Update Car" : "Create Car"}
           </Button>
-          {state && <p className="text-sm text-red-500">{state.message}</p>}
+          {state && <p className={`text-sm ${state.success ? "text-green-600" : "text-red-500"}`}>{state.message}</p>}
         </form>
       </CardContent>
     </Card>

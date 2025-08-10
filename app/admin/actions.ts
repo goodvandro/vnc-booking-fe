@@ -1,156 +1,136 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
-import { redirect } from "next/navigation"
-import {
-  getGuestHousesData,
-  getGuestHouseByIdData,
-  createGuestHouseData,
-  updateGuestHouseData,
-  deleteGuestHouseData,
-  getCarsData,
-  getCarByIdData,
-  createCarData,
-  updateCarData,
-  deleteCarData,
-  getBookingsData,
-  updateBookingStatusData,
-  getDashboardStatsData,
-  getBookingByIdData,
-} from "@/lib/strapi-data"
-import type { GuestHouse, Car, BookingStatus } from "@/lib/types"
+import { strapiAPI } from "@/lib/strapi-api"
 
-// Helper function to extract images from form data
-function extractImagesFromFormData(formData: FormData): string[] {
-  const images: string[] = []
-  let index = 0
+type ActionResult = { success: boolean; message: string }
 
-  while (formData.has(`image-${index}`)) {
-    const image = formData.get(`image-${index}`) as string
-    if (image && image.trim()) {
-      images.push(image.trim())
+function getImageIdsFromForm(formData: FormData): number[] {
+  const ids: number[] = []
+  for (const [key, value] of formData.entries()) {
+    if (key.startsWith("imageId-")) {
+      const n = Number(value)
+      if (!Number.isNaN(n)) ids.push(n)
     }
-    index++
   }
-
-  return images.length > 0 ? images : ["/placeholder.svg?height=300&width=400"]
+  return ids
 }
 
-// Guest House Actions
-export async function getGuestHouses() {
-  return await getGuestHousesData()
-}
+// Cars
+export async function createCar(formData: FormData): Promise<ActionResult> {
+  try {
+    const title = String(formData.get("title") || "").trim()
+    const seats = Number(formData.get("seats") || 0)
+    const transmission = String(formData.get("transmission") || "").trim()
+    const price = Number(formData.get("price") || 0)
+    const description = String(formData.get("description") || "").trim()
+    const images = getImageIdsFromForm(formData)
 
-export async function getGuestHouse(id: string) {
-  return await getGuestHouseByIdData(id)
-}
+    if (!title || !seats || !transmission || !price || !description) {
+      return { success: false, message: "Please fill out all required fields." }
+    }
 
-export async function createGuestHouse(formData: FormData) {
-  const images = extractImagesFromFormData(formData)
+    await strapiAPI.createCar({
+      carId: `car-${Date.now()}`,
+      title,
+      seats,
+      transmission,
+      price,
+      description,
+      ...(images.length > 0 ? { images } : {}),
+    })
 
-  const newGh: Omit<GuestHouse, "id"> = {
-    guestHouseId: `gh-${Date.now()}`,
-    images,
-    title: formData.get("title") as string,
-    location: formData.get("location") as string,
-    rating: Number.parseFloat(formData.get("rating") as string),
-    price: Number.parseFloat(formData.get("price") as string),
-    description: formData.get("description") as string,
+    return { success: true, message: "Car created successfully." }
+  } catch (e: any) {
+    return { success: false, message: e?.message || "Failed to create car." }
   }
-  await createGuestHouseData(newGh)
-  revalidatePath("/admin/guest-houses")
-  redirect("/admin/guest-houses")
 }
 
-export async function updateGuestHouse(id: string, formData: FormData) {
-  const images = extractImagesFromFormData(formData)
+export async function updateCar(id: string, formData: FormData): Promise<ActionResult> {
+  try {
+    const title = String(formData.get("title") || "").trim()
+    const seats = Number(formData.get("seats") || 0)
+    const transmission = String(formData.get("transmission") || "").trim()
+    const price = Number(formData.get("price") || 0)
+    const description = String(formData.get("description") || "").trim()
+    const images = getImageIdsFromForm(formData)
 
-  const updatedGh: Partial<GuestHouse> = {
-    images,
-    title: formData.get("title") as string,
-    location: formData.get("location") as string,
-    rating: Number.parseFloat(formData.get("rating") as string),
-    price: Number.parseFloat(formData.get("price") as string),
-    description: formData.get("description") as string,
+    if (!title || !seats || !transmission || !price || !description) {
+      return { success: false, message: "Please fill out all required fields." }
+    }
+
+    const payload: any = {
+      title,
+      seats,
+      transmission,
+      price,
+      description,
+    }
+    if (images.length > 0) payload.images = images
+
+    await strapiAPI.updateCar(id, payload)
+
+    return { success: true, message: "Car updated successfully." }
+  } catch (e: any) {
+    return { success: false, message: e?.message || "Failed to update car." }
   }
-  await updateGuestHouseData(id, updatedGh)
-  revalidatePath("/admin/guest-houses")
-  redirect("/admin/guest-houses")
 }
 
-export async function deleteGuestHouse(id: string) {
-  await deleteGuestHouseData(id)
-  revalidatePath("/admin/guest-houses")
-}
+// Guest Houses
+export async function createGuestHouse(formData: FormData): Promise<ActionResult> {
+  try {
+    const title = String(formData.get("title") || "").trim()
+    const location = String(formData.get("location") || "").trim()
+    const rating = Number(formData.get("rating") || 0)
+    const price = Number(formData.get("price") || 0)
+    const description = String(formData.get("description") || "").trim()
+    const images = getImageIdsFromForm(formData)
 
-// Car Actions
-export async function getCars() {
-  return await getCarsData()
-}
+    if (!title || !location || !rating || !price || !description) {
+      return { success: false, message: "Please fill out all required fields." }
+    }
 
-export async function getCar(id: string) {
-  return await getCarByIdData(id)
-}
+    await strapiAPI.createGuestHouse({
+      guestHouseId: `gh-${Date.now()}`,
+      title,
+      location,
+      rating,
+      price,
+      description,
+      ...(images.length > 0 ? { images } : {}),
+    })
 
-export async function createCar(formData: FormData) {
-  const images = extractImagesFromFormData(formData)
-
-  const newCar: Omit<Car, "id"> = {
-    carId: `car-${Date.now()}`,
-    images,
-    title: formData.get("title") as string,
-    seats: Number.parseInt(formData.get("seats") as string),
-    transmission: formData.get("transmission") as string,
-    price: Number.parseFloat(formData.get("price") as string),
-    description: formData.get("description") as string,
+    return { success: true, message: "Guest house created successfully." }
+  } catch (e: any) {
+    return { success: false, message: e?.message || "Failed to create guest house." }
   }
-  await createCarData(newCar)
-  revalidatePath("/admin/cars")
-  redirect("/admin/cars")
 }
 
-export async function updateCar(id: string, formData: FormData) {
-  const images = extractImagesFromFormData(formData)
+export async function updateGuestHouse(id: string, formData: FormData): Promise<ActionResult> {
+  try {
+    const title = String(formData.get("title") || "").trim()
+    const location = String(formData.get("location") || "").trim()
+    const rating = Number(formData.get("rating") || 0)
+    const price = Number(formData.get("price") || 0)
+    const description = String(formData.get("description") || "").trim()
+    const images = getImageIdsFromForm(formData)
 
-  const updatedCar: Partial<Car> = {
-    images,
-    title: formData.get("title") as string,
-    seats: Number.parseInt(formData.get("seats") as string),
-    transmission: formData.get("transmission") as string,
-    price: Number.parseFloat(formData.get("price") as string),
-    description: formData.get("description") as string,
+    if (!title || !location || !rating || !price || !description) {
+      return { success: false, message: "Please fill out all required fields." }
+    }
+
+    const payload: any = {
+      title,
+      location,
+      rating,
+      price,
+      description,
+    }
+    if (images.length > 0) payload.images = images
+
+    await strapiAPI.updateGuestHouse(id, payload)
+
+    return { success: true, message: "Guest house updated successfully." }
+  } catch (e: any) {
+    return { success: false, message: e?.message || "Failed to update guest house." }
   }
-  await updateCarData(id, updatedCar)
-  revalidatePath("/admin/cars")
-  redirect("/admin/cars")
-}
-
-export async function deleteCar(id: string) {
-  await deleteCarData(id)
-  revalidatePath("/admin/cars")
-}
-
-// Booking Actions
-export async function getBookings() {
-  return await getBookingsData()
-}
-
-export async function updateBookingStatus(id: string, status: BookingStatus) {
-  await updateBookingStatusData(id, status)
-  revalidatePath("/admin/bookings")
-}
-
-// Dashboard Actions
-export async function getDashboardStats() {
-  return await getDashboardStatsData()
-}
-
-// Server Action for updating booking status (to be used in client components)
-export async function updateBookingStatusAction(id: string, status: BookingStatus) {
-  await updateBookingStatusData(id, status)
-  revalidatePath("/admin/bookings")
-}
-
-export async function getBookingById(id: string) {
-  return await getBookingByIdData(id)
 }
