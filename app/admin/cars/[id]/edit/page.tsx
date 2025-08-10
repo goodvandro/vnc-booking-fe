@@ -2,8 +2,14 @@ import CarForm from "../../form"
 import { getCar } from "../../../actions"
 import { notFound } from "next/navigation"
 
-export default async function EditCarPage({ params }: { params: { id: string } }) {
-  const car = await getCar(params.id)
+interface EditCarPageProps {
+  params: Promise<{ id: string }>
+}
+
+export default async function EditCarPage({ params }: EditCarPageProps) {
+  const { id } = await params
+
+  const car = await getCar(id)
 
   if (!car) {
     notFound()

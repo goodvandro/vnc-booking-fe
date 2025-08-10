@@ -25,6 +25,7 @@ export interface GuestHouse {
 
 export interface Car {
   id: string
+  documentId?: string
   carId: string
   images: string[] // Changed from imageSrc to images array
   title: string

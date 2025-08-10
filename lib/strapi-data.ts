@@ -123,9 +123,10 @@ export async function getCarsData(): Promise<Car[]> {
 export async function getCarByIdData(id: string): Promise<Car | undefined> {
   try {
     const response = await strapiAPI.getCar(id)
+    console.log("response", response)
     return {
       ...transformStrapiEntity<Omit<Car, "id">>(response.data),
-      images: getImageUrls(response.data.attributes.images),
+      // images: getImageUrls(response.data.attributes.images),
     }
   } catch (error) {
     console.error("Failed to fetch car:", error)

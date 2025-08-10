@@ -56,7 +56,7 @@ export default async function CarsPage() {
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
                     <Button asChild variant="outline" size="icon">
-                      <Link href={`/admin/cars/${car.id}/edit`}>
+                      <Link href={`/admin/cars/${car.documentId}/edit`}>
                         <Pencil className="h-4 w-4" />
                         <span className="sr-only">Edit</span>
                       </Link>

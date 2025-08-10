@@ -2,8 +2,13 @@ import GuestHouseForm from "../../form"
 import { getGuestHouse } from "../../../actions"
 import { notFound } from "next/navigation"
 
-export default async function EditGuestHousePage({ params }: { params: { id: string } }) {
-  const guestHouse = await getGuestHouse(params.id)
+interface EditGuestHousePageProps {
+  params: Promise<{ id: string }>
+}
+
+export default async function EditGuestHousePage({ params }: EditGuestHousePageProps) {
+  const { id } = await params
+  const guestHouse = await getGuestHouse(id)
 
   if (!guestHouse) {
     notFound()
