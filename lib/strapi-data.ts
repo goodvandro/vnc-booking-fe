@@ -32,7 +32,11 @@ export async function getGuestHousesData(): Promise<GuestHouse[]> {
     const res = await strapiAPI.getGuestHouses()
     const list = (res?.data || []).map((item: any) => {
       const flat = flattenEntity<GuestHouse>(item)
-      return { ...flat, images: getImageUrls(flat.images) }
+      return {
+        ...flat,
+        images: getImageUrls(flat.images),
+        documentId: Number(item.id),
+      } as any
     })
     return list
   } catch (e) {
@@ -46,7 +50,7 @@ export async function getGuestHouseByIdData(id: string): Promise<GuestHouse | un
     const res = await strapiAPI.getGuestHouse(id)
     if (!res?.data) return undefined
     const flat = flattenEntity<GuestHouse>(res.data)
-    return { ...flat, images: getImageUrls(flat.images) }
+    return { ...flat, images: getImageUrls(flat.images), documentId: Number(res.data.id) } as any
   } catch (e) {
     console.error("Failed to fetch guest house:", e)
     return undefined

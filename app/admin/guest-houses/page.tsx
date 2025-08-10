@@ -26,38 +26,51 @@ export default async function GuestHousesPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Image</TableHead>
               <TableHead>Title</TableHead>
               <TableHead>Location</TableHead>
               <TableHead>Price/Night</TableHead>
               <TableHead>Rating</TableHead>
-              <TableHead className="w-[100px] text-right">Actions</TableHead>
+              <TableHead className="w-[120px] text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {guestHouses.map((gh) => (
-              <TableRow key={gh.id}>
-                <TableCell className="font-medium">{gh.title}</TableCell>
-                <TableCell>{gh.location}</TableCell>
-                <TableCell>${gh.price}</TableCell>
-                <TableCell>{gh.rating}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button asChild variant="outline" size="icon">
-                      <Link href={`/admin/guest-houses/${gh.id}/edit`}>
-                        <Pencil className="h-4 w-4" />
-                        <span className="sr-only">Edit</span>
-                      </Link>
-                    </Button>
-                    <form action={deleteGuestHouse.bind(null, gh.id)}>
-                      <Button variant="destructive" size="icon" type="submit">
-                        <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Delete</span>
+            {guestHouses.map((gh: any) => {
+              const thumb =
+                Array.isArray(gh.images) && gh.images.length > 0 ? gh.images[0] : "/placeholder.svg?height=56&width=56"
+              return (
+                <TableRow key={gh.id}>
+                  <TableCell>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={thumb || "/placeholder.svg"}
+                      alt={`${gh.title || "Guest House"} thumbnail`}
+                      className="h-14 w-14 rounded object-cover border"
+                    />
+                  </TableCell>
+                  <TableCell className="font-medium">{gh.title}</TableCell>
+                  <TableCell>{gh.location}</TableCell>
+                  <TableCell>{typeof gh.price === "number" ? `$${gh.price}` : gh.price}</TableCell>
+                  <TableCell>{gh.rating}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button asChild variant="outline" size="icon">
+                        <Link href={`/admin/guest-houses/${gh.documentId}/edit`}>
+                          <Pencil className="h-4 w-4" />
+                          <span className="sr-only">Edit</span>
+                        </Link>
                       </Button>
-                    </form>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
+                      <form action={deleteGuestHouse.bind(null, gh.documentId)}>
+                        <Button variant="destructive" size="icon" type="submit">
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Delete</span>
+                        </Button>
+                      </form>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )
+            })}
           </TableBody>
         </Table>
       </CardContent>

@@ -89,8 +89,8 @@ export async function updateGuestHouse(id: string, formData: FormData) {
   revalidatePath("/admin/guest-houses")
   redirect("/admin/guest-houses")
 }
-export async function deleteGuestHouse(id: string) {
-  await deleteGuestHouseData(id)
+export async function deleteGuestHouse(id: string | number) {
+  await deleteGuestHouseData(String(id))
   revalidatePath("/admin/guest-houses")
 }
 
@@ -129,7 +129,7 @@ export async function updateCar(id: string, formData: FormData) {
   revalidatePath("/admin/cars")
   redirect("/admin/cars")
 }
-export async function deleteCar(id: string) {
-  await deleteCarData(id)
+export async function deleteCar(id: string | number) {
+  await deleteCarData(String(id))
   revalidatePath("/admin/cars")
 }

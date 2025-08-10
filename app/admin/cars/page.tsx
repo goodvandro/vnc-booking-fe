@@ -1,25 +1,12 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { getCars, deleteCar } from "../actions";
-import { PlusCircle, Pencil, Trash2 } from "lucide-react";
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { getCars, deleteCar } from "../actions"
+import { PlusCircle, Pencil, Trash2 } from "lucide-react"
 
 export default async function CarsPage() {
-  const cars = await getCars();
+  const cars = await getCars()
 
   return (
     <Card>
@@ -39,41 +26,56 @@ export default async function CarsPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Image</TableHead>
               <TableHead>Title</TableHead>
               <TableHead>Seats</TableHead>
               <TableHead>Transmission</TableHead>
               <TableHead>Price/Day</TableHead>
-              <TableHead className="w-[100px] text-right">Actions</TableHead>
+              <TableHead className="w-[120px] text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {cars.map((car) => (
-              <TableRow key={car.id}>
-                <TableCell className="font-medium">{car.title}</TableCell>
-                <TableCell>{car.seats}</TableCell>
-                <TableCell>{car.transmission}</TableCell>
-                <TableCell>${car.price}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button asChild variant="outline" size="icon">
-                      <Link href={`/admin/cars/${car.documentId}/edit`}>
-                        <Pencil className="h-4 w-4" />
-                        <span className="sr-only">Edit</span>
-                      </Link>
-                    </Button>
-                    <form action={deleteCar.bind(null, car.id)}>
-                      <Button variant="destructive" size="icon" type="submit">
-                        <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Delete</span>
+            {cars.map((car: any) => {
+              const thumb =
+                Array.isArray(car.images) && car.images.length > 0
+                  ? car.images[0]
+                  : "/placeholder.svg?height=56&width=56"
+              return (
+                <TableRow key={car.id}>
+                  <TableCell>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={thumb || "/placeholder.svg"}
+                      alt={`${car.title || "Car"} thumbnail`}
+                      className="h-14 w-14 rounded object-cover border"
+                    />
+                  </TableCell>
+                  <TableCell className="font-medium">{car.title}</TableCell>
+                  <TableCell>{car.seats}</TableCell>
+                  <TableCell>{car.transmission}</TableCell>
+                  <TableCell>{typeof car.price === "number" ? `$${car.price}` : car.price}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button asChild variant="outline" size="icon">
+                        <Link href={`/admin/cars/${car.documentId}/edit`}>
+                          <Pencil className="h-4 w-4" />
+                          <span className="sr-only">Edit</span>
+                        </Link>
                       </Button>
-                    </form>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
+                      <form action={deleteCar.bind(null, car.documentId)}>
+                        <Button variant="destructive" size="icon" type="submit">
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Delete</span>
+                        </Button>
+                      </form>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )
+            })}
           </TableBody>
         </Table>
       </CardContent>
     </Card>
-  );
+  )
 }

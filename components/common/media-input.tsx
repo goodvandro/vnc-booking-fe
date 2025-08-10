@@ -1,14 +1,13 @@
 "use client"
 
 import type React from "react"
-
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useMemo, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { X, UploadCloud, Plus } from "lucide-react"
+import { X, UploadCloud, Trash2, Plus, GripVertical, ArrowUp, ArrowDown } from "lucide-react"
 
 export type UploadedMedia = {
   id?: number
@@ -40,38 +39,42 @@ export default function MediaInput({
   const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const [addUrl, setAddUrl] = useState("")
+  const dragSourceIndex = useRef<number | null>(null)
+
+  const countMessage = useMemo(() => {
+    if (!maxFiles) return null
+    return `${items.length}/${maxFiles} selected`
+  }, [items.length, maxFiles])
 
   const update = (next: UploadedMedia[]) => {
     setItems(next)
     onChange?.(next)
   }
 
-  const uploadFiles = async (files: File[]) => {
-    const formData = new FormData()
-    files.forEach((f) => formData.append("files", f))
-    setProgress(10)
-    setError(null)
-    const res = await fetch("/api/upload", { method: "POST", body: formData })
-    if (!res.ok) {
-      const message = "Upload failed"
-      try {
-        const j = await res.json()
-        const errorMessage = j?.error || message
-        throw new Error(errorMessage)
-      } catch {}
-    }
-    const { uploadedFiles } = (await res.json()) as { uploadedFiles: UploadedMedia[] }
-    return uploadedFiles
-  }
-
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return
+    setError(null)
+    const filesArray = Array.from(files)
     const remaining = Math.max(0, maxFiles - items.length)
-    const toUpload = Array.from(files).slice(0, remaining)
+    const toUpload = filesArray.slice(0, remaining)
+
+    const formData = new FormData()
+    toUpload.forEach((f) => formData.append("files", f))
+
+    // Fake progress while uploading
+    setProgress(10)
+
     try {
-      const uploaded = await uploadFiles(toUpload)
+      const res = await fetch("/api/upload", { method: "POST", body: formData })
+      if (!res.ok) {
+        const maybe = await res.json().catch(() => null)
+        const msg = maybe?.error || "Upload failed"
+        throw new Error(msg)
+      }
       setProgress(85)
-      const next = [...items, ...(uploaded || [])]
+      const { files } = (await res.json()) as { files: UploadedMedia[] }
+
+      const next = [...items, ...files]
       update(next)
       setProgress(100)
       setTimeout(() => setProgress(0), 600)
@@ -81,7 +84,7 @@ export default function MediaInput({
     }
   }
 
-  const onDrop = useCallback(
+  const onDropZoneDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault()
       setIsDragging(false)
@@ -102,9 +105,44 @@ export default function MediaInput({
     update(next)
   }
 
+  const moveItem = (from: number, to: number) => {
+    if (from === to || from < 0 || to < 0 || from >= items.length || to >= items.length) return
+    const next = items.slice()
+    const [spliced] = next.splice(from, 1)
+    next.splice(to, 0, spliced)
+    update(next)
+  }
+
+  // DnD handlers for image tiles
+  const onTileDragStart = (index: number) => (e: React.DragEvent) => {
+    dragSourceIndex.current = index
+    e.dataTransfer.effectAllowed = "move"
+    try {
+      e.dataTransfer.setData("text/plain", String(index))
+    } catch {}
+  }
+  const onTileDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = "move"
+  }
+  const onTileDrop = (index: number) => (e: React.DragEvent) => {
+    e.preventDefault()
+    const source = dragSourceIndex.current ?? Number(e.dataTransfer.getData("text/plain") || Number.NaN)
+    if (!Number.isNaN(source)) {
+      moveItem(source, index)
+    }
+    dragSourceIndex.current = null
+  }
+  const onTileDragEnd = () => {
+    dragSourceIndex.current = null
+  }
+
   return (
     <div className="grid gap-3">
-      <Label>{label}</Label>
+      <div className="flex items-center justify-between">
+        <Label>{label}</Label>
+        {countMessage && <span className="text-xs text-muted-foreground">{countMessage}</span>}
+      </div>
       {description && <p className="text-sm text-muted-foreground">{description}</p>}
 
       <div
@@ -117,7 +155,7 @@ export default function MediaInput({
           setIsDragging(true)
         }}
         onDragLeave={() => setIsDragging(false)}
-        onDrop={onDrop}
+        onDrop={onDropZoneDrop}
         role="button"
         aria-label="Upload images by dropping files here"
         onClick={() => inputRef.current?.click()}
@@ -145,6 +183,7 @@ export default function MediaInput({
         </div>
       </div>
 
+      {/* Add by URL (optional) */}
       <div className="flex gap-2">
         <Input placeholder="https://example.com/image.jpg" value={addUrl} onChange={(e) => setAddUrl(e.target.value)} />
         <Button type="button" variant="outline" onClick={onAddUrl}>
@@ -155,15 +194,48 @@ export default function MediaInput({
       {items.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
           {items.map((m, idx) => (
-            <Card key={`${m.url}-${idx}`} className="relative overflow-hidden">
-              <button
-                type="button"
-                onClick={() => removeAt(idx)}
-                className="absolute right-1 top-1 z-10 inline-flex h-7 w-7 items-center justify-center rounded-full bg-background/80 shadow hover:bg-background"
-                aria-label={`Remove image ${idx + 1}`}
-              >
-                <X className="h-4 w-4" />
-              </button>
+            <Card
+              key={`${m.url}-${idx}`}
+              className="relative overflow-hidden group"
+              draggable
+              onDragStart={onTileDragStart(idx)}
+              onDragOver={onTileDragOver}
+              onDrop={onTileDrop(idx)}
+              onDragEnd={onTileDragEnd}
+            >
+              <div className="absolute left-1 top-1 z-10 inline-flex items-center gap-1 rounded bg-background/80 px-1.5 py-0.5 shadow text-[10px] text-muted-foreground">
+                <GripVertical className="h-3.5 w-3.5" />
+                Drag to reorder
+              </div>
+
+              <div className="absolute right-1 top-1 z-10 inline-flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => moveItem(idx, Math.max(0, idx - 1))}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-background/80 shadow hover:bg-background"
+                  aria-label={`Move image ${idx + 1} up`}
+                >
+                  <ArrowUp className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => moveItem(idx, Math.min(items.length - 1, idx + 1))}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-background/80 shadow hover:bg-background"
+                  aria-label={`Move image ${idx + 1} down`}
+                >
+                  <ArrowDown className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => removeAt(idx)}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-background/80 shadow hover:bg-background"
+                  aria-label={`Remove image ${idx + 1}`}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Image preview */}
               <div className="relative h-28 w-full">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -180,9 +252,15 @@ export default function MediaInput({
                 <p className="truncate text-xs text-muted-foreground">{m.name || m.url}</p>
                 {typeof m.id === "number" && (
                   <span className="mt-1 inline-flex items-center gap-1 rounded bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-                    Strapi ID #{m.id}
+                    <Trash2 className="h-3 w-3" /> Uploaded (#{m.id})
                   </span>
                 )}
+              </div>
+
+              {/* Hidden inputs so server actions receive IDs/URLs in current order */}
+              <div className="hidden">
+                {typeof m.id === "number" && <input name={`imageId-${idx}`} defaultValue={String(m.id)} readOnly />}
+                <input name={`imageUrl-${idx}`} defaultValue={m.url} readOnly />
               </div>
             </Card>
           ))}
