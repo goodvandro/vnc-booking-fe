@@ -16,16 +16,6 @@ function authHeaders() {
   }
 }
 
-function toRichTextBlocksFromString(input: unknown): any[] {
-  if (Array.isArray(input)) return input
-  const str = typeof input === "string" ? input : ""
-  const paragraphs = str.split(/\r?\n/)
-  return paragraphs.map((line) => ({
-    type: "paragraph",
-    children: [{ type: "text", text: line }],
-  }))
-}
-
 function normalizeNumbers(n: any): number | undefined {
   const v = typeof n === "string" ? n.trim() : n
   const num = Number(v)
@@ -41,7 +31,9 @@ export async function POST(req: Request) {
       seats: normalizeNumbers(payload.seats),
       transmission: payload.transmission ?? "",
       price: normalizeNumbers(payload.price),
-      description: toRichTextBlocksFromString(payload.description),
+      // Pass description as string (Markdown)
+      description: typeof payload.description === "string" ? payload.description : "",
+      // Pass media relation IDs as-is
       images: Array.isArray(payload.images) ? payload.images : [],
     }
 

@@ -21,31 +21,6 @@ function absUrl(path?: string | null) {
   return path.startsWith("http") ? path : `${getStrapiUrl()}${path}`
 }
 
-// Convert Strapi richtext blocks -> plain text (for textarea)
-function toPlainTextFromRichText(blocks: unknown): string {
-  if (!Array.isArray(blocks)) return typeof blocks === "string" ? blocks : ""
-  const lines: string[] = []
-  for (const node of blocks as any[]) {
-    if (!node || node.type !== "paragraph") continue
-    const children = Array.isArray(node.children) ? node.children : []
-    const text = children.map((ch: any) => (typeof ch?.text === "string" ? ch.text : "")).join("")
-    lines.push(text)
-  }
-  return lines.join("\n")
-}
-
-// Convert textarea string -> Strapi richtext blocks
-function toRichTextBlocksFromString(input: unknown): any[] {
-  if (Array.isArray(input)) return input
-  const str = typeof input === "string" ? input : ""
-  // Split by newlines to paragraphs, preserve empty lines
-  const paragraphs = str.split(/\r?\n/)
-  return paragraphs.map((line) => ({
-    type: "paragraph",
-    children: [{ type: "text", text: line }],
-  }))
-}
-
 function normalizeNumbers(n: any): number | undefined {
   const v = typeof n === "string" ? n.trim() : n
   const num = Number(v)
@@ -91,8 +66,8 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       seats: a.seats ?? null,
       transmission: a.transmission ?? "",
       price: a.price ?? null,
-      description: toPlainTextFromRichText(a.description),
-      descriptionBlocks: Array.isArray(a.description) ? a.description : [],
+      // Return description as-is (string from Strapi)
+      description: typeof a.description === "string" ? a.description : "",
       images,
     })
   } catch (err: any) {
@@ -110,8 +85,8 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       seats: normalizeNumbers(payload.seats),
       transmission: payload.transmission ?? "",
       price: normalizeNumbers(payload.price),
-      // Convert textarea string to Strapi richtext blocks
-      description: toRichTextBlocksFromString(payload.description),
+      // Pass description as string (Markdown)
+      description: typeof payload.description === "string" ? payload.description : "",
       images: Array.isArray(payload.images) ? payload.images : [],
     }
 
