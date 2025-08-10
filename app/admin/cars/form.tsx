@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useEffect, useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -37,6 +36,11 @@ export default function CarForm({ initialData }: CarFormProps) {
         if (!active) return
         const next: UploadedMedia[] = Array.isArray(data.images) ? data.images : []
         setMedia(next.length ? next : media)
+        // Optionally hydrate description in the UI if needed:
+        const descEl = document.getElementById("description") as HTMLTextAreaElement | null
+        if (descEl && typeof data.description === "string" && !descEl.value) {
+          descEl.value = data.description
+        }
       } catch {}
     })()
     return () => {
@@ -55,6 +59,7 @@ export default function CarForm({ initialData }: CarFormProps) {
       seats: Number((form.elements.namedItem("seats") as HTMLInputElement)?.value),
       transmission: (form.elements.namedItem("transmission") as HTMLInputElement)?.value,
       price: Number((form.elements.namedItem("price") as HTMLInputElement)?.value),
+      // Send as string; server will convert to array to satisfy Strapi schema
       description: (form.elements.namedItem("description") as HTMLTextAreaElement)?.value,
       images: media.filter((m) => typeof m.id === "number").map((m) => m.id) as number[],
     }
@@ -69,7 +74,6 @@ export default function CarForm({ initialData }: CarFormProps) {
       const j = await res.json()
       if (!res.ok) throw new Error(j?.error || "Save failed")
       setMessage("Saved successfully.")
-      // Navigate back to list after short delay
       setTimeout(() => {
         router.push("/admin/cars")
       }, 600)
@@ -127,7 +131,10 @@ export default function CarForm({ initialData }: CarFormProps) {
           </div>
           <div className="grid gap-2">
             <Label htmlFor="description">Description</Label>
-            <Textarea id="description" name="description" defaultValue={initialData?.description} required />
+            <Textarea id="description" name="description" defaultValue={(initialData as any)?.description} />
+            <p className="text-xs text-muted-foreground">
+              Tip: We save this as a structured array in Strapi automatically.
+            </p>
           </div>
           <Button type="submit" disabled={loading}>
             {loading ? "Saving..." : isEditing ? "Update Car" : "Create Car"}
