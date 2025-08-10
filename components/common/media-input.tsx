@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useCallback, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
@@ -34,6 +34,12 @@ export default function MediaInput({
   maxFiles = 10,
 }: MediaInputProps) {
   const [items, setItems] = useState<UploadedMedia[]>(initialMedia)
+
+  useEffect(() => {
+    // Sync with parent-provided media list (useful when editing and data loads async)
+    setItems(initialMedia)
+  }, [initialMedia])
+
   const [isDragging, setIsDragging] = useState(false)
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)

@@ -20,7 +20,7 @@ export default function CarForm({ initialData }: CarFormProps) {
   const isEditing = !!initialData
   const router = useRouter()
   const [car, setCar] = useState<Car | null>(null)
-  const [media, setMedia] = useState<UploadedMedia[]>([])
+  const [media, setMedia] = useState<UploadedMedia[]>((initialData?.images || []).map((url) => ({ url })))
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [transmission, setTransmission] = useState<string>("Manual")
@@ -33,6 +33,42 @@ export default function CarForm({ initialData }: CarFormProps) {
       ? initialData.images.map((url) => ({ url }))
       : []
     setMedia(nextMedia)
+  }, [isEditing, initialData])
+
+  useEffect(() => {
+    const documentId = (initialData as any)?.documentId
+    if (!isEditing || !documentId) return
+
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch(`/api/admin/cars/${documentId}`, { method: "GET", cache: "no-store" })
+        if (!res.ok) return
+        const data = await res.json()
+        if (cancelled) return
+
+        const fromServer = Array.isArray(data.images)
+          ? data.images.map((img: any) => ({
+              id: img.id,
+              url: img.url,
+              name: img.name,
+              width: img.width,
+              height: img.height,
+              mime: img.mime,
+            }))
+          : []
+
+        if (fromServer.length) {
+          setMedia(fromServer)
+        }
+      } catch {
+        // ignore; keep any existing media
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
   }, [isEditing, initialData])
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
