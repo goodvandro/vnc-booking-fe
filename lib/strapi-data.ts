@@ -1,97 +1,90 @@
 import { strapiAPI } from "./strapi-api"
-import type { GuestHouse, Car, BookingStatus, CarRentalBooking, GuestHouseBooking, Booking } from "./types"
+import type { GuestHouse, Car, Booking, BookingStatus } from "./types"
 
-// Helper function to transform Strapi entity to our types
-function transformStrapiEntity<T>(entity: any): T & { id: string } {
+// Flatten a Strapi v4 entity to a plain object with id, documentId, and attributes
+function flattenEntity<T extends Record<string, any>>(item: any): T & { id: string; documentId: number } {
+  // Prefer human UID if present (e.g., carId, guestHouseId, bookingId), else fallback to numeric id
+  const attrs = item?.attributes || {}
+  const uid = attrs.carId || attrs.guestHouseId || attrs.bookingId
   return {
-    id: entity.id.toString(),
-    ...entity,
-  }
+    id: String(uid || item.id),
+    documentId: Number(item.id),
+    ...attrs,
+  } as any
 }
 
-// function transformStrapiEntities<T>(entities: any[]): (T & { id: string })[] {
-//   return entities.map(transformStrapiEntity)
-// }
-
-// Helper function to get image URLs from Strapi media
+// Convert Strapi media field to array of full URLs
 function getImageUrls(media: any): string[] {
-  if (!media?.data) return ["/placeholder.svg?height=300&width=400"]
-
-  const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337"
-
-  if (Array.isArray(media.data)) {
-    return media.data.map((img: any) => `${STRAPI_URL}${img.attributes.url}`)
-  } else {
-    return [`${STRAPI_URL}${media.data.attributes.url}`]
+  const base = (process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337").replace(/\/$/, "")
+  const items = media?.data
+  if (!items) return ["/placeholder.svg?height=300&width=400"]
+  if (Array.isArray(items)) {
+    return items.map((img) => `${base}${img.attributes?.url}`)
   }
+  return [`${base}${items.attributes?.url}`]
 }
 
-// Guest House CRUD
+// --------------------
+// Guest Houses
+// --------------------
 export async function getGuestHousesData(): Promise<GuestHouse[]> {
   try {
-    const response = await strapiAPI.getGuestHouses()
-    return response.data.map((entity) => ({
-      ...transformStrapiEntity<Omit<GuestHouse, "id">>(entity),
-      images: getImageUrls(entity.attributes.images),
-    }))
-  } catch (error) {
-    console.error("Failed to fetch guest houses:", error)
+    const res = await strapiAPI.getGuestHouses()
+    const list = (res?.data || []).map((item: any) => {
+      const flat = flattenEntity<GuestHouse>(item)
+      return { ...flat, images: getImageUrls(flat.images) }
+    })
+    return list
+  } catch (e) {
+    console.error("Failed to fetch guest houses:", e)
     return []
   }
 }
 
 export async function getGuestHouseByIdData(id: string): Promise<GuestHouse | undefined> {
   try {
-    const response = await strapiAPI.getGuestHouse(id)
-    return {
-      ...transformStrapiEntity<Omit<GuestHouse, "id">>(response.data),
-      images: getImageUrls(response.data.attributes.images),
-    }
-  } catch (error) {
-    console.error("Failed to fetch guest house:", error)
+    const res = await strapiAPI.getGuestHouse(id)
+    if (!res?.data) return undefined
+    const flat = flattenEntity<GuestHouse>(res.data)
+    return { ...flat, images: getImageUrls(flat.images) }
+  } catch (e) {
+    console.error("Failed to fetch guest house:", e)
     return undefined
   }
 }
 
 export async function createGuestHouseData(newGh: Omit<GuestHouse, "id">): Promise<GuestHouse> {
-  try {
-    const response = await strapiAPI.createGuestHouse({
-      guestHouseId: newGh.guestHouseId || `gh-${Date.now()}`,
-      title: newGh.title,
-      location: newGh.location,
-      rating: newGh.rating,
-      price: newGh.price,
-      description: newGh.description,
-      // Note: Images should be handled separately through upload endpoint
-    })
-
-    return {
-      ...transformStrapiEntity<Omit<GuestHouse, "id">>(response.data),
-      images: newGh.images, // Use provided images for now
-    }
-  } catch (error) {
-    console.error("Failed to create guest house:", error)
-    throw error
+  const payload: any = {
+    guestHouseId: (newGh as any).guestHouseId || `gh-${Date.now()}`,
+    title: newGh.title,
+    location: (newGh as any).location,
+    rating: (newGh as any).rating,
+    price: newGh.price as any,
+    description: newGh.description,
+    // If you're saving media by IDs, send images: [id, id]
   }
+  const res = await strapiAPI.createGuestHouse(payload)
+  const flat = flattenEntity<GuestHouse>(res?.data)
+  return { ...flat, images: newGh.images || getImageUrls(flat.images) }
 }
 
 export async function updateGuestHouseData(id: string, updatedGh: Partial<GuestHouse>): Promise<GuestHouse | null> {
+  const payload: any = {
+    title: updatedGh.title,
+    location: (updatedGh as any)?.location,
+    rating: (updatedGh as any)?.rating,
+    price: updatedGh.price,
+    description: updatedGh.description,
+  }
+  if ((updatedGh as any)?.images && Array.isArray((updatedGh as any).imagesIds)) {
+    payload.images = (updatedGh as any).imagesIds
+  }
   try {
-    const response = await strapiAPI.updateGuestHouse(id, {
-      guestHouseId: updatedGh.guestHouseId,
-      title: updatedGh.title,
-      location: updatedGh.location,
-      rating: updatedGh.rating,
-      price: updatedGh.price,
-      description: updatedGh.description,
-    })
-
-    return {
-      ...transformStrapiEntity<Omit<GuestHouse, "id">>(response.data),
-      images: updatedGh.images || [], // Use provided images for now
-    }
-  } catch (error) {
-    console.error("Failed to update guest house:", error)
+    const res = await strapiAPI.updateGuestHouse(id, payload)
+    const flat = flattenEntity<GuestHouse>(res?.data)
+    return { ...flat, images: updatedGh.images || getImageUrls(flat.images) }
+  } catch (e) {
+    console.error("Failed to update guest house:", e)
     return null
   }
 }
@@ -100,78 +93,93 @@ export async function deleteGuestHouseData(id: string): Promise<boolean> {
   try {
     await strapiAPI.deleteGuestHouse(id)
     return true
-  } catch (error) {
-    console.error("Failed to delete guest house:", error)
+  } catch (e) {
+    console.error("Failed to delete guest house:", e)
     return false
   }
 }
 
-// Car CRUD
+// --------------------
+// Cars
+// --------------------
 export async function getCarsData(): Promise<Car[]> {
   try {
-    const response = await strapiAPI.getCars()
-    return response.data.map((entity) => ({
-      ...transformStrapiEntity<Omit<Car, "id">>(entity),
-      // images: getImageUrls(entity.attributes.images),
-    }))
-  } catch (error) {
-    console.error("Failed to fetch cars:", error)
+    const res = await strapiAPI.getCars()
+    const list = (res?.data || []).map((item: any) => {
+      const flat = flattenEntity<Car>(item)
+      // Ensure both id (UID or numeric) and documentId (numeric) exist for linking/editing
+      const result: any = {
+        ...flat,
+        images: getImageUrls(flat.images),
+        documentId: Number(item.id),
+      }
+      // Keep carId if present
+      if ((flat as any).carId) result.carId = (flat as any).carId
+      return result
+    })
+    return list
+  } catch (e) {
+    console.error("Failed to fetch cars:", e)
     return []
   }
 }
 
 export async function getCarByIdData(id: string): Promise<Car | undefined> {
   try {
-    const response = await strapiAPI.getCar(id)
-    console.log("response", response)
+    const res = await strapiAPI.getCar(id)
+    if (!res?.data) return undefined
+    const flat = flattenEntity<Car>(res.data)
     return {
-      ...transformStrapiEntity<Omit<Car, "id">>(response.data),
-      // images: getImageUrls(response.data.attributes.images),
-    }
-  } catch (error) {
-    console.error("Failed to fetch car:", error)
+      ...flat,
+      images: getImageUrls((flat as any).images),
+      documentId: Number(res.data.id),
+    } as any
+  } catch (e) {
+    console.error("Failed to fetch car:", e)
     return undefined
   }
 }
 
 export async function createCarData(newCar: Omit<Car, "id">): Promise<Car> {
-  try {
-    const response = await strapiAPI.createCar({
-      carId: newCar.carId || `car-${Date.now()}`,
-      title: newCar.title,
-      seats: newCar.seats,
-      transmission: newCar.transmission,
-      price: newCar.price,
-      description: newCar.description,
-    })
-
-    return {
-      ...transformStrapiEntity<Omit<Car, "id">>(response.data),
-      images: newCar.images, // Use provided images for now
-    }
-  } catch (error) {
-    console.error("Failed to create car:", error)
-    throw error
+  const payload: any = {
+    carId: (newCar as any).carId || `car-${Date.now()}`,
+    title: newCar.title,
+    seats: (newCar as any).seats,
+    transmission: (newCar as any).transmission,
+    price: newCar.price as any,
+    description: newCar.description,
+    // If you have uploaded media IDs: images: [id, id]
   }
+  const res = await strapiAPI.createCar(payload)
+  const flat = flattenEntity<Car>(res?.data)
+  return {
+    ...flat,
+    images: newCar.images || getImageUrls((flat as any).images),
+    documentId: Number(res.data.id),
+  } as any
 }
 
 export async function updateCarData(id: string, updatedCar: Partial<Car>): Promise<Car | null> {
+  const payload: any = {
+    title: updatedCar.title,
+    seats: (updatedCar as any)?.seats,
+    transmission: (updatedCar as any)?.transmission,
+    price: updatedCar.price,
+    description: updatedCar.description,
+  }
+  if ((updatedCar as any)?.imagesIds && Array.isArray((updatedCar as any).imagesIds)) {
+    payload.images = (updatedCar as any).imagesIds
+  }
   try {
-    const response = await strapiAPI.updateCar(id, {
-      carId: updatedCar.carId,
-      title: updatedCar.title,
-      seats: updatedCar.seats,
-      transmission: updatedCar.transmission,
-      price: updatedCar.price,
-      description: updatedCar.description,
-    })
-
+    const res = await strapiAPI.updateCar(id, payload)
+    const flat = flattenEntity<Car>(res?.data)
     return {
-      ...transformStrapiEntity<Omit<Car, "id">>(response.data),
-      images: updatedCar.images || [], // Use provided images for now
-    }
-  } catch (error) {
-    console.error("Failed to update car:", error)
+      ...flat,
+      images: updatedCar.images || getImageUrls((flat as any).images),
+      documentId: Number(res.data.id),
+    } as any
+  } catch (e) {
+    console.error("Failed to update car:", e)
     return null
   }
 }
@@ -180,85 +188,24 @@ export async function deleteCarData(id: string): Promise<boolean> {
   try {
     await strapiAPI.deleteCar(id)
     return true
-  } catch (error) {
-    console.error("Failed to delete car:", error)
+  } catch (e) {
+    console.error("Failed to delete car:", e)
     return false
   }
 }
 
-// Car Rental Booking Management
-export async function getCarRentalBookingsData(): Promise<CarRentalBooking[]> {
-  try {
-    const response = await strapiAPI.getCarRentalBookings()
-    return response.data.map((entity) => ({
-      ...transformStrapiEntity<Omit<CarRentalBooking, "id">>(entity),
-      createdAt: entity.attributes.createdAt || new Date().toISOString(),
-      car: entity.attributes.car?.data ? transformStrapiEntity(entity.attributes.car.data) : undefined,
-    }))
-  } catch (error) {
-    console.error("Failed to fetch car rental bookings:", error)
-    return []
-  }
-}
-
-export async function getCarRentalBookingByIdData(id: string): Promise<CarRentalBooking | undefined> {
-  try {
-    const response = await strapiAPI.getCarRentalBooking(id)
-    return {
-      ...transformStrapiEntity<Omit<CarRentalBooking, "id">>(response.data),
-      createdAt: response.data.attributes.createdAt || new Date().toISOString(),
-      car: response.data.attributes.car?.data ? transformStrapiEntity(response.data.attributes.car.data) : undefined,
-    }
-  } catch (error) {
-    console.error("Failed to fetch car rental booking:", error)
-    return undefined
-  }
-}
-
-// Guest House Booking Management
-export async function getGuestHouseBookingsData(): Promise<GuestHouseBooking[]> {
-  try {
-    const response = await strapiAPI.getGuestHouseBookings()
-    return response.data.map((entity) => ({
-      ...transformStrapiEntity<Omit<GuestHouseBooking, "id">>(entity),
-      createdAt: entity.attributes.createdAt || new Date().toISOString(),
-      guest_house: entity.attributes.guest_house?.data
-        ? transformStrapiEntity(entity.attributes.guest_house.data)
-        : undefined,
-    }))
-  } catch (error) {
-    console.error("Failed to fetch guest house bookings:", error)
-    return []
-  }
-}
-
-export async function getGuestHouseBookingByIdData(id: string): Promise<GuestHouseBooking | undefined> {
-  try {
-    const response = await strapiAPI.getGuestHouseBooking(id)
-    return {
-      ...transformStrapiEntity<Omit<GuestHouseBooking, "id">>(response.data),
-      createdAt: response.data.attributes.createdAt || new Date().toISOString(),
-      guest_house: response.data.attributes.guest_house?.data
-        ? transformStrapiEntity(response.data.attributes.guest_house.data)
-        : undefined,
-    }
-  } catch (error) {
-    console.error("Failed to fetch guest house booking:", error)
-    return undefined
-  }
-}
-
-// Combined Booking Management (for backward compatibility)
+// --------------------
+// Bookings (combined)
+// --------------------
 export async function getBookingsData(): Promise<Booking[]> {
   try {
     const [carRes, ghRes] = await Promise.all([strapiAPI.getCarRentalBookings(), strapiAPI.getGuestHouseBookings()])
 
-    const cars: Booking[] = (carRes.data || []).map((item) => {
-      const a = item.attributes
+    const cars: Booking[] = (carRes?.data || []).map((item: any) => {
+      const a = item.attributes || {}
       return {
-        id: a.bookingId || String(item.id), // show friendly UID first if available
-        // Keep a hidden link to the Strapi document id for updates
-        documentId: item.id as any,
+        id: String(a.bookingId || item.id),
+        documentId: Number(item.id) as any,
         type: "car",
         itemId: String(a.car?.data?.id || ""),
         itemName: a.car?.data?.attributes?.title || "Car",
@@ -272,16 +219,16 @@ export async function getBookingsData(): Promise<Booking[]> {
         pickupLocation: a.driverLicense,
         specialRequests: "",
         totalPrice: a.totalPrice,
-        status: (a.bookingStatus || "pending") as BookingStatus,
+        status: a.bookingStatus,
         createdAt: a.createdAt || new Date().toISOString(),
-      }
+      } as Booking
     })
 
-    const ghs: Booking[] = (ghRes.data || []).map((item) => {
-      const a = item.attributes
+    const ghs: Booking[] = (ghRes?.data || []).map((item: any) => {
+      const a = item.attributes || {}
       return {
-        id: a.bookingId || String(item.id),
-        documentId: item.id as any,
+        id: String(a.bookingId || item.id),
+        documentId: Number(item.id) as any,
         type: "guestHouse",
         itemId: String(a.guest_house?.data?.id || ""),
         itemName: a.guest_house?.data?.attributes?.title || "Guest House",
@@ -295,16 +242,16 @@ export async function getBookingsData(): Promise<Booking[]> {
         pickupLocation: undefined,
         specialRequests: a.specialRequests || "",
         totalPrice: a.totalPrice,
-        status: (a.bookingStatus || "pending") as BookingStatus,
+        status: a.bookingStatus,
         createdAt: a.createdAt || new Date().toISOString(),
-      }
+      } as Booking
     })
 
     const all = [...cars, ...ghs]
     all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     return all
-  } catch (err) {
-    console.error("Failed to fetch bookings:", err)
+  } catch (e) {
+    console.error("Failed to fetch bookings:", e)
     return []
   }
 }
@@ -315,59 +262,27 @@ export async function getBookingByIdData(id: string): Promise<Booking | null> {
 }
 
 export async function updateBookingStatusData(id: string, status: BookingStatus): Promise<void> {
-  const b = await getBookingByIdData(id)
-  if (!b) throw new Error("Booking not found")
+  const booking = await getBookingByIdData(id)
+  if (!booking) throw new Error("Booking not found")
+  const docId = Number((booking as any).documentId)
+  if (!docId) throw new Error("Invalid booking reference")
 
-  // We stored documentId for updates
-  const documentId = Number((b as any).documentId)
-  if (!documentId) throw new Error("Invalid booking reference")
-
-  if (b.type === "car") {
-    await strapiAPI.updateCarRentalBookingStatus(documentId, status as any)
+  if (booking.type === "car") {
+    await strapiAPI.updateCarRentalBookingStatus(docId, status)
   } else {
-    await strapiAPI.updateGuestHouseBookingStatus(documentId, status as any)
+    await strapiAPI.updateGuestHouseBookingStatus(docId, status)
   }
 }
 
-// Optional: basic dashboard stats to avoid import errors elsewhere.
+// Basic stats
 export async function getDashboardStatsData() {
   const list = await getBookingsData()
   const total = list.length
-  const pending = list.filter((b) => b.status === "pending").length
-  const confirmed = list.filter((b) => b.status === "confirmed").length
-  const cancelled = list.filter((b) => b.status === "cancelled").length
-  const completed = list.filter((b) => b.status === "completed").length
-  return { total, pending, confirmed, cancelled, completed }
+  return {
+    totalGuestHouses: 0,
+    totalCars: 0,
+    totalBookings: total,
+    pendingBookings: list.filter((b) => b.status === "pending").length,
+    confirmedBookings: list.filter((b) => b.status === "confirmed").length,
+  }
 }
-
-// Stubs to keep other imports working. Replace with full implementations if needed.
-// export async function getGuestHousesData() {
-//   return []
-// }
-// export async function getGuestHouseByIdData(_id: string) {
-//   return null
-// }
-// export async function createGuestHouseData(_payload: any) {
-//   return {}
-// }
-// export async function updateGuestHouseData(_id: string, _payload: any) {
-//   return {}
-// }
-// export async function deleteGuestHouseData(_id: string) {
-//   return {}
-// }
-// export async function getCarsData() {
-//   return []
-// }
-// export async function getCarByIdData(_id: string) {
-//   return null
-// }
-// export async function createCarData(_payload: any) {
-//   return {}
-// }
-// export async function updateCarData(_id: string, _payload: any) {
-//   return {}
-// }
-// export async function deleteCarData(_id: string) {
-//   return {}
-// }

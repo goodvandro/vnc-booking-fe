@@ -1,126 +1,149 @@
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337"
-const STRAPI_ADMIN_TOKEN = process.env.STRAPI_ADMIN_TOKEN
+const API_BASE = `${STRAPI_URL.replace(/\/$/, "")}/api`
+const TOKEN = process.env.STRAPI_ADMIN_TOKEN
 
-type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
+type HttpMethod = "GET" | "POST" | "PUT" | "DELETE"
 
-async function parseResponse(res: Response): Promise<any> {
-  // Handle no content
-  if (res.status === 204) return {}
-  const contentType = res.headers.get("content-type") || ""
-  const text = await res.text()
-
-  // Strapi should return JSON; fall back gracefully if not
-  if (contentType.includes("application/json")) {
-    try {
-      return JSON.parse(text)
-    } catch {
-      // If Strapi returns a blank/HTML page while status=ok, avoid crashing JSON.parse
-      return {}
-    }
+async function request(path: string, method: HttpMethod = "GET", body?: any, headers?: HeadersInit) {
+  const url = `${API_BASE}${path}`
+  const defaultHeaders: HeadersInit = {
+    ...(TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {}),
+  }
+  const init: RequestInit = {
+    method,
+    headers: {
+      ...defaultHeaders,
+      ...(body && !(body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
+      ...(headers || {}),
+    },
+    body: body
+      ? body instanceof FormData
+        ? body
+        : JSON.stringify({ data: body }) // Strapi v4 expects { data: ... }
+      : undefined,
+    cache: "no-store",
   }
 
-  // Not JSON; return the raw text to avoid JSON parse errors
-  return { raw: text }
+  const res = await fetch(url, init)
+
+  // Handle non-OK with readable error
+  if (!res.ok) {
+    const text = await res.text().catch(() => "")
+    throw new Error(`Strapi request failed: ${res.status} ${res.statusText} ${text}`)
+  }
+
+  // Safe JSON parse (avoid JSON.parse errors on 204 or non-JSON)
+  const contentType = res.headers.get("content-type") || ""
+  if (res.status === 204 || !contentType.includes("application/json")) {
+    return { data: null }
+  }
+  try {
+    return await res.json()
+  } catch {
+    return { data: null }
+  }
 }
 
-async function strapiFetch<T>(
-  path: string,
-  options: { method?: HttpMethod; body?: any; headers?: HeadersInit } = {},
-): Promise<T> {
-  const url = `${STRAPI_URL}${path}`
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    ...(STRAPI_ADMIN_TOKEN ? { Authorization: `Bearer ${STRAPI_ADMIN_TOKEN}` } : {}),
-    ...options.headers,
-  }
-
-  const res = await fetch(url, {
-    method: options.method || "GET",
-    headers,
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  })
-
-  if (!res.ok) {
-    let message = `Strapi request failed: ${res.status} ${res.statusText}`
-    try {
-      const errMaybeJson = await parseResponse(res)
-      const errMsg =
-        (errMaybeJson?.error && (errMaybeJson.error.message || errMaybeJson.error.name)) ||
-        errMaybeJson?.message ||
-        errMaybeJson?.raw
-      if (errMsg) message = errMsg
-    } catch {
-      // ignore parse error
-    }
-    throw new Error(message)
-  }
-
-  return (await parseResponse(res)) as T
+function qs(params: Record<string, string | number | boolean | undefined>) {
+  const s = Object.entries(params)
+    .filter(([, v]) => v !== undefined && v !== null)
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
+    .join("&")
+  return s ? `?${s}` : ""
 }
 
 export const strapiAPI = {
-  // Car Rental Bookings
+  // Cars
+  async getCars() {
+    return request(`/cars${qs({ populate: "images" })}`, "GET")
+  },
+  async getCar(id: string | number) {
+    return request(`/cars/${id}${qs({ populate: "images" })}`, "GET")
+  },
+  async createCar(data: any) {
+    return request(`/cars`, "POST", data)
+  },
+  async updateCar(id: string | number, data: any) {
+    return request(`/cars/${id}`, "PUT", data)
+  },
+  async deleteCar(id: string | number) {
+    return request(`/cars/${id}`, "DELETE")
+  },
+
+  // Guest Houses
+  async getGuestHouses() {
+    return request(`/guest-houses${qs({ populate: "images" })}`, "GET")
+  },
+  async getGuestHouse(id: string | number) {
+    return request(`/guest-houses/${id}${qs({ populate: "images" })}`, "GET")
+  },
+  async createGuestHouse(data: any) {
+    return request(`/guest-houses`, "POST", data)
+  },
+  async updateGuestHouse(id: string | number, data: any) {
+    return request(`/guest-houses/${id}`, "PUT", data)
+  },
+  async deleteGuestHouse(id: string | number) {
+    return request(`/guest-houses/${id}`, "DELETE")
+  },
+
+  // Bookings: Car Rental
   async getCarRentalBookings() {
-    return strapiFetch<{
-      data: Array<{
-        id: number
-        attributes: {
-          bookingId?: string
-          firstName: string
-          lastName: string
-          email: string
-          phone: string
-          driverLicense?: string
-          startDate: string
-          endDate: string
-          totalPrice: number
-          bookingStatus: "pending" | "confirmed" | "cancelled" | "completed"
-          createdAt?: string
-          car?: { data?: { id: number; attributes: { title?: string; carId?: string } } }
-        }
-      }>
-    }>(
-      `/api/car-rental-bookings?populate[car][fields][0]=title&populate[car][fields][1]=carId&sort=createdAt:desc&pagination[pageSize]=200`,
-    )
+    return request(`/car-rental-bookings${qs({ populate: "car" })}`, "GET")
+  },
+  async getCarRentalBooking(id: string | number) {
+    return request(`/car-rental-bookings/${id}${qs({ populate: "car" })}`, "GET")
+  },
+  async createCarRentalBooking(data: any) {
+    return request(`/car-rental-bookings`, "POST", data)
+  },
+  async updateCarRentalBooking(id: string | number, data: any) {
+    return request(`/car-rental-bookings/${id}`, "PUT", data)
+  },
+  async updateCarRentalBookingStatus(id: string | number, status: string) {
+    return request(`/car-rental-bookings/${id}`, "PUT", { bookingStatus: status })
   },
 
-  async updateCarRentalBookingStatus(documentId: number, status: "pending" | "confirmed" | "cancelled" | "completed") {
-    return strapiFetch(`/api/car-rental-bookings/${documentId}`, {
-      method: "PUT",
-      body: { data: { bookingStatus: status } },
-    })
-  },
-
-  // Guest House Bookings
+  // Bookings: Guest House
   async getGuestHouseBookings() {
-    return strapiFetch<{
-      data: Array<{
-        id: number
-        attributes: {
-          bookingId?: string
-          firstName: string
-          lastName: string
-          email: string
-          phone: string
-          guests?: number
-          specialRequests?: string
-          checkIn: string
-          checkOut: string
-          totalPrice: number
-          bookingStatus: "pending" | "confirmed" | "cancelled" | "completed"
-          createdAt?: string
-          guest_house?: { data?: { id: number; attributes: { title?: string; guestHouseId?: string } } }
-        }
-      }>
-    }>(
-      `/api/guest-house-bookings?populate[guest_house][fields][0]=title&populate[guest_house][fields][1]=guestHouseId&sort=createdAt:desc&pagination[pageSize]=200`,
-    )
+    return request(`/guest-house-bookings${qs({ populate: "guest_house" })}`, "GET")
+  },
+  async getGuestHouseBooking(id: string | number) {
+    return request(`/guest-house-bookings/${id}${qs({ populate: "guest_house" })}`, "GET")
+  },
+  async createGuestHouseBooking(data: any) {
+    return request(`/guest-house-bookings`, "POST", data)
+  },
+  async updateGuestHouseBooking(id: string | number, data: any) {
+    return request(`/guest-house-bookings/${id}`, "PUT", data)
+  },
+  async updateGuestHouseBookingStatus(id: string | number, status: string) {
+    return request(`/guest-house-bookings/${id}`, "PUT", { bookingStatus: status })
   },
 
-  async updateGuestHouseBookingStatus(documentId: number, status: "pending" | "confirmed" | "cancelled" | "completed") {
-    return strapiFetch(`/api/guest-house-bookings/${documentId}`, {
-      method: "PUT",
-      body: { data: { bookingStatus: status } },
+  // Upload (if needed later)
+  async upload(formData: FormData) {
+    // Strapi upload uses /upload and expects FormData, not { data: ... }
+    const url = `${API_BASE}/upload`
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        ...(TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {}),
+      },
+      body: formData,
     })
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "")
+      throw new Error(`Strapi upload failed: ${res.status} ${res.statusText} ${text}`)
+    }
+
+    const contentType = res.headers.get("content-type") || ""
+    if (!contentType.includes("application/json")) {
+      return []
+    }
+
+    return res.json()
   },
 }
+export type StrapiAPI = typeof strapiAPI
