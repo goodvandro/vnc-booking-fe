@@ -1,14 +1,16 @@
 "use client"
 
-import { useActionState, useState } from "react"
+import type React from "react"
+
+import { useEffect, useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import MediaInput, { type UploadedMedia } from "@/components/common/media-input"
-import { createCar, updateCar } from "../actions"
 import type { Car } from "@/lib/types"
+import { useRouter } from "next/navigation"
 
 interface CarFormProps {
   initialData?: Car
@@ -16,15 +18,66 @@ interface CarFormProps {
 
 export default function CarForm({ initialData }: CarFormProps) {
   const isEditing = !!initialData
+  const router = useRouter()
   const [media, setMedia] = useState<UploadedMedia[]>((initialData?.images || []).map((url) => ({ url })))
+  const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
 
-  const action = isEditing ? updateCar.bind(null, initialData.id) : createCar
-  const [state, formAction, isPending] = useActionState(action as any, null)
+  // Hydrate existing media with Strapi IDs for editing
+  useEffect(() => {
+    const documentId = (initialData as any)?.documentId
+    if (!isEditing || !documentId) return
 
-  const handleFormSubmit = (formData: FormData) => {
-    // Append uploaded image IDs; the MediaInput already renders hidden inputs imageId-*
-    // so we don't need to append here manually unless customizing.
-    formAction(formData)
+    let active = true
+    ;(async () => {
+      try {
+        const res = await fetch(`/api/admin/cars/${documentId}`, { method: "GET", cache: "no-store" })
+        if (!res.ok) return
+        const data = await res.json()
+        if (!active) return
+        const next: UploadedMedia[] = Array.isArray(data.images) ? data.images : []
+        setMedia(next.length ? next : media)
+      } catch {}
+    })()
+    return () => {
+      active = false
+    }
+  }, [isEditing, initialData])
+
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setLoading(true)
+    setMessage(null)
+    const form = e.currentTarget
+    const payload = {
+      carId: (initialData as any)?.carId,
+      title: (form.elements.namedItem("title") as HTMLInputElement)?.value,
+      seats: Number((form.elements.namedItem("seats") as HTMLInputElement)?.value),
+      transmission: (form.elements.namedItem("transmission") as HTMLInputElement)?.value,
+      price: Number((form.elements.namedItem("price") as HTMLInputElement)?.value),
+      description: (form.elements.namedItem("description") as HTMLTextAreaElement)?.value,
+      images: media.filter((m) => typeof m.id === "number").map((m) => m.id) as number[],
+    }
+
+    try {
+      const documentId = (initialData as any)?.documentId
+      const res = await fetch(documentId ? `/api/admin/cars/${documentId}` : `/api/admin/cars`, {
+        method: documentId ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+      const j = await res.json()
+      if (!res.ok) throw new Error(j?.error || "Save failed")
+      setMessage("Saved successfully.")
+      // Navigate back to list after short delay
+      setTimeout(() => {
+        router.push("/admin/cars")
+      }, 600)
+    } catch (err: any) {
+      setMessage(err?.message || "Save failed")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -36,7 +89,7 @@ export default function CarForm({ initialData }: CarFormProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form action={handleFormSubmit} className="grid gap-4">
+        <form onSubmit={onSubmit} className="grid gap-4">
           <div className="grid gap-2">
             <Label htmlFor="title">Title</Label>
             <Input id="title" name="title" defaultValue={initialData?.title} required />
@@ -44,7 +97,7 @@ export default function CarForm({ initialData }: CarFormProps) {
 
           <MediaInput
             label="Car Images"
-            description="Upload one or more images. You can also add by URL for preview only."
+            description="Upload images. These will be saved in Strapi and linked by media IDs."
             initialMedia={media}
             onChange={setMedia}
             maxFiles={12}
@@ -76,10 +129,12 @@ export default function CarForm({ initialData }: CarFormProps) {
             <Label htmlFor="description">Description</Label>
             <Textarea id="description" name="description" defaultValue={initialData?.description} required />
           </div>
-          <Button type="submit" disabled={isPending}>
-            {isPending ? "Saving..." : isEditing ? "Update Car" : "Create Car"}
+          <Button type="submit" disabled={loading}>
+            {loading ? "Saving..." : isEditing ? "Update Car" : "Create Car"}
           </Button>
-          {state && <p className={`text-sm ${state.success ? "text-green-600" : "text-red-500"}`}>{state.message}</p>}
+          {message && (
+            <p className={`text-sm ${/successfully/i.test(message) ? "text-green-600" : "text-red-500"}`}>{message}</p>
+          )}
         </form>
       </CardContent>
     </Card>

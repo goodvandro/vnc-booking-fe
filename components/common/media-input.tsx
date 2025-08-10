@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { X, UploadCloud, Trash2, Plus } from "lucide-react"
+import { X, UploadCloud, Plus } from "lucide-react"
 
 export type UploadedMedia = {
   id?: number
@@ -46,29 +46,32 @@ export default function MediaInput({
     onChange?.(next)
   }
 
+  const uploadFiles = async (files: File[]) => {
+    const formData = new FormData()
+    files.forEach((f) => formData.append("files", f))
+    setProgress(10)
+    setError(null)
+    const res = await fetch("/api/upload", { method: "POST", body: formData })
+    if (!res.ok) {
+      const message = "Upload failed"
+      try {
+        const j = await res.json()
+        const errorMessage = j?.error || message
+        throw new Error(errorMessage)
+      } catch {}
+    }
+    const { uploadedFiles } = (await res.json()) as { uploadedFiles: UploadedMedia[] }
+    return uploadedFiles
+  }
+
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return
-    setError(null)
-    const filesArray = Array.from(files)
     const remaining = Math.max(0, maxFiles - items.length)
-    const toUpload = filesArray.slice(0, remaining)
-
-    const formData = new FormData()
-    toUpload.forEach((f) => formData.append("files", f))
-
-    // Fake progress while uploading
-    setProgress(10)
-
+    const toUpload = Array.from(files).slice(0, remaining)
     try {
-      const res = await fetch("/api/upload", { method: "POST", body: formData })
-      if (!res.ok) {
-        const { error } = await res.json()
-        throw new Error(error || "Upload failed")
-      }
+      const uploaded = await uploadFiles(toUpload)
       setProgress(85)
-      const { files } = (await res.json()) as { files: UploadedMedia[] }
-
-      const next = [...items, ...files]
+      const next = [...items, ...(uploaded || [])]
       update(next)
       setProgress(100)
       setTimeout(() => setProgress(0), 600)
@@ -117,11 +120,12 @@ export default function MediaInput({
         onDrop={onDrop}
         role="button"
         aria-label="Upload images by dropping files here"
+        onClick={() => inputRef.current?.click()}
       >
         <div className="flex flex-col items-center justify-center gap-2 text-center">
           <UploadCloud className="h-6 w-6 text-muted-foreground" />
           <p className="text-sm text-muted-foreground">Drag and drop images here, or click to select files</p>
-          <Button type="button" variant="outline" onClick={() => inputRef.current?.click()} className="mt-2">
+          <Button type="button" variant="outline" className="mt-2 bg-transparent">
             Choose files
           </Button>
           <input
@@ -141,7 +145,6 @@ export default function MediaInput({
         </div>
       </div>
 
-      {/* Add by URL (optional) */}
       <div className="flex gap-2">
         <Input placeholder="https://example.com/image.jpg" value={addUrl} onChange={(e) => setAddUrl(e.target.value)} />
         <Button type="button" variant="outline" onClick={onAddUrl}>
@@ -161,10 +164,7 @@ export default function MediaInput({
               >
                 <X className="h-4 w-4" />
               </button>
-              {/* Image preview */}
-              {/* next/image requires width/height; use fill wrapper */}
               <div className="relative h-28 w-full">
-                {/* Use regular img for remote unknown sizes to avoid layout shifts */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={m.url || "/placeholder.svg?height=120&width=160&query=preview"}
@@ -180,7 +180,7 @@ export default function MediaInput({
                 <p className="truncate text-xs text-muted-foreground">{m.name || m.url}</p>
                 {typeof m.id === "number" && (
                   <span className="mt-1 inline-flex items-center gap-1 rounded bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-                    <Trash2 className="h-3 w-3" /> Uploaded (#{m.id})
+                    Strapi ID #{m.id}
                   </span>
                 )}
               </div>
@@ -188,14 +188,6 @@ export default function MediaInput({
           ))}
         </div>
       )}
-
-      {/* Hidden inputs so server actions receive IDs/URLs */}
-      {items.map((m, i) => (
-        <div key={`hidden-${i}`} className="hidden">
-          {typeof m.id === "number" && <input name={`imageId-${i}`} defaultValue={String(m.id)} readOnly />}
-          <input name={`imageUrl-${i}`} defaultValue={m.url} readOnly />
-        </div>
-      ))}
     </div>
   )
 }

@@ -26,13 +26,11 @@ async function request(path: string, method: HttpMethod = "GET", body?: any, hea
 
   const res = await fetch(url, init)
 
-  // Handle non-OK with readable error
   if (!res.ok) {
     const text = await res.text().catch(() => "")
     throw new Error(`Strapi request failed: ${res.status} ${res.statusText} ${text}`)
   }
 
-  // Safe JSON parse (avoid JSON.parse errors on 204 or non-JSON)
   const contentType = res.headers.get("content-type") || ""
   if (res.status === 204 || !contentType.includes("application/json")) {
     return { data: null }
@@ -121,9 +119,8 @@ export const strapiAPI = {
     return request(`/guest-house-bookings/${id}`, "PUT", { bookingStatus: status })
   },
 
-  // Upload (if needed later)
+  // Upload (direct), used by /api/upload
   async upload(formData: FormData) {
-    // Strapi upload uses /upload and expects FormData, not { data: ... }
     const url = `${API_BASE}/upload`
     const res = await fetch(url, {
       method: "POST",
