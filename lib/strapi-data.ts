@@ -5,13 +5,13 @@ import type { GuestHouse, Car, Booking, BookingStatus, CarRentalBooking, GuestHo
 function transformStrapiEntity<T>(entity: any): T & { id: string } {
   return {
     id: entity.id.toString(),
-    ...entity.attributes,
+    ...entity,
   }
 }
 
-function transformStrapiEntities<T>(entities: any[]): (T & { id: string })[] {
-  return entities.map(transformStrapiEntity)
-}
+// function transformStrapiEntities<T>(entities: any[]): (T & { id: string })[] {
+//   return entities.map(transformStrapiEntity)
+// }
 
 // Helper function to get image URLs from Strapi media
 function getImageUrls(media: any): string[] {
@@ -112,7 +112,7 @@ export async function getCarsData(): Promise<Car[]> {
     const response = await strapiAPI.getCars()
     return response.data.map((entity) => ({
       ...transformStrapiEntity<Omit<Car, "id">>(entity),
-      images: getImageUrls(entity.attributes.images),
+      // images: getImageUrls(entity.attributes.images),
     }))
   } catch (error) {
     console.error("Failed to fetch cars:", error)

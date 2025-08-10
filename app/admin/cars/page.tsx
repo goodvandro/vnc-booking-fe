@@ -1,12 +1,25 @@
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { getCars, deleteCar } from "../actions"
-import { PlusCircle, Pencil, Trash2 } from "lucide-react"
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { getCars, deleteCar } from "../actions";
+import { PlusCircle, Pencil, Trash2 } from "lucide-react";
 
 export default async function CarsPage() {
-  const cars = await getCars()
+  const cars = await getCars();
 
   return (
     <Card>
@@ -62,5 +75,5 @@ export default async function CarsPage() {
         </Table>
       </CardContent>
     </Card>
-  )
+  );
 }

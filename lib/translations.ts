@@ -1,6 +1,6 @@
 export const translations = {
   en: {
-    siteTitle: "V0 Booking",
+    siteTitle: "VNC Booking",
     guestHouses: "Guest Houses",
     carRental: "Car Rental",
     whyChooseUs: "Why Choose Us",
@@ -87,7 +87,7 @@ export const translations = {
     signInRequired: "Please sign in to make a booking",
   },
   fr: {
-    siteTitle: "V0 Réservation",
+    siteTitle: "VNC Réservation",
     guestHouses: "Maisons d'hôtes",
     carRental: "Location de voitures",
     whyChooseUs: "Pourquoi nous choisir",
@@ -178,7 +178,7 @@ export const translations = {
     signInRequired: "Veuillez vous connecter pour effectuer une réservation",
   },
   pt: {
-    siteTitle: "V0 Reserva",
+    siteTitle: "VNC Reserva",
     guestHouses: "Casas de Hóspedes",
     carRental: "Aluguel de Carros",
     whyChooseUs: "Por que nos escolher",
