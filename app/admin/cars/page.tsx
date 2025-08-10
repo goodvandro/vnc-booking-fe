@@ -55,7 +55,7 @@ export default async function CarsPage() {
                   <TableCell className="font-medium">{car.title}</TableCell>
                   <TableCell>{car.seats}</TableCell>
                   <TableCell>{car.transmission}</TableCell>
-                  <TableCell>{typeof car.price === "number" ? `$${car.price}` : car.price}</TableCell>
+                  <TableCell>{typeof car.price === "number" ? `€${car.price}` : car.price}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button asChild variant="outline" size="icon">
