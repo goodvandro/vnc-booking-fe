@@ -3,6 +3,26 @@ const STRAPI_ADMIN_TOKEN = process.env.STRAPI_ADMIN_TOKEN
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
 
+async function parseResponse(res: Response): Promise<any> {
+  // Handle no content
+  if (res.status === 204) return {}
+  const contentType = res.headers.get("content-type") || ""
+  const text = await res.text()
+
+  // Strapi should return JSON; fall back gracefully if not
+  if (contentType.includes("application/json")) {
+    try {
+      return JSON.parse(text)
+    } catch {
+      // If Strapi returns a blank/HTML page while status=ok, avoid crashing JSON.parse
+      return {}
+    }
+  }
+
+  // Not JSON; return the raw text to avoid JSON parse errors
+  return { raw: text }
+}
+
 async function strapiFetch<T>(
   path: string,
   options: { method?: HttpMethod; body?: any; headers?: HeadersInit } = {},
@@ -18,25 +38,28 @@ async function strapiFetch<T>(
     method: options.method || "GET",
     headers,
     body: options.body ? JSON.stringify(options.body) : undefined,
-    // Server-only usage; do not set "cache" here to keep revalidation via actions working
   })
 
   if (!res.ok) {
     let message = `Strapi request failed: ${res.status} ${res.statusText}`
     try {
-      const err = await res.json()
-      message = err?.error?.message || message
+      const errMaybeJson = await parseResponse(res)
+      const errMsg =
+        (errMaybeJson?.error && (errMaybeJson.error.message || errMaybeJson.error.name)) ||
+        errMaybeJson?.message ||
+        errMaybeJson?.raw
+      if (errMsg) message = errMsg
     } catch {
-      // ignore json parse error
+      // ignore parse error
     }
     throw new Error(message)
   }
 
-  return res.json()
+  return (await parseResponse(res)) as T
 }
 
 export const strapiAPI = {
-  // Bookings
+  // Car Rental Bookings
   async getCarRentalBookings() {
     return strapiFetch<{
       data: Array<{
@@ -53,7 +76,6 @@ export const strapiAPI = {
           totalPrice: number
           bookingStatus: "pending" | "confirmed" | "cancelled" | "completed"
           createdAt?: string
-          updatedAt?: string
           car?: { data?: { id: number; attributes: { title?: string; carId?: string } } }
         }
       }>
@@ -62,6 +84,14 @@ export const strapiAPI = {
     )
   },
 
+  async updateCarRentalBookingStatus(documentId: number, status: "pending" | "confirmed" | "cancelled" | "completed") {
+    return strapiFetch(`/api/car-rental-bookings/${documentId}`, {
+      method: "PUT",
+      body: { data: { bookingStatus: status } },
+    })
+  },
+
+  // Guest House Bookings
   async getGuestHouseBookings() {
     return strapiFetch<{
       data: Array<{
@@ -79,20 +109,12 @@ export const strapiAPI = {
           totalPrice: number
           bookingStatus: "pending" | "confirmed" | "cancelled" | "completed"
           createdAt?: string
-          updatedAt?: string
           guest_house?: { data?: { id: number; attributes: { title?: string; guestHouseId?: string } } }
         }
       }>
     }>(
       `/api/guest-house-bookings?populate[guest_house][fields][0]=title&populate[guest_house][fields][1]=guestHouseId&sort=createdAt:desc&pagination[pageSize]=200`,
     )
-  },
-
-  async updateCarRentalBookingStatus(documentId: number, status: "pending" | "confirmed" | "cancelled" | "completed") {
-    return strapiFetch(`/api/car-rental-bookings/${documentId}`, {
-      method: "PUT",
-      body: { data: { bookingStatus: status } },
-    })
   },
 
   async updateGuestHouseBookingStatus(documentId: number, status: "pending" | "confirmed" | "cancelled" | "completed") {

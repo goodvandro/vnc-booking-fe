@@ -5,9 +5,10 @@ import { redirect } from "next/navigation"
 import type { BookingStatus, Car, GuestHouse } from "@/lib/types"
 import {
   getBookingsData,
-  updateBookingStatusData,
   getBookingByIdData,
-  // The following are present to satisfy other admin pages; they are stubs in lib/strapi-data.ts for now.
+  updateBookingStatusData,
+  getDashboardStatsData,
+  // stubs below keep other admin imports working
   getGuestHousesData,
   getGuestHouseByIdData,
   createGuestHouseData,
@@ -18,42 +19,31 @@ import {
   createCarData,
   updateCarData,
   deleteCarData,
-  getDashboardStatsData,
 } from "@/lib/strapi-data"
 
-// ----------------------
-// BOOKINGS (Strapi)
-// ----------------------
+// BOOKINGS
 export async function getBookings() {
   return await getBookingsData()
 }
-
 export async function getBookingById(id: string) {
   return await getBookingByIdData(id)
 }
-
 export async function updateBookingStatus(id: string, status: BookingStatus) {
   await updateBookingStatusData(id, status)
   revalidatePath("/admin/bookings")
 }
-
-// This is the named export your client component imports.
-// Keep this function exported to avoid the "doesn't provide an export" error.
+// Keep this export for the client component import to avoid "doesn't provide an export" errors.
 export async function updateBookingStatusAction(id: string, status: BookingStatus) {
   await updateBookingStatusData(id, status)
   revalidatePath("/admin/bookings")
 }
 
-// ----------------------
-// DASHBOARD (optional)
-// ----------------------
+// DASHBOARD
 export async function getDashboardStats() {
   return await getDashboardStatsData()
 }
 
-// ----------------------
-// GUEST HOUSES (placeholder pass-throughs)
-// ----------------------
+// GUEST HOUSES (stubs passthrough)
 function extractImagesFromFormData(formData: FormData): string[] {
   const images: string[] = []
   let index = 0
@@ -68,11 +58,9 @@ function extractImagesFromFormData(formData: FormData): string[] {
 export async function getGuestHouses() {
   return await getGuestHousesData()
 }
-
 export async function getGuestHouse(id: string) {
   return await getGuestHouseByIdData(id)
 }
-
 export async function createGuestHouse(formData: FormData) {
   const images = extractImagesFromFormData(formData)
   const newGh: Omit<GuestHouse, "id"> = {
@@ -87,7 +75,6 @@ export async function createGuestHouse(formData: FormData) {
   revalidatePath("/admin/guest-houses")
   redirect("/admin/guest-houses")
 }
-
 export async function updateGuestHouse(id: string, formData: FormData) {
   const images = extractImagesFromFormData(formData)
   const updatedGh: Partial<GuestHouse> = {
@@ -102,23 +89,18 @@ export async function updateGuestHouse(id: string, formData: FormData) {
   revalidatePath("/admin/guest-houses")
   redirect("/admin/guest-houses")
 }
-
 export async function deleteGuestHouse(id: string) {
   await deleteGuestHouseData(id)
   revalidatePath("/admin/guest-houses")
 }
 
-// ----------------------
-// CARS (placeholder pass-throughs)
-// ----------------------
+// CARS (stubs passthrough)
 export async function getCars() {
   return await getCarsData()
 }
-
 export async function getCar(id: string) {
   return await getCarByIdData(id)
 }
-
 export async function createCar(formData: FormData) {
   const images = extractImagesFromFormData(formData)
   const newCar: Omit<Car, "id"> = {
@@ -133,7 +115,6 @@ export async function createCar(formData: FormData) {
   revalidatePath("/admin/cars")
   redirect("/admin/cars")
 }
-
 export async function updateCar(id: string, formData: FormData) {
   const images = extractImagesFromFormData(formData)
   const updatedCar: Partial<Car> = {
@@ -148,7 +129,6 @@ export async function updateCar(id: string, formData: FormData) {
   revalidatePath("/admin/cars")
   redirect("/admin/cars")
 }
-
 export async function deleteCar(id: string) {
   await deleteCarData(id)
   revalidatePath("/admin/cars")
