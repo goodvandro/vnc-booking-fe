@@ -1,3 +1,5 @@
+import { UploadedMedia } from "@/components/common/media-input";
+
 export interface ImageFormat {
   ext: string;
   hash: string;
@@ -66,7 +68,7 @@ export interface Car {
   id: string;
   documentId?: string;
   carId: string;
-  images: string[]; // Changed from imageSrc to images array
+  images: UploadedMedia[]; // Changed from imageSrc to images array
   title: string;
   seats: number;
   transmission: string;
