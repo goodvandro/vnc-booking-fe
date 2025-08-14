@@ -27,7 +27,8 @@ function getImageUrls(media: DocumentImage[]): DocumentImage[] {
   const base = (
     process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337"
   ).replace(/\/$/, "");
-  return media.map((img) => ({
+
+  return media?.map((img) => ({
     ...img,
     url: `${base}${img.url}` || "/placeholder.svg?height=300&width=400",
   }));
