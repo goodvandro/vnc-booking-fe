@@ -56,7 +56,19 @@ export interface SelectedItem {
 export interface GuestHouse {
   id: string;
   guestHouseId: string;
-  images: string[]; // Changed from imageSrc to images array
+  images: UploadedMedia[]; // Changed from imageSrc to images array
+  title: string;
+  location: string;
+  rating: number;
+  price: number;
+  description: string;
+}
+
+export interface GuestHouseOutputDTO {
+  id: string;
+  documentId?: string;
+  guestHouseId: string;
+  images: DocumentImage[];
   title: string;
   location: string;
   rating: number;

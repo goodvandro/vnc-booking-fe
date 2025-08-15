@@ -1,102 +1,174 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useEffect, useState } from "react"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import MediaInput, { type UploadedMedia } from "@/components/common/media-input"
-import type { GuestHouse } from "@/lib/types"
-import { useRouter } from "next/navigation"
+import type React from "react";
+import { useEffect, useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import MediaInput, {
+  type UploadedMedia,
+} from "@/components/common/media-input";
+import type { GuestHouse } from "@/lib/types";
+import { useRouter } from "next/navigation";
+import { getGuestHouseByIdData, getGuestHousesData } from "@/lib/strapi-data";
+import { createGuestHouse, getGuestHouse, updateGuestHouse } from "../actions";
 
 interface GuestHouseFormProps {
-  initialData?: GuestHouse
+  initialData?: GuestHouse;
 }
 
 export default function GuestHouseForm({ initialData }: GuestHouseFormProps) {
-  const isEditing = !!initialData
-  const router = useRouter()
-  const [media, setMedia] = useState<UploadedMedia[]>((initialData?.images || []).map((url) => ({ url })))
-  const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState<string | null>(null)
+  const isEditing = !!initialData;
+  const router = useRouter();
+  const [guestHouse, setGuestHouse] = useState<GuestHouse | null>(null);
+  const [media, setMedia] = useState<UploadedMedia[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isEditing || !initialData) return;
+    setGuestHouse(initialData);
+    const nextMedia: UploadedMedia[] = Array.isArray(initialData.images)
+      ? initialData.images.map((image) => {
+          return {
+            id: image.id,
+            url: image.url,
+            name: image.name,
+            width: image.width,
+            height: image.height,
+            mime: image.mime,
+          };
+        })
+      : [];
+    setMedia(nextMedia);
+  }, [isEditing, initialData]);
 
   // Hydrate existing media and description for editing
   useEffect(() => {
-    const documentId = (initialData as any)?.documentId
-    if (!isEditing || !documentId) return
+    const documentId = (initialData as any)?.documentId;
+    if (!isEditing || !documentId) return;
 
-    let active = true
-    ;(async () => {
+    let cancelled = false;
+    (async () => {
       try {
-        const res = await fetch(`/api/admin/guest-houses/${documentId}`, { method: "GET", cache: "no-store" })
-        if (!res.ok) return
-        const data = await res.json()
-        if (!active) return
-        const next: UploadedMedia[] = Array.isArray(data.images) ? data.images : []
-        setMedia(next.length ? next : media)
-        const descEl = document.getElementById("description") as HTMLTextAreaElement | null
-        if (descEl && typeof data.description === "string" && !descEl.value) {
-          descEl.value = data.description
+        const guestHouse = await getGuestHouse(documentId);
+
+        if (!guestHouse) return;
+        if (cancelled) return;
+
+        const fromServer = Array.isArray(guestHouse.images)
+          ? guestHouse.images.map((img: any) => {
+              // Check if img is already a string URL or an object
+              if (typeof img === "string") {
+                return { url: img };
+              }
+              // Handle case where img is a full media object
+              return {
+                id: img.id,
+                url: img.url,
+                name: img.name,
+                width: img.width,
+                height: img.height,
+                mime: img.mime,
+              };
+            })
+          : [];
+
+        if (fromServer.length > 0) {
+          setMedia(fromServer);
         }
-      } catch {}
-    })()
+      } catch {
+        // ignore; keep any existing media
+      }
+    })();
     return () => {
-      active = false
-    }
-  }, [isEditing, initialData])
+      cancelled = true;
+    };
+  }, [isEditing, initialData]);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setLoading(true)
-    setMessage(null)
-    const form = e.currentTarget
+    e.preventDefault();
+    setLoading(true);
+    setMessage(null);
+    const form = e.currentTarget;
     const payload = {
-      ghId: (initialData as any)?.ghId,
+      guestHouseId: (initialData as GuestHouse)?.guestHouseId,
       title: (form.elements.namedItem("title") as HTMLInputElement)?.value,
-      location: (form.elements.namedItem("location") as HTMLInputElement)?.value,
-      rating: Number((form.elements.namedItem("rating") as HTMLInputElement)?.value),
-      price: Number((form.elements.namedItem("price") as HTMLInputElement)?.value),
-      description: (form.elements.namedItem("description") as HTMLTextAreaElement)?.value,
-      images: media.filter((m) => typeof m.id === "number").map((m) => m.id) as number[],
-    }
+      location: (form.elements.namedItem("location") as HTMLInputElement)
+        ?.value,
+      rating: Number(
+        (form.elements.namedItem("rating") as HTMLInputElement)?.value
+      ),
+      price: Number(
+        (form.elements.namedItem("price") as HTMLInputElement)?.value
+      ),
+      description:
+        (form.elements.namedItem("description") as HTMLTextAreaElement)
+          ?.value || "",
+      images: media
+        .filter((m) => typeof m.id === "number")
+        .map((m) => m.id) as number[],
+    };
+
+    console.log("payload", payload);
 
     try {
-      const documentId = (initialData as any)?.documentId
-      const res = await fetch(documentId ? `/api/admin/guest-houses/${documentId}` : `/api/admin/guest-houses`, {
-        method: documentId ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      })
-      const j = await res.json()
-      if (!res.ok) throw new Error(j?.error || "Save failed")
-      setMessage("Saved successfully.")
+      const documentId = (initialData as any)?.documentId;
+
+      (await documentId)
+        ? updateGuestHouse(documentId, payload)
+        : createGuestHouse(payload);
+
+      setMessage("Saved successfully.");
       setTimeout(() => {
-        router.push("/admin/guest-houses")
-      }, 600)
+        router.push("/admin/guest-houses");
+      }, 600);
     } catch (err: any) {
-      setMessage(err?.message || "Save failed")
+      setMessage(err?.message || "Save failed");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle>{isEditing ? "Edit Guest House" : "Add New Guest House"}</CardTitle>
-        <CardDescription>We convert the description to Strapi Rich Text Blocks automatically.</CardDescription>
+        <CardTitle>
+          {isEditing ? "Edit Guest House" : "Add New Guest House"}
+        </CardTitle>
+        <CardDescription>
+          {isEditing
+            ? "Edit your guest house listing."
+            : "Add a new guest house listing."}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={onSubmit} className="grid gap-4">
           <div className="grid gap-2">
             <Label htmlFor="title">Title</Label>
-            <Input id="title" name="title" defaultValue={initialData?.title} required />
+            <Input
+              id="title"
+              name="title"
+              defaultValue={guestHouse?.title}
+              required
+            />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="location">Location</Label>
-            <Input id="location" name="location" defaultValue={initialData?.location} required />
+            <Input
+              id="location"
+              name="location"
+              defaultValue={guestHouse?.location}
+              required
+            />
           </div>
 
           <MediaInput
@@ -110,7 +182,14 @@ export default function GuestHouseForm({ initialData }: GuestHouseFormProps) {
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="price">Price per Night</Label>
-              <Input id="price" name="price" type="number" step="0.01" defaultValue={initialData?.price} required />
+              <Input
+                id="price"
+                name="price"
+                type="number"
+                step="0.01"
+                defaultValue={guestHouse?.price}
+                required
+              />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="rating">Rating (0-5)</Label>
@@ -121,7 +200,7 @@ export default function GuestHouseForm({ initialData }: GuestHouseFormProps) {
                 step="0.1"
                 min="0"
                 max="5"
-                defaultValue={(initialData as any)?.rating}
+                defaultValue={guestHouse?.rating}
                 required
               />
             </div>
@@ -131,19 +210,30 @@ export default function GuestHouseForm({ initialData }: GuestHouseFormProps) {
             <Textarea
               id="description"
               name="description"
-              placeholder={"One paragraph per line.\nUse blank lines for empty paragraphs."}
-              defaultValue={(initialData as any)?.description}
+              placeholder={"Write the guest house details..."}
+              defaultValue={guestHouse?.description as any}
             />
-            <p className="text-xs text-muted-foreground">Each line becomes a paragraph in Strapi Rich Text.</p>
           </div>
           <Button type="submit" disabled={loading}>
-            {loading ? "Saving..." : isEditing ? "Update Guest House" : "Create Guest House"}
+            {loading
+              ? "Saving..."
+              : isEditing
+              ? "Update Guest House"
+              : "Create Guest House"}
           </Button>
           {message && (
-            <p className={`text-sm ${/successfully/i.test(message) ? "text-green-600" : "text-red-500"}`}>{message}</p>
+            <p
+              className={`text-sm ${
+                /successfully/i.test(message)
+                  ? "text-green-600"
+                  : "text-red-500"
+              }`}
+            >
+              {message}
+            </p>
           )}
         </form>
       </CardContent>
     </Card>
-  )
+  );
 }

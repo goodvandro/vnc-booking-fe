@@ -1,13 +1,26 @@
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { getCars, deleteCar } from "../actions"
-import { PlusCircle, Pencil, Trash2 } from "lucide-react"
-import { CarOutputDTO } from "@/lib/types"
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { getCars, deleteCar } from "../actions";
+import { PlusCircle, Pencil, Trash2 } from "lucide-react";
+import { CarOutputDTO } from "@/lib/types";
 
 export default async function CarsPage() {
-  const cars = await getCars()
+  const cars = await getCars();
 
   return (
     <Card>
@@ -40,7 +53,7 @@ export default async function CarsPage() {
               const thumb =
                 Array.isArray(car.images) && car.images.length > 0
                   ? car.images[0].url
-                  : "/placeholder.svg?height=56&width=56"
+                  : "/placeholder.svg?height=56&width=56";
               return (
                 <TableRow key={car.id}>
                   <TableCell>
@@ -54,7 +67,11 @@ export default async function CarsPage() {
                   <TableCell className="font-medium">{car.title}</TableCell>
                   <TableCell>{car.seats}</TableCell>
                   <TableCell>{car.transmission}</TableCell>
-                  <TableCell>{typeof car.price === "number" ? `€${car.price}` : car.price}</TableCell>
+                  <TableCell>
+                    {typeof car.price === "number"
+                      ? `€${car.price}`
+                      : car.price}
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button asChild variant="outline" size="icon">
@@ -72,11 +89,11 @@ export default async function CarsPage() {
                     </div>
                   </TableCell>
                 </TableRow>
-              )
+              );
             })}
           </TableBody>
         </Table>
       </CardContent>
     </Card>
-  )
+  );
 }

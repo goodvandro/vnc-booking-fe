@@ -1,12 +1,26 @@
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { getGuestHouses, deleteGuestHouse } from "../actions"
-import { Pencil, Trash2, PlusCircle } from "lucide-react"
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { getGuestHouses, deleteGuestHouse } from "../actions";
+import { Pencil, Trash2, PlusCircle } from "lucide-react";
+import { GuestHouseOutputDTO } from "@/lib/types";
 
 export default async function GuestHousesPage() {
-  const guestHouses = await getGuestHouses()
+  const guestHouses = await getGuestHouses();
 
   return (
     <Card>
@@ -35,32 +49,43 @@ export default async function GuestHousesPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {guestHouses.map((gh: any) => {
+            {guestHouses.map((gh: GuestHouseOutputDTO) => {
               const thumb =
-                Array.isArray(gh.images) && gh.images.length > 0 ? gh.images[0] : "/placeholder.svg?height=56&width=56"
+                Array.isArray(gh.images) && gh.images.length > 0
+                  ? gh.images[0].url
+                  : "/placeholder.svg?height=56&width=56";
               return (
                 <TableRow key={gh.id}>
                   <TableCell>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={thumb || "/placeholder.svg"}
-                      alt={`${gh.title || "Guest House"} thumbnail`}
+                      alt={`${gh.title || "Car"} thumbnail`}
                       className="h-14 w-14 rounded object-cover border"
                     />
                   </TableCell>
                   <TableCell className="font-medium">{gh.title}</TableCell>
                   <TableCell>{gh.location}</TableCell>
-                  <TableCell>{typeof gh.price === "number" ? `$${gh.price}` : gh.price}</TableCell>
+                  <TableCell>
+                    {typeof gh.price === "number" ? `$${gh.price}` : gh.price}
+                  </TableCell>
                   <TableCell>{gh.rating}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button asChild variant="outline" size="icon">
-                        <Link href={`/admin/guest-houses/${gh.documentId}/edit`}>
+                        <Link
+                          href={`/admin/guest-houses/${gh.documentId}/edit`}
+                        >
                           <Pencil className="h-4 w-4" />
                           <span className="sr-only">Edit</span>
                         </Link>
                       </Button>
-                      <form action={deleteGuestHouse.bind(null, gh.documentId)}>
+                      <form
+                        action={deleteGuestHouse.bind(
+                          null,
+                          gh.documentId as string
+                        )}
+                      >
                         <Button variant="destructive" size="icon" type="submit">
                           <Trash2 className="h-4 w-4" />
                           <span className="sr-only">Delete</span>
@@ -69,11 +94,11 @@ export default async function GuestHousesPage() {
                     </div>
                   </TableCell>
                 </TableRow>
-              )
+              );
             })}
           </TableBody>
         </Table>
       </CardContent>
     </Card>
-  )
+  );
 }

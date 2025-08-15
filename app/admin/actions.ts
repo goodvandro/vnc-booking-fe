@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
-import type { BookingStatus, Car, GuestHouse } from "@/lib/types"
+import type { BookingStatus, Car, GuestHouse, GuestHouseOutputDTO } from "@/lib/types"
 import {
   getBookingsData,
   getBookingByIdData,
@@ -56,39 +56,16 @@ function extractImagesFromFormData(formData: FormData): string[] {
 }
 
 export async function getGuestHouses() {
-  return await getGuestHousesData()
+  return await getGuestHousesData() as GuestHouseOutputDTO[]
 }
 export async function getGuestHouse(id: string) {
   return await getGuestHouseByIdData(id)
 }
-export async function createGuestHouse(formData: FormData) {
-  const images = extractImagesFromFormData(formData)
-  const newGh: Omit<GuestHouse, "id"> = {
-    images,
-    guestHouseId: new Date().getTime().toString(),
-    title: String(formData.get("title") || ""),
-    location: String(formData.get("location") || ""),
-    rating: Number.parseFloat(String(formData.get("rating") || "0")),
-    price: Number.parseFloat(String(formData.get("price") || "0")),
-    description: String(formData.get("description") || ""),
-  }
-  await createGuestHouseData(newGh)
-  revalidatePath("/admin/guest-houses")
-  redirect("/admin/guest-houses")
+export async function createGuestHouse(payload: any) {
+  return await createGuestHouseData(payload)
 }
-export async function updateGuestHouse(id: string, formData: FormData) {
-  const images = extractImagesFromFormData(formData)
-  const updatedGh: Partial<GuestHouse> = {
-    images,
-    title: String(formData.get("title") || ""),
-    location: String(formData.get("location") || ""),
-    rating: Number.parseFloat(String(formData.get("rating") || "0")),
-    price: Number.parseFloat(String(formData.get("price") || "0")),
-    description: String(formData.get("description") || ""),
-  }
-  await updateGuestHouseData(id, updatedGh)
-  revalidatePath("/admin/guest-houses")
-  redirect("/admin/guest-houses")
+export async function updateGuestHouse(id: string, payload: any) {
+  return await updateGuestHouseData(id, payload)
 }
 export async function deleteGuestHouse(id: string | number) {
   await deleteGuestHouseData(String(id))

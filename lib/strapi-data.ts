@@ -6,6 +6,7 @@ import type {
   BookingStatus,
   CarOutputDTO,
   DocumentImage,
+  GuestHouseOutputDTO,
 } from "./types";
 
 // Flatten a Strapi v4 entity to a plain object with id, documentId, and attributes
@@ -17,7 +18,6 @@ function flattenEntity<T extends Record<string, any>>(
   const uid = attrs.carId || attrs.guestHouseId || attrs.bookingId;
   return {
     id: String(uid || item.id),
-    documentId: Number(item.id),
     ...attrs,
   } as any;
 }
@@ -37,15 +37,14 @@ function getImageUrls(media: DocumentImage[]): DocumentImage[] {
 // --------------------
 // Guest Houses
 // --------------------
-export async function getGuestHousesData(): Promise<GuestHouse[]> {
+export async function getGuestHousesData(): Promise<GuestHouseOutputDTO[]> {
   try {
     const res = await strapiAPI.getGuestHouses();
     const list = (res?.data || []).map((item: any) => {
-      const flat = flattenEntity<GuestHouse>(item);
+      const flat = flattenEntity<GuestHouseOutputDTO>(item);
       return {
         ...flat,
-        // images: getImageUrls(flat.images),
-        documentId: Number(item.id),
+        images: getImageUrls(flat.images),
       } as any;
     });
     return list;
@@ -64,8 +63,7 @@ export async function getGuestHouseByIdData(
     const flat = flattenEntity<GuestHouse>(res.data);
     return {
       ...flat,
-      // images: getImageUrls(flat.images),
-      documentId: Number(res.data.id),
+      images: getImageUrls((flat as any).images),
     } as any;
   } catch (e) {
     console.error("Failed to fetch guest house:", e);
@@ -97,26 +95,23 @@ export async function updateGuestHouseData(
   id: string,
   updatedGh: Partial<GuestHouse>
 ): Promise<GuestHouse | null> {
-  const payload: any = {
-    title: updatedGh.title,
-    location: (updatedGh as any)?.location,
-    rating: (updatedGh as any)?.rating,
-    price: updatedGh.price,
-    description: updatedGh.description,
-  };
-  if (
-    (updatedGh as any)?.images &&
-    Array.isArray((updatedGh as any).imagesIds)
-  ) {
-    payload.images = (updatedGh as any).imagesIds;
-  }
+  // const payload: any = {
+  //   title: updatedGh.title,
+  //   location: (updatedGh as any)?.location,
+  //   rating: (updatedGh as any)?.rating,
+  //   price: updatedGh.price,
+  //   description: updatedGh.description,
+  // };
+  // if (
+  //   (updatedGh as any)?.images &&
+  //   Array.isArray((updatedGh as any).imagesIds)
+  // ) {
+  //   payload.images = (updatedGh as any).imagesIds;
+  // }
   try {
-    const res = await strapiAPI.updateGuestHouse(id, payload);
-    const flat = flattenEntity<GuestHouse>(res?.data);
-    return {
-      ...flat,
-      // images: updatedGh.images || getImageUrls(flat.images)
-    };
+    const res = await strapiAPI.updateGuestHouse(id, updatedGh);
+    // const flat = flattenEntity<GuestHouse>(res?.data);
+    return res.data
   } catch (e) {
     console.error("Failed to update guest house:", e);
     return null;
@@ -146,7 +141,6 @@ export async function getCarsData(): Promise<CarOutputDTO[]> {
       const result: any = {
         ...flat,
         images: getImageUrls(flat.images),
-        // documentId: Number(item.id),
       };
       // Keep carId if present
       if ((flat as any).carId) result.carId = (flat as any).carId;

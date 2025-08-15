@@ -89,14 +89,13 @@ export default function CarForm({ initialData }: CarFormProps) {
             })
           : [];
 
-        if (fromServer.length) {
+        if (fromServer.length > 0) {
           setMedia(fromServer);
         }
       } catch {
         // ignore; keep any existing media
       }
     })();
-
     return () => {
       cancelled = true;
     };
@@ -104,7 +103,6 @@ export default function CarForm({ initialData }: CarFormProps) {
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("media", media);
     setLoading(true);
     setMessage(null);
     const form = e.currentTarget;
@@ -157,7 +155,9 @@ export default function CarForm({ initialData }: CarFormProps) {
       <CardHeader>
         <CardTitle>{isEditing ? "Edit Car" : "Add New Car"}</CardTitle>
         <CardDescription>
-          Manage your car rental details. Description supports Markdown.
+          {isEditing
+            ? "Edit your car rental listing."
+            : "Add a new car rental listing."}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -216,16 +216,13 @@ export default function CarForm({ initialData }: CarFormProps) {
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="description">Description (Markdown)</Label>
+            <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
               name="description"
-              placeholder={"Write the car details in Markdown..."}
+              placeholder={"Write the car details..."}
               defaultValue={car?.description as any}
             />
-            <p className="text-xs text-muted-foreground">
-              Tip: Use Markdown for formatting.
-            </p>
           </div>
 
           <Button type="submit" disabled={loading}>
