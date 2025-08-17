@@ -34,28 +34,28 @@ export default function AboutUsSection({ t }: AboutUsSectionProps) {
           </div>
           <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:col-span-1 order-1 lg:order-2">
             <Image
-              src="/placeholder.svg?height=200&width=200"
+              src="/users/user-03.jpg?height=200&width=200"
               width={200}
               height={200}
               alt="Happy Travelers"
               className="rounded-lg object-cover w-full h-32 sm:h-40 md:h-48"
             />
             <Image
-              src="/placeholder.svg?height=200&width=200"
+              src="/users/user-04.jpg?height=200&width=200"
               width={200}
               height={200}
               alt="Diverse Destinations"
               className="rounded-lg object-cover w-full h-32 sm:h-40 md:h-48"
             />
             <Image
-              src="/placeholder.svg?height=200&width=200"
+              src="/users/user-05.jpg?height=200&width=200"
               width={200}
               height={200}
               alt="Customer Support"
               className="rounded-lg object-cover w-full h-32 sm:h-40 md:h-48"
             />
             <Image
-              src="/placeholder.svg?height=200&width=200"
+              src="/gh/gh-01.png?height=200&width=200"
               width={200}
               height={200}
               alt="Modern Cars"

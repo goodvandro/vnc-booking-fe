@@ -1,12 +1,12 @@
-"use client"
+"use client";
 
-import Image from "next/image"
-import Link from "next/link"
-import { Card, CardDescription, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import Image from "next/image";
+import Link from "next/link";
+import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 interface MarketingSectionProps {
-  t: any // Translation object
+  t: any; // Translation object
 }
 
 export default function MarketingSection({ t }: MarketingSectionProps) {
@@ -29,40 +29,48 @@ export default function MarketingSection({ t }: MarketingSectionProps) {
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
           <Card className="flex flex-col items-center text-center p-4 sm:p-6">
             <Image
-              src="/placeholder.svg?height=150&width=150"
+              src="/users/user-03.jpg?height=150&width=150"
               width={150}
               height={150}
               alt="Easy Booking"
               className="mb-4 rounded-full object-cover w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36"
             />
-            <CardTitle className="text-lg sm:text-xl font-bold mb-2">{t.effortlessBookingTitle}</CardTitle>
+            <CardTitle className="text-lg sm:text-xl font-bold mb-2">
+              {t.effortlessBookingTitle}
+            </CardTitle>
             <CardDescription className="text-sm sm:text-base leading-relaxed">
               {t.effortlessBookingDescription}
             </CardDescription>
           </Card>
           <Card className="flex flex-col items-center text-center p-4 sm:p-6">
             <Image
-              src="/placeholder.svg?height=150&width=150"
+              src="/gh/gh-01.jpg?height=150&width=150"
               width={150}
               height={150}
               alt="Diverse Options"
               className="mb-4 rounded-full object-cover w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36"
             />
-            <CardTitle className="text-lg sm:text-xl font-bold mb-2">{t.diverseSelectionTitle}</CardTitle>
+            <CardTitle className="text-lg sm:text-xl font-bold mb-2">
+              {t.diverseSelectionTitle}
+            </CardTitle>
             <CardDescription className="text-sm sm:text-base leading-relaxed">
               {t.diverseSelectionDescription}
             </CardDescription>
           </Card>
           <Card className="flex flex-col items-center text-center p-4 sm:p-6 sm:col-span-2 lg:col-span-1">
             <Image
-              src="/placeholder.svg?height=150&width=150"
+              src="/users/user-04.jpg?height=150&width=150"
               width={150}
               height={150}
               alt="24/7 Support"
               className="mb-4 rounded-full object-cover w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36"
             />
-            <CardTitle className="text-lg sm:text-xl font-bold mb-2">{t.supportTitle}</CardTitle>
-            <CardDescription className="text-sm sm:text-base leading-relaxed">{t.supportDescription}</CardDescription>
+            <CardTitle className="text-lg sm:text-xl font-bold mb-2">
+              {t.supportTitle}
+            </CardTitle>
+            <CardDescription className="text-sm sm:text-base leading-relaxed">
+              {t.supportDescription}
+            </CardDescription>
           </Card>
         </div>
         <div className="text-center mt-8 md:mt-12">
@@ -72,5 +80,5 @@ export default function MarketingSection({ t }: MarketingSectionProps) {
         </div>
       </div>
     </section>
-  )
+  );
 }
