@@ -1,18 +1,18 @@
-"use client"
+"use client";
 
-import Image from "next/image"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
+import Image from "next/image";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 interface HeroSectionProps {
-  t: any // Translation object
+  t: any; // Translation object
 }
 
 export default function HeroSection({ t }: HeroSectionProps) {
   return (
     <section className="section-container relative w-full py-16 sm:py-24 md:py-32 lg:py-48 bg-gradient-to-r from-gray-900 to-gray-800 text-white">
       <Image
-        src="/placeholder.svg?height=1080&width=1920"
+        src="/placeholder-01.jpg?height=1080&width=1920"
         width={1920}
         height={1080}
         alt="Hero Background"
@@ -46,5 +46,5 @@ export default function HeroSection({ t }: HeroSectionProps) {
         </div>
       </div>
     </section>
-  )
+  );
 }
