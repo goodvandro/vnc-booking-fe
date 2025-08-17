@@ -24,7 +24,7 @@ export const translations = {
     automatic: "Automatic",
     perDay: "/day",
     rentNow: "Rent Now",
-    whyChooseV0Booking: "Why Choose V0 Booking?",
+    whyChooseV0Booking: "Why Choose VNC Booking?",
     whyChooseV0BookingSubtitle: "We make your travel planning seamless and enjoyable.",
     effortlessBookingTitle: "Effortless Booking",
     effortlessBookingDescription:
@@ -35,15 +35,15 @@ export const translations = {
     supportTitle: "24/7 Support",
     supportDescription: "Our dedicated customer service team is always here to assist you, anytime, anywhere.",
     startYourJourney: "Start Your Journey",
-    aboutV0BookingTitle: "About V0 Booking",
+    aboutV0BookingTitle: "About VNC Booking",
     aboutV0BookingSubtitle:
       "Our mission is to provide unparalleled travel experiences through seamless booking and exceptional service.",
     aboutV0BookingParagraph1:
-      "At V0 Booking, we believe that every journey should be an unforgettable adventure. Founded with a passion for travel and a commitment to excellence, we strive to connect travelers with the perfect guest houses and reliable car rentals, ensuring comfort, convenience, and peace of mind.",
+      "At VNC Booking, we believe that every journey should be an unforgettable adventure. Founded with a passion for travel and a commitment to excellence, we strive to connect travelers with the perfect guest houses and reliable car rentals, ensuring comfort, convenience, and peace of mind.",
     aboutV0BookingParagraph2:
       "Our platform is designed to be user-friendly, offering a vast selection of curated properties and vehicles to meet diverse needs and preferences. We are constantly expanding our network and innovating our services to provide you with the best possible booking experience.",
     aboutV0BookingParagraph3:
-      "Join our community of happy travelers and let V0 Booking be your trusted partner in exploring the world. Your next great adventure starts here!",
+      "Join our community of happy travelers and let VNC Booking be your trusted partner in exploring the world. Your next great adventure starts here!",
     newsletterTitle: "Stay Updated with Our Latest Deals",
     newsletterSubtitle: "Subscribe to our newsletter for exclusive offers on guest houses and car rentals.",
     enterYourEmail: "Enter your email",
@@ -113,7 +113,7 @@ export const translations = {
     automatic: "Automatique",
     perDay: "/jour",
     rentNow: "Louer maintenant",
-    whyChooseV0Booking: "Pourquoi choisir V0 Réservation ?",
+    whyChooseV0Booking: "Pourquoi choisir VNC Réservation ?",
     whyChooseV0BookingSubtitle: "Nous rendons votre planification de voyage simple et agréable.",
     effortlessBookingTitle: "Réservation sans effort",
     effortlessBookingDescription:
@@ -125,15 +125,15 @@ export const translations = {
     supportDescription:
       "Notre équipe de service client dédiée est toujours là pour vous aider, à tout moment, n'importe où.",
     startYourJourney: "Commencez votre voyage",
-    aboutV0BookingTitle: "À propos de V0 Réservation",
+    aboutV0BookingTitle: "À propos de VNC Réservation",
     aboutV0BookingSubtitle:
       "Notre mission est de fournir des expériences de voyage inégalées grâce à une réservation fluide et un service exceptionnel.",
     aboutV0BookingParagraph1:
-      "Chez V0 Réservation, nous croyons que chaque voyage doit être une aventure inoubliable. Fondée avec une passion pour le voyage et un engagement envers l'excellence, nous nous efforçons de connecter les voyageurs avec les maisons d'hôtes parfaites et des locations de voitures fiables, assurant confort, commodité et tranquillité d'esprit.",
+      "Chez VNC Réservation, nous croyons que chaque voyage doit être une aventure inoubliable. Fondée avec une passion pour le voyage et un engagement envers l'excellence, nous nous efforçons de connecter les voyageurs avec les maisons d'hôtes parfaites et des locations de voitures fiables, assurant confort, commodité et tranquillité d'esprit.",
     aboutV0BookingParagraph2:
       "Notre plateforme est conçue pour être conviviale, offrant une vaste sélection de propriétés et de véhicules sélectionnés pour répondre aux divers besoins et préférences. Nous élargissons constamment notre réseau et innovons nos services pour vous offrir la meilleure expérience de réservation possible.",
     aboutV0BookingParagraph3:
-      "Rejoignez notre communauté de voyageurs heureux et laissez V0 Réservation être votre partenaire de confiance pour explorer le monde. Votre prochaine grande aventure commence ici !",
+      "Rejoignez notre communauté de voyageurs heureux et laissez VNC Réservation être votre partenaire de confiance pour explorer le monde. Votre prochaine grande aventure commence ici !",
     newsletterTitle: "Restez informé de nos dernières offres",
     newsletterSubtitle:
       "Abonnez-vous à notre newsletter pour des offres exclusives sur les maisons d'hôtes et les locations de voitures.",
@@ -202,7 +202,7 @@ export const translations = {
     automatic: "Automático",
     perDay: "/dia",
     rentNow: "Alugar Agora",
-    whyChooseV0Booking: "Por que escolher V0 Reserva?",
+    whyChooseV0Booking: "Por que escolher VNC Reserva?",
     whyChooseV0BookingSubtitle: "Tornamos seu planejamento de viagem fácil e agradável.",
     effortlessBookingTitle: "Reserva sem Esforço",
     effortlessBookingDescription:
@@ -214,15 +214,15 @@ export const translations = {
     supportDescription:
       "Nossa equipe de atendimento ao cliente dedicada está sempre aqui para ajudá-lo, a qualquer hora, em qualquer lugar.",
     startYourJourney: "Comece Sua Jornada",
-    aboutV0BookingTitle: "Sobre V0 Reserva",
+    aboutV0BookingTitle: "Sobre VNC Reserva",
     aboutV0BookingSubtitle:
       "Nossa missão é fornecer experiências de viagem incomparáveis através de reservas perfeitas e serviço excepcional.",
     aboutV0BookingParagraph1:
-      "Na V0 Reserva, acreditamos que cada jornada deve ser uma aventura inesquecível. Fundada com paixão por viagens e compromisso com a excelência, nos esforçamos para conectar viajantes com as casas de hóspedes perfeitas e aluguéis de carros confiáveis, garantindo conforto, conveniência e tranquilidade.",
+      "Na VNC Reserva, acreditamos que cada jornada deve ser uma aventura inesquecível. Fundada com paixão por viagens e compromisso com a excelência, nos esforçamos para conectar viajantes com as casas de hóspedes perfeitas e aluguéis de carros confiáveis, garantindo conforto, conveniência e tranquilidade.",
     aboutV0BookingParagraph2:
       "Nossa plataforma é projetada para ser fácil de usar, oferecendo uma vasta seleção de propriedades e veículos selecionados para atender às diversas necessidades e preferências. Estamos constantemente expandindo nossa rede e inovando nossos serviços para fornecer a você a melhor experiência de reserva possível.",
     aboutV0BookingParagraph3:
-      "Junte-se à nossa comunidade de viajantes felizes e deixe a V0 Reserva ser seu parceiro de confiança na exploração do mundo. Sua próxima grande aventura começa aqui!",
+      "Junte-se à nossa comunidade de viajantes felizes e deixe a VNC Reserva ser seu parceiro de confiança na exploração do mundo. Sua próxima grande aventura começa aqui!",
     newsletterTitle: "Mantenha-se Atualizado com Nossas Últimas Ofertas",
     newsletterSubtitle: "Assine nossa newsletter para ofertas exclusivas em casas de hóspedes e aluguel de carros.",
     enterYourEmail: "Digite seu e-mail",
