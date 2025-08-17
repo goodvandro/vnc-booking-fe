@@ -1,158 +1,243 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Card, CardContent } from "@/components/ui/card"
+import { Users, CalendarDays } from "lucide-react"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Users, Settings, Car } from "lucide-react"
-import BookingRentalModal from "@/components/common/booking-rental-modal"
 import ImageSlider from "@/components/common/image-slider"
-import type { Car as CarType } from "@/lib/types"
+import type { SelectedItem } from "@/lib/types"
 
 interface CarRentalSectionProps {
-  t: any
+  t: any // Translation object
+  handleRentNowClick: (itemData: SelectedItem["data"]) => void
 }
 
-export default function CarRentalSection({ t }: CarRentalSectionProps) {
-  const [cars, setCars] = useState<CarType[]>([])
-  const [loading, setLoading] = useState(true)
-  const [selectedCar, setSelectedCar] = useState<CarType | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-
-  useEffect(() => {
-    const fetchCars = async () => {
-      try {
-        const response = await fetch("/api/cars")
-        if (!response.ok) {
-          throw new Error("Failed to fetch cars")
-        }
-        const data = await response.json()
-        setCars(data)
-      } catch (error) {
-        console.error("Error fetching cars:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchCars()
-  }, [])
-
-  const handleRentNow = (car: CarType) => {
-    setSelectedCar(car)
-    setIsModalOpen(true)
-  }
-
-  if (loading) {
-    return (
-      <section id="car-rental" className="w-full py-12 md:py-24 lg:py-32">
-        <div className="container px-4 md:px-6">
-          <div className="flex flex-col items-center justify-center space-y-4 text-center">
-            <div className="space-y-2">
-              <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">{t.carRentalSectionTitle}</h2>
-              <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                {t.carRentalSectionSubtitle}
-              </p>
-            </div>
-          </div>
-          <div className="mx-auto grid max-w-5xl items-center gap-6 py-12 lg:grid-cols-3 lg:gap-12">
-            {[1, 2, 3].map((i) => (
-              <Card key={i} className="animate-pulse">
-                <div className="aspect-video bg-muted rounded-t-lg"></div>
-                <CardContent className="p-6">
-                  <div className="h-4 bg-muted rounded mb-2"></div>
-                  <div className="h-3 bg-muted rounded mb-4 w-2/3"></div>
-                  <div className="flex justify-between items-center mb-4">
-                    <div className="h-3 bg-muted rounded w-1/3"></div>
-                    <div className="h-3 bg-muted rounded w-1/4"></div>
-                  </div>
-                  <div className="h-10 bg-muted rounded"></div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-    )
-  }
-
+export default function CarRentalSection({ t, handleRentNowClick }: CarRentalSectionProps) {
   return (
-    <section id="car-rental" className="w-full py-12 md:py-24 lg:py-32">
-      <div className="container px-4 md:px-6">
-        <div className="flex flex-col items-center justify-center space-y-4 text-center">
-          <div className="space-y-2">
-            <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">{t.carRentalSectionTitle}</h2>
-            <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+    <section id="car-rental" className="section-container w-full py-12 md:py-16 lg:py-24 xl:py-32">
+      <div className="section-content">
+        <div className="flex flex-col items-center justify-center space-y-4 text-center mb-8 md:mb-12">
+          <div className="space-y-2 max-w-4xl mx-auto">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tighter text-gray-700">
+              {t.carRentalSectionTitle}
+            </h2>
+            <p className="max-w-[900px] mx-auto text-muted-foreground text-sm sm:text-base md:text-lg lg:text-xl leading-relaxed">
               {t.carRentalSectionSubtitle}
             </p>
           </div>
         </div>
-        <div className="mx-auto grid max-w-5xl items-center gap-6 py-12 lg:grid-cols-3 lg:gap-12">
-          {cars.length === 0 ? (
-            <div className="col-span-full text-center py-12">
-              <Car className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No cars available</h3>
-              <p className="text-muted-foreground">Check back later or contact us for availability.</p>
-            </div>
-          ) : (
-            cars.map((car) => (
-              <Card key={car.id} className="overflow-hidden">
-                <div className="aspect-video relative">
-                  {car.images && car.images.length > 0 ? (
-                    <ImageSlider images={car.images} alt={car.title} className="w-full h-full object-cover" />
-                  ) : (
-                    <img
-                      src="/placeholder.svg?height=200&width=300&text=Car"
-                      alt={car.title}
-                      className="w-full h-full object-cover"
-                    />
-                  )}
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-w-7xl mx-auto">
+          {/* Car cards content remains the same, just wrapped in proper container */}
+          <Card className="flex flex-col overflow-hidden">
+            <ImageSlider
+              images={[
+                "/placeholder.svg?height=300&width=400&text=Toyota+Camry+Exterior",
+                "/placeholder.svg?height=300&width=400&text=Toyota+Camry+Interior",
+                "/placeholder.svg?height=300&width=400&text=Toyota+Camry+Dashboard",
+              ]}
+              alt="Toyota Camry"
+            />
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg sm:text-xl">Toyota Camry</CardTitle>
+              <CardDescription className="flex items-center gap-1 text-sm flex-wrap">
+                <div className="flex items-center gap-1">
+                  <Users className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  <span>5 {t.seats}</span>
                 </div>
-                <CardContent className="p-6">
-                  <div className="space-y-2">
-                    <h3 className="text-xl font-bold">{car.title}</h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2">{car.description}</p>
-                  </div>
-                  <div className="flex items-center justify-between py-4">
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Users className="h-4 w-4" />
-                        <span>
-                          {car.seats} {t.seats}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Settings className="h-4 w-4" />
-                        <span>{car.transmission === "automatic" ? t.automatic : t.manual}</span>
-                      </div>
-                    </div>
-                    <Badge variant="secondary" className="text-lg font-bold">
-                      ${car.pricePerDay}
-                      {t.perDay}
-                    </Badge>
-                  </div>
-                  <Button className="w-full" onClick={() => handleRentNow(car)}>
-                    {t.rentNow}
-                  </Button>
-                </CardContent>
-              </Card>
-            ))
-          )}
+                <span className="mx-1">•</span>
+                <div className="flex items-center gap-1">
+                  <CalendarDays className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  <span>{t.automatic}</span>
+                </div>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 pt-0">
+              <p className="text-xl sm:text-2xl font-bold">
+                $50<span className="text-sm sm:text-base font-normal text-muted-foreground">{t.perDay}</span>
+              </p>
+            </CardContent>
+            <CardFooter className="pt-0">
+              <Button
+                className="w-full"
+                onClick={() =>
+                  handleRentNowClick({
+                    images: [
+                      "/placeholder.svg?height=300&width=400&text=Toyota+Camry+Exterior",
+                      "/placeholder.svg?height=300&width=400&text=Toyota+Camry+Interior",
+                      "/placeholder.svg?height=300&width=400&text=Toyota+Camry+Dashboard",
+                    ],
+                    title: "Toyota Camry",
+                    seats: 5,
+                    transmission: "Automatic",
+                    price: 50,
+                    description:
+                      "A reliable and fuel-efficient sedan, perfect for city driving and long road trips. Enjoy a smooth and comfortable ride.",
+                  })
+                }
+              >
+                {t.rentNow}
+              </Button>
+            </CardFooter>
+          </Card>
+          {/* Add the other 3 car cards with the same structure */}
+          <Card className="flex flex-col overflow-hidden">
+            <ImageSlider
+              images={[
+                "/placeholder.svg?height=300&width=400&text=Honda+CR-V+Exterior",
+                "/placeholder.svg?height=300&width=400&text=Honda+CR-V+Interior",
+                "/placeholder.svg?height=300&width=400&text=Honda+CR-V+Cargo",
+                "/placeholder.svg?height=300&width=400&text=Honda+CR-V+Dashboard",
+              ]}
+              alt="Honda CR-V"
+            />
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg sm:text-xl">Honda CR-V</CardTitle>
+              <CardDescription className="flex items-center gap-1 text-sm flex-wrap">
+                <div className="flex items-center gap-1">
+                  <Users className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  <span>5 {t.seats}</span>
+                </div>
+                <span className="mx-1">•</span>
+                <div className="flex items-center gap-1">
+                  <CalendarDays className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  <span>{t.automatic}</span>
+                </div>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 pt-0">
+              <p className="text-xl sm:text-2xl font-bold">
+                $65<span className="text-sm sm:text-base font-normal text-muted-foreground">{t.perDay}</span>
+              </p>
+            </CardContent>
+            <CardFooter className="pt-0">
+              <Button
+                className="w-full"
+                onClick={() =>
+                  handleRentNowClick({
+                    images: [
+                      "/placeholder.svg?height=300&width=400&text=Honda+CR-V+Exterior",
+                      "/placeholder.svg?height=300&width=400&text=Honda+CR-V+Interior",
+                      "/placeholder.svg?height=300&width=400&text=Honda+CR-V+Cargo",
+                      "/placeholder.svg?height=300&width=400&text=Honda+CR-V+Dashboard",
+                    ],
+                    title: "Honda CR-V",
+                    seats: 5,
+                    transmission: "Automatic",
+                    price: 65,
+                    description:
+                      "A versatile and spacious SUV, ideal for families and adventurers. Offers ample cargo space and a comfortable ride.",
+                  })
+                }
+              >
+                {t.rentNow}
+              </Button>
+            </CardFooter>
+          </Card>
+          <Card className="flex flex-col overflow-hidden">
+            <ImageSlider
+              images={[
+                "/placeholder.svg?height=300&width=400&text=Mercedes+C-Class+Exterior",
+                "/placeholder.svg?height=300&width=400&text=Mercedes+C-Class+Interior",
+                "/placeholder.svg?height=300&width=400&text=Mercedes+C-Class+Dashboard",
+              ]}
+              alt="Mercedes-Benz C-Class"
+            />
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg sm:text-xl">Mercedes-Benz C-Class</CardTitle>
+              <CardDescription className="flex items-center gap-1 text-sm flex-wrap">
+                <div className="flex items-center gap-1">
+                  <Users className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  <span>4 {t.seats}</span>
+                </div>
+                <span className="mx-1">•</span>
+                <div className="flex items-center gap-1">
+                  <CalendarDays className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  <span>{t.automatic}</span>
+                </div>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 pt-0">
+              <p className="text-xl sm:text-2xl font-bold">
+                $120<span className="text-sm sm:text-base font-normal text-muted-foreground">{t.perDay}</span>
+              </p>
+            </CardContent>
+            <CardFooter className="pt-0">
+              <Button
+                className="w-full"
+                onClick={() =>
+                  handleRentNowClick({
+                    images: [
+                      "/placeholder.svg?height=300&width=400&text=Mercedes+C-Class+Exterior",
+                      "/placeholder.svg?height=300&width=400&text=Mercedes+C-Class+Interior",
+                      "/placeholder.svg?height=300&width=400&text=Mercedes+C-Class+Dashboard",
+                    ],
+                    title: "Mercedes-Benz C-Class",
+                    seats: 4,
+                    transmission: "Automatic",
+                    price: 120,
+                    description:
+                      "Drive in style and comfort with this luxurious sedan. Perfect for business trips or a sophisticated city experience.",
+                  })
+                }
+              >
+                {t.rentNow}
+              </Button>
+            </CardFooter>
+          </Card>
+          <Card className="flex flex-col overflow-hidden">
+            <ImageSlider
+              images={[
+                "/placeholder.svg?height=300&width=400&text=Chrysler+Pacifica+Exterior",
+                "/placeholder.svg?height=300&width=400&text=Chrysler+Pacifica+Interior",
+                "/placeholder.svg?height=300&width=400&text=Chrysler+Pacifica+Seating",
+                "/placeholder.svg?height=300&width=400&text=Chrysler+Pacifica+Entertainment",
+              ]}
+              alt="Chrysler Pacifica"
+            />
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg sm:text-xl">Chrysler Pacifica</CardTitle>
+              <CardDescription className="flex items-center gap-1 text-sm flex-wrap">
+                <div className="flex items-center gap-1">
+                  <Users className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  <span>7 {t.seats}</span>
+                </div>
+                <span className="mx-1">•</span>
+                <div className="flex items-center gap-1">
+                  <CalendarDays className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  <span>{t.automatic}</span>
+                </div>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 pt-0">
+              <p className="text-xl sm:text-2xl font-bold">
+                $90<span className="text-sm sm:text-base font-normal text-muted-foreground">{t.perDay}</span>
+              </p>
+            </CardContent>
+            <CardFooter className="pt-0">
+              <Button
+                className="w-full"
+                onClick={() =>
+                  handleRentNowClick({
+                    images: [
+                      "/placeholder.svg?height=300&width=400&text=Chrysler+Pacifica+Exterior",
+                      "/placeholder.svg?height=300&width=400&text=Chrysler+Pacifica+Interior",
+                      "/placeholder.svg?height=300&width=400&text=Chrysler+Pacifica+Seating",
+                      "/placeholder.svg?height=300&width=400&text=Chrysler+Pacifica+Entertainment",
+                    ],
+                    title: "Chrysler Pacifica",
+                    seats: 7,
+                    transmission: "Automatic",
+                    price: 90,
+                    description:
+                      "The ultimate family minivan, offering ample space, comfort, and entertainment features for long journeys with kids.",
+                  })
+                }
+              >
+                {t.rentNow}
+              </Button>
+            </CardFooter>
+          </Card>
         </div>
       </div>
-
-      {selectedCar && (
-        <BookingRentalModal
-          isOpen={isModalOpen}
-          onClose={() => {
-            setIsModalOpen(false)
-            setSelectedCar(null)
-          }}
-          item={selectedCar}
-          type="car"
-          t={t}
-        />
-      )}
     </section>
   )
 }
