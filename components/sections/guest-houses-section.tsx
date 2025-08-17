@@ -1,19 +1,45 @@
-"use client"
+"use client";
 
-import { MapPin, Star } from "lucide-react"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import ImageSlider from "@/components/common/image-slider"
-import type { SelectedItem } from "@/lib/types"
+import { MapPin, Star } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import ImageSlider from "@/components/common/image-slider";
+import type { GuestHouseOutputDTO, SelectedItem } from "@/lib/types";
+import { getGuestHouses } from "@/app/admin/actions";
+import { useEffect, useState } from "react";
 
 interface GuestHousesSectionProps {
-  t: any // Translation object
-  handleBookNowClick: (itemData: SelectedItem["data"]) => void
+  t: any; // Translation object
+  handleBookNowClick: (itemData: SelectedItem["data"]) => void;
 }
 
-export default function GuestHousesSection({ t, handleBookNowClick }: GuestHousesSectionProps) {
+export default function GuestHousesSection({
+  t,
+  handleBookNowClick,
+}: GuestHousesSectionProps) {
+  const [guestHouses, setGuestHouses] = useState<GuestHouseOutputDTO[]>([]);
+
+  useEffect(() => {
+    const array = Array(5);
+    console.log(array);
+    getGuestHouses().then((guestHouses) => {
+      setGuestHouses(guestHouses);
+      console.log("guestHouses", JSON.stringify(guestHouses));
+    });
+  }, []);
+
   return (
-    <section id="guest-houses" className="section-container w-full py-12 md:py-16 lg:py-24 xl:py-32 bg-muted">
+    <section
+      id="guest-houses"
+      className="section-container w-full py-12 md:py-16 lg:py-24 xl:py-32 bg-muted"
+    >
       <div className="section-content">
         <div className="flex flex-col items-center justify-center space-y-4 text-center mb-8 md:mb-12">
           <div className="space-y-2 max-w-4xl mx-auto">
@@ -26,222 +52,81 @@ export default function GuestHousesSection({ t, handleBookNowClick }: GuestHouse
           </div>
         </div>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-w-7xl mx-auto">
-          <Card className="flex flex-col overflow-hidden">
-            <ImageSlider
-              images={[
-                "/placeholder.svg?height=300&width=400&text=Riverside+Retreat+1",
-                "/placeholder.svg?height=300&width=400&text=Riverside+Retreat+2",
-                "/placeholder.svg?height=300&width=400&text=Riverside+Retreat+3",
-                "/placeholder.svg?height=300&width=400&text=Riverside+Retreat+4",
-              ]}
-              alt="Riverside Retreat"
-            />
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg sm:text-xl">Riverside Retreat</CardTitle>
-              <CardDescription className="flex items-center gap-1 text-sm">
-                <MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                <span>Kyoto, Japan</span>
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 pt-0">
-              <div className="flex items-center gap-1 text-sm text-yellow-500 mb-2">
-                <Star className="w-4 h-4 fill-yellow-500" />
-                <Star className="w-4 h-4 fill-yellow-500" />
-                <Star className="w-4 h-4 fill-yellow-500" />
-                <Star className="w-4 h-4 fill-yellow-500" />
-                <Star className="w-4 h-4" />
-                <span className="text-muted-foreground ml-1">(4.5)</span>
-              </div>
-              <p className="text-xl sm:text-2xl font-bold">
-                $150<span className="text-sm sm:text-base font-normal text-muted-foreground">{t.perNight}</span>
-              </p>
-            </CardContent>
-            <CardFooter className="pt-0">
-              <Button
-                className="w-full"
-                onClick={() =>
-                  handleBookNowClick({
-                    images: [
-                      "/placeholder.svg?height=300&width=400&text=Riverside+Retreat+1",
-                      "/placeholder.svg?height=300&width=400&text=Riverside+Retreat+2",
-                      "/placeholder.svg?height=300&width=400&text=Riverside+Retreat+3",
-                      "/placeholder.svg?height=300&width=400&text=Riverside+Retreat+4",
-                    ],
-                    title: "Riverside Retreat",
-                    location: "Kyoto, Japan",
-                    rating: 4.5,
-                    price: 150,
-                    description:
-                      "A serene retreat nestled by the river, offering traditional Japanese aesthetics and modern comforts. Perfect for a peaceful getaway.",
-                  })
-                }
-              >
-                {t.bookNow}
-              </Button>
-            </CardFooter>
-          </Card>
-          <Card className="flex flex-col overflow-hidden">
-            <ImageSlider
-              images={[
-                "/placeholder.svg?height=300&width=400&text=Urban+Loft+1",
-                "/placeholder.svg?height=300&width=400&text=Urban+Loft+2",
-                "/placeholder.svg?height=300&width=400&text=Urban+Loft+3",
-              ]}
-              alt="Urban Loft"
-            />
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg sm:text-xl">Urban Loft</CardTitle>
-              <CardDescription className="flex items-center gap-1 text-sm">
-                <MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                <span>New York, USA</span>
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 pt-0">
-              <div className="flex items-center gap-1 text-sm text-yellow-500 mb-2">
-                <Star className="w-4 h-4 fill-yellow-500" />
-                <Star className="w-4 h-4 fill-yellow-500" />
-                <Star className="w-4 h-4 fill-yellow-500" />
-                <Star className="w-4 h-4 fill-yellow-500" />
-                <Star className="w-4 h-4 fill-yellow-500" />
-                <span className="text-muted-foreground ml-1">(5.0)</span>
-              </div>
-              <p className="text-xl sm:text-2xl font-bold">
-                $220<span className="text-sm sm:text-base font-normal text-muted-foreground">{t.perNight}</span>
-              </p>
-            </CardContent>
-            <CardFooter className="pt-0">
-              <Button
-                className="w-full"
-                onClick={() =>
-                  handleBookNowClick({
-                    images: [
-                      "/placeholder.svg?height=300&width=400&text=Urban+Loft+1",
-                      "/placeholder.svg?height=300&width=400&text=Urban+Loft+2",
-                      "/placeholder.svg?height=300&width=400&text=Urban+Loft+3",
-                    ],
-                    title: "Urban Loft",
-                    location: "New York, USA",
-                    rating: 5.0,
-                    price: 220,
-                    description:
-                      "A stylish and spacious loft in the heart of the city, offering breathtaking skyline views and easy access to all major attractions.",
-                  })
-                }
-              >
-                {t.bookNow}
-              </Button>
-            </CardFooter>
-          </Card>
-          <Card className="flex flex-col overflow-hidden">
-            <ImageSlider
-              images={[
-                "/placeholder.svg?height=300&width=400&text=Beachfront+Villa+1",
-                "/placeholder.svg?height=300&width=400&text=Beachfront+Villa+2",
-                "/placeholder.svg?height=300&width=400&text=Beachfront+Villa+3",
-                "/placeholder.svg?height=300&width=400&text=Beachfront+Villa+4",
-                "/placeholder.svg?height=300&width=400&text=Beachfront+Villa+5",
-              ]}
-              alt="Beachfront Villa"
-            />
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg sm:text-xl">Beachfront Villa</CardTitle>
-              <CardDescription className="flex items-center gap-1 text-sm">
-                <MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                <span>Bali, Indonesia</span>
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 pt-0">
-              <div className="flex items-center gap-1 text-sm text-yellow-500 mb-2">
-                <Star className="w-4 h-4 fill-yellow-500" />
-                <Star className="w-4 h-4 fill-yellow-500" />
-                <Star className="w-4 h-4 fill-yellow-500" />
-                <Star className="w-4 h-4 fill-yellow-500" />
-                <Star className="w-4 h-4" />
-                <span className="text-muted-foreground ml-1">(4.8)</span>
-              </div>
-              <p className="text-xl sm:text-2xl font-bold">
-                $300<span className="text-sm sm:text-base font-normal text-muted-foreground">{t.perNight}</span>
-              </p>
-            </CardContent>
-            <CardFooter className="pt-0">
-              <Button
-                className="w-full"
-                onClick={() =>
-                  handleBookNowClick({
-                    images: [
-                      "/placeholder.svg?height=300&width=400&text=Beachfront+Villa+1",
-                      "/placeholder.svg?height=300&width=400&text=Beachfront+Villa+2",
-                      "/placeholder.svg?height=300&width=400&text=Beachfront+Villa+3",
-                      "/placeholder.svg?height=300&width=400&text=Beachfront+Villa+4",
-                      "/placeholder.svg?height=300&width=400&text=Beachfront+Villa+5",
-                    ],
-                    title: "Beachfront Villa",
-                    location: "Bali, Indonesia",
-                    rating: 4.8,
-                    price: 300,
-                    description:
-                      "Experience luxury by the sea in this stunning beachfront villa. Enjoy private access to the beach and breathtaking ocean views.",
-                  })
-                }
-              >
-                {t.bookNow}
-              </Button>
-            </CardFooter>
-          </Card>
-          <Card className="flex flex-col overflow-hidden">
-            <ImageSlider
-              images={[
-                "/placeholder.svg?height=300&width=400&text=Mountain+Cabin+1",
-                "/placeholder.svg?height=300&width=400&text=Mountain+Cabin+2",
-                "/placeholder.svg?height=300&width=400&text=Mountain+Cabin+3",
-              ]}
-              alt="Mountain Cabin"
-            />
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg sm:text-xl">Mountain Cabin</CardTitle>
-              <CardDescription className="flex items-center gap-1 text-sm">
-                <MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                <span>Aspen, USA</span>
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 pt-0">
-              <div className="flex items-center gap-1 text-sm text-yellow-500 mb-2">
-                <Star className="w-4 h-4 fill-yellow-500" />
-                <Star className="w-4 h-4 fill-yellow-500" />
-                <Star className="w-4 h-4 fill-yellow-500" />
-                <Star className="w-4 h-4 fill-yellow-500" />
-                <Star className="w-4 h-4 fill-yellow-500" />
-                <span className="text-muted-foreground ml-1">(4.9)</span>
-              </div>
-              <p className="text-xl sm:text-2xl font-bold">
-                $250<span className="text-sm sm:text-base font-normal text-muted-foreground">{t.perNight}</span>
-              </p>
-            </CardContent>
-            <CardFooter className="pt-0">
-              <Button
-                className="w-full"
-                onClick={() =>
-                  handleBookNowClick({
-                    images: [
-                      "/placeholder.svg?height=300&width=400&text=Mountain+Cabin+1",
-                      "/placeholder.svg?height=300&width=400&text=Mountain+Cabin+2",
-                      "/placeholder.svg?height=300&width=400&text=Mountain+Cabin+3",
-                    ],
-                    title: "Mountain Cabin",
-                    location: "Aspen, USA",
-                    rating: 4.9,
-                    price: 250,
-                    description:
-                      "A rustic yet luxurious cabin nestled in the mountains, offering stunning views and direct access to hiking and skiing trails.",
-                  })
-                }
-              >
-                {t.bookNow}
-              </Button>
-            </CardFooter>
-          </Card>
+          {guestHouses.map((gh: GuestHouseOutputDTO) => {
+            const thumbs: string[] = [];
+
+            Array.isArray(gh.images) && gh.images.length > 0
+              ? thumbs.push(...gh.images.map((i) => i.url)) || thumbs
+              : thumbs.push(
+                  `/placeholder.svg?height=300&width=400&text=${gh.title}`
+                );
+
+            console.log("thumbs", thumbs);
+
+            return (
+              <Card key={gh.id} className="flex flex-col overflow-hidden">
+                <ImageSlider
+                  images={thumbs}
+                  alt="Riverside Retreat"
+                />
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg sm:text-xl">
+                    {gh.title}
+                  </CardTitle>
+                  <CardDescription className="flex items-center gap-1 text-sm">
+                    <MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                    <span>{gh.location}</span>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex-1 pt-0">
+                  <div className="flex items-center gap-1 text-sm text-yellow-500 mb-2">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`w-4 h-4 ${
+                          i < gh.rating ? "fill-yellow-500" : "fill-white"
+                        }`}
+                      />
+                    ))}
+                    <span className="text-muted-foreground ml-1">
+                      ({gh.rating})
+                    </span>
+                  </div>
+                  <p className="text-xl sm:text-2xl font-bold">
+                    €{gh.price}
+                    <span className="text-sm sm:text-base font-normal text-muted-foreground">
+                      {t.perNight}
+                    </span>
+                  </p>
+                </CardContent>
+                <CardFooter className="pt-0">
+                  <Button
+                    className="w-full"
+                    onClick={() =>
+                      handleBookNowClick({
+                        images: [
+                          "/placeholder.svg?height=300&width=400&text=Riverside+Retreat+1",
+                          "/placeholder.svg?height=300&width=400&text=Riverside+Retreat+2",
+                          "/placeholder.svg?height=300&width=400&text=Riverside+Retreat+3",
+                          "/placeholder.svg?height=300&width=400&text=Riverside+Retreat+4",
+                        ],
+                        title: "Riverside Retreat",
+                        location: "Kyoto, Japan",
+                        rating: 4.5,
+                        price: 150,
+                        description:
+                          "A serene retreat nestled by the river, offering traditional Japanese aesthetics and modern comforts. Perfect for a peaceful getaway.",
+                      })
+                    }
+                  >
+                    {t.bookNow}
+                  </Button>
+                </CardFooter>
+              </Card>
+            );
+          })}
         </div>
       </div>
     </section>
-  )
+  );
 }

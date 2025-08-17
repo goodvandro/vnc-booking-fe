@@ -46,6 +46,9 @@ export default function HomePage() {
   const [crReturnDate, setCrReturnDate] = useState("")
   const [crPickupLocation, setCrPickupLocation] = useState("")
 
+  //   const guestHouses = await getGuestHouses();
+  // console.log("guestHouses", guestHouses);
+
   const handleBookNowClick = (itemData: SelectedItem["data"]) => {
     setSelectedItem({ type: "guestHouse", data: itemData })
     setOpenModal(true)
