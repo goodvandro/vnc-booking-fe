@@ -27,8 +27,6 @@ export default function GuestHousesSection({
   const [guestHouses, setGuestHouses] = useState<GuestHouseOutputDTO[]>([]);
 
   useEffect(() => {
-    const array = Array(5);
-    console.log(array);
     getGuestHouses().then((guestHouses) => {
       setGuestHouses(guestHouses);
       console.log("guestHouses", JSON.stringify(guestHouses));
@@ -61,14 +59,9 @@ export default function GuestHousesSection({
                   `/placeholder.svg?height=300&width=400&text=${gh.title}`
                 );
 
-            console.log("thumbs", thumbs);
-
             return (
               <Card key={gh.id} className="flex flex-col overflow-hidden">
-                <ImageSlider
-                  images={thumbs}
-                  alt="Riverside Retreat"
-                />
+                <ImageSlider images={thumbs} alt="Riverside Retreat" />
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg sm:text-xl">
                     {gh.title}
