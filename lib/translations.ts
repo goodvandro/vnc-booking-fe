@@ -273,4 +273,148 @@ export const translations = {
     cancelled: "Cancelado",
     completed: "Concluído",
   },
+  fr: {
+    // Navigation
+    home: "Accueil",
+    guestHouses: "Maisons d'hôtes",
+    carRental: "Location de voitures",
+    about: "À propos",
+    contact: "Contact",
+    admin: "Admin",
+    signIn: "Se connecter",
+    signOut: "Se déconnecter",
+    profile: "Profil",
+
+    // Hero Section
+    heroTitle: "Découvrez Votre Séjour et Voyage Parfaits",
+    heroSubtitle:
+      "Expérimentez le confort et la commodité avec nos maisons d'hôtes premium et nos services de location de voitures fiables. Votre voyage commence ici.",
+    exploreGuestHouses: "Explorer les Maisons d'Hôtes",
+    browseCars: "Parcourir les Voitures",
+
+    // Guest Houses Section
+    guestHousesSectionTitle: "Maisons d'Hôtes Premium",
+    guestHousesSectionSubtitle: "Logements confortables pour votre escapade parfaite",
+    perNight: "/nuit",
+    bookNow: "Réserver Maintenant",
+    guests: "invités",
+    rating: "notation",
+
+    // Car Rental Section
+    carRentalSectionTitle: "Location de Voitures Fiable",
+    carRentalSectionSubtitle: "Choisissez parmi notre flotte de véhicules bien entretenus pour vos besoins de voyage",
+    perDay: "/jour",
+    rentNow: "Louer Maintenant",
+    seats: "sièges",
+    automatic: "Automatique",
+    manual: "Manuel",
+
+    // Marketing Section
+    marketingSectionTitle: "Pourquoi Nous Choisir?",
+    marketingSectionSubtitle: "Expérimentez la différence avec nos services premium",
+    premiumQuality: "Qualité Premium",
+    premiumQualityDesc: "Logements et véhicules de première qualité entretenus aux normes les plus élevées",
+    bestPrices: "Meilleurs Prix",
+    bestPricesDesc: "Tarifs compétitifs sans compromettre la qualité et le service",
+    support247: "Support 24/7",
+    support247Desc: "Support client 24 heures sur 24 pour toutes vos besoins",
+
+    // About Us Section
+    aboutUsSectionTitle: "À Propos de Nos Services",
+    aboutUsSectionSubtitle: "Votre partenaire de confiance pour l'hébergement et le transport",
+    aboutUsDescription:
+      "Nous offrons des hébergements exceptionnels dans des maisons d'hôtes et des services de location de voitures fiables. Avec des années d'expérience dans l'hôtellerie et le transport, nous garantissons votre confort et votre commodité tout au long de votre voyage.",
+    yearsExperience: "Années d'Expérience",
+    happyCustomers: "Clients Satisfaits",
+    premiumVehicles: "Véhicules Premium",
+    guestHousesAvailable: "Maisons d'Hôtes",
+
+    // Newsletter Section
+    newsletterTitle: "Restez Informé",
+    newsletterSubtitle: "Inscrivez-vous à notre newsletter pour les dernières offres et mises à jour",
+    emailPlaceholder: "Entrez votre email",
+    subscribe: "S'inscrire",
+
+    // Contact Section
+    contactTitle: "Nous Contacter",
+    contactSubtitle: "Nous sommes là pour vous aider avec vos besoins d'hébergement et de transport",
+    address: "123 Rue Principale, Ville, Pays",
+    phone: "+33 (1) 2345-6789",
+    email: "info@example.fr",
+    contactForm: "Formulaire de Contact",
+    name: "Nom",
+    message: "Message",
+    sendMessage: "Envoyer le Message",
+
+    // Footer
+    footerDescription:
+      "Votre partenaire de confiance pour des hébergements premium et des services de transport fiables.",
+    quickLinks: "Liens Rapides",
+    services: "Services",
+    followUs: "Suivez-nous",
+    allRightsReserved: "Tous droits réservés.",
+
+    // Back to Top
+    backToTop: "Retour en Haut",
+
+    // Booking Modal
+    bookingDetails: "Détails de la Réservation",
+    rentalDetails: "Détails de la Location",
+    personalInformation: "Informations Personnelles",
+    firstName: "Prénom",
+    lastName: "Nom de Famille",
+    phoneNumber: "Numéro de Téléphone",
+    specialRequests: "Requêtes Spéciales",
+    checkInDate: "Date d'Arrivée",
+    checkOutDate: "Date de Départ",
+    numberOfGuests: "Nombre d'Invités",
+    pickupDate: "Date de Prise en Main",
+    returnDate: "Date de Retour",
+    pickupLocation: "Lieu de Prise en Main",
+    totalPrice: "Prix Total",
+    confirmBooking: "Confirmer la Réservation",
+    confirmRental: "Confirmer la Location",
+    cancel: "Annuler",
+
+    // Common
+    loading: "Chargement...",
+    error: "Erreur",
+    success: "Succès",
+    close: "Fermer",
+    save: "Enregistrer",
+    edit: "Éditer",
+    delete: "Supprimer",
+    view: "Afficher",
+    search: "Rechercher",
+    filter: "Filtrer",
+    sort: "Trier",
+    next: "Suivant",
+    previous: "Précédent",
+    page: "Page",
+    of: "de",
+    results: "résultats",
+    noResults: "Aucun résultat trouvé",
+    selectAll: "Sélectionner Tout",
+    deselectAll: "Désélectionner Tout",
+    actions: "Actions",
+    status: "Statut",
+    date: "Date",
+    time: "Heure",
+    location: "Lieu",
+    price: "Prix",
+    availability: "Disponibilité",
+    available: "Disponible",
+    unavailable: "Indisponible",
+    booked: "Réservé",
+    pending: "En Attente",
+    confirmed: "Confirmé",
+    cancelled: "Annulé",
+    completed: "Terminé",
+  },
+}
+
+export const languageNames: { [key: string]: string } = {
+  en: "English",
+  fr: "Français",
+  pt: "Português",
 }
