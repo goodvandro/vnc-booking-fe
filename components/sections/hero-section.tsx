@@ -12,7 +12,7 @@ export default function HeroSection({ t }: HeroSectionProps) {
   return (
     <section className="section-container relative w-full py-16 sm:py-24 md:py-32 lg:py-48 bg-gradient-to-r from-gray-900 to-gray-800 text-white">
       <Image
-        src="/placeholder-01.jpg?height=1080&width=1920"
+        src="/placeholder-02.jpg?height=1080&width=1920"
         width={1920}
         height={1080}
         alt="Hero Background"
@@ -30,7 +30,7 @@ export default function HeroSection({ t }: HeroSectionProps) {
             <Button
               asChild
               size="lg"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 w-full sm:w-auto"
+              className="bg-primary text-primary-foreground hover:bg-primary/70 w-full sm:w-auto"
             >
               <Link href="#guest-houses">{t.findGuestHouse}</Link>
             </Button>
