@@ -19,17 +19,6 @@ export default function ContactSection({ t }: ContactSectionProps) {
           <p className="text-muted-foreground text-sm sm:text-base md:text-lg lg:text-xl leading-relaxed">
             {t.getInTouchSubtitle}
           </p>
-          <div className="space-y-2 text-muted-foreground text-left max-w-md mx-auto mb-6 sm:mb-8 text-sm sm:text-base">
-            <p>
-              <strong>{t.email}:</strong> info@v0booking.com
-            </p>
-            <p>
-              <strong>{t.phone}:</strong> +1 (123) 456-7890
-            </p>
-            <p>
-              <strong>{t.address}:</strong> 123 Booking Lane, Travel City, TC 12345
-            </p>
-          </div>
           <form className="space-y-4 max-w-md mx-auto text-left">
             <div>
               <Label htmlFor="name" className="block text-sm font-medium text-foreground mb-1">

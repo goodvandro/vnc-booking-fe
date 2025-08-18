@@ -30,7 +30,7 @@ export default function HomePage() {
   const [ghFirstName, setGhFirstName] = useState("")
   const [ghLastName, setGhLastName] = useState("")
   const [ghPhone, setGhPhone] = useState("")
-  const [ghEmail, setGhEmail] = useState("goodvandro@gmail.com")
+  const [ghEmail, setGhEmail] = useState("")
   const [ghSpecialRequests, setGhSpecialRequests] = useState("")
   const [ghCheckInDate, setGhCheckInDate] = useState("")
   const [ghCheckOutDate, setGhCheckOutDate] = useState("")
