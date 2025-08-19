@@ -15,81 +15,13 @@ interface GuestHousesSectionProps {
 
 export default function GuestHousesSection({ t, handleBookNowClick }: GuestHousesSectionProps) {
   const [guestHouses, setGuestHouses] = useState<GuestHouseOutputDTO[]>([])
-  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getGuestHouses()
-      .then((guestHouses) => {
-        setGuestHouses(guestHouses)
-      })
-      .catch((error) => {
-        console.error("Failed to fetch guest houses:", error)
-      })
-      .finally(() => {
-        setLoading(false)
-      })
+    getGuestHouses().then((guestHouses) => {
+      setGuestHouses(guestHouses)
+      console.log("guestHouses", JSON.stringify(guestHouses))
+    })
   }, [])
-
-  if (loading) {
-    return (
-      <section id="guest-houses" className="section-container w-full py-12 md:py-16 lg:py-24 xl:py-32 bg-muted">
-        <div className="section-content">
-          <div className="flex flex-col items-center justify-center space-y-4 text-center mb-8 md:mb-12">
-            <div className="space-y-2 max-w-4xl mx-auto">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tighter text-gray-700">
-                {t.guestHousesSectionTitle}
-              </h2>
-              <p className="max-w-[900px] mx-auto text-muted-foreground text-sm sm:text-base md:text-lg lg:text-xl leading-relaxed">
-                {t.guestHousesSectionSubtitle}
-              </p>
-            </div>
-          </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-w-7xl mx-auto">
-            {[...Array(4)].map((_, i) => (
-              <Card key={i} className="flex flex-col overflow-hidden animate-pulse">
-                <div className="h-48 bg-gray-200"></div>
-                <CardHeader className="pb-2">
-                  <div className="h-6 bg-gray-200 rounded mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                </CardHeader>
-                <CardContent className="flex-1 pt-0">
-                  <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
-                  <div className="h-8 bg-gray-200 rounded w-1/2"></div>
-                </CardContent>
-                <CardFooter className="pt-0">
-                  <div className="h-10 bg-gray-200 rounded w-full"></div>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-    )
-  }
-
-  if (guestHouses.length === 0) {
-    return (
-      <section id="guest-houses" className="section-container w-full py-12 md:py-16 lg:py-24 xl:py-32 bg-muted">
-        <div className="section-content">
-          <div className="flex flex-col items-center justify-center space-y-4 text-center mb-8 md:mb-12">
-            <div className="space-y-2 max-w-4xl mx-auto">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tighter text-gray-700">
-                {t.guestHousesSectionTitle}
-              </h2>
-              <p className="max-w-[900px] mx-auto text-muted-foreground text-sm sm:text-base md:text-lg lg:text-xl leading-relaxed">
-                {t.guestHousesSectionSubtitle}
-              </p>
-            </div>
-          </div>
-          <div className="text-center py-12">
-            <p className="text-muted-foreground text-lg">
-              No guest houses available at the moment. Please check back later.
-            </p>
-          </div>
-        </div>
-      </section>
-    )
-  }
 
   return (
     <section id="guest-houses" className="section-container w-full py-12 md:py-16 lg:py-24 xl:py-32 bg-muted">
@@ -106,17 +38,15 @@ export default function GuestHousesSection({ t, handleBookNowClick }: GuestHouse
         </div>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-w-7xl mx-auto">
           {guestHouses.map((gh: GuestHouseOutputDTO) => {
-            const images: string[] = []
+            const thumbs: string[] = []
 
-            if (Array.isArray(gh.images) && gh.images.length > 0) {
-              images.push(...gh.images.map((i) => i.url))
-            } else {
-              images.push(`/placeholder.svg?height=300&width=400&text=${encodeURIComponent(gh.title)}`)
-            }
+            Array.isArray(gh.images) && gh.images.length > 0
+              ? thumbs.push(...gh.images.map((i) => i.url)) || thumbs
+              : thumbs.push(`/placeholder.svg?height=300&width=400&text=${gh.title}`)
 
             return (
               <Card key={gh.id} className="flex flex-col overflow-hidden">
-                <ImageSlider images={images} alt={gh.title} />
+                <ImageSlider images={thumbs} alt="Riverside Retreat" />
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg sm:text-xl">{gh.title}</CardTitle>
                   <CardDescription className="flex items-center gap-1 text-sm">
@@ -127,10 +57,7 @@ export default function GuestHousesSection({ t, handleBookNowClick }: GuestHouse
                 <CardContent className="flex-1 pt-0">
                   <div className="flex items-center gap-1 text-sm text-yellow-500 mb-2">
                     {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`w-4 h-4 ${i < Math.floor(gh.rating) ? "fill-yellow-500" : "fill-gray-200"}`}
-                      />
+                      <Star key={i} className={`w-4 h-4 ${i < gh.rating ? "fill-yellow-500" : "fill-white"}`} />
                     ))}
                     <span className="text-muted-foreground ml-1">({gh.rating})</span>
                   </div>
@@ -144,12 +71,12 @@ export default function GuestHousesSection({ t, handleBookNowClick }: GuestHouse
                     className="w-full"
                     onClick={() =>
                       handleBookNowClick({
-                        images,
+                        images: thumbs,
                         title: gh.title,
                         location: gh.location,
                         rating: gh.rating,
                         price: gh.price,
-                        description: gh.description,
+                        description: gh.description || "No description available",
                       })
                     }
                   >

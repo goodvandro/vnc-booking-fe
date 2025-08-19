@@ -15,78 +15,12 @@ interface CarRentalSectionProps {
 
 export default function CarRentalSection({ t, handleRentNowClick }: CarRentalSectionProps) {
   const [cars, setCars] = useState<CarOutputDTO[]>([])
-  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getCars()
-      .then((carRental) => {
-        setCars(carRental)
-      })
-      .catch((error) => {
-        console.error("Failed to fetch cars:", error)
-      })
-      .finally(() => {
-        setLoading(false)
-      })
+    getCars().then((carRental) => {
+      setCars(carRental)
+    })
   }, [])
-
-  if (loading) {
-    return (
-      <section id="car-rental" className="section-container w-full py-12 md:py-16 lg:py-24 xl:py-32">
-        <div className="section-content">
-          <div className="flex flex-col items-center justify-center space-y-4 text-center mb-8 md:mb-12">
-            <div className="space-y-2 max-w-4xl mx-auto">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tighter text-gray-700">
-                {t.carRentalSectionTitle}
-              </h2>
-              <p className="max-w-[900px] mx-auto text-muted-foreground text-sm sm:text-base md:text-lg lg:text-xl leading-relaxed">
-                {t.carRentalSectionSubtitle}
-              </p>
-            </div>
-          </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-w-7xl mx-auto">
-            {[...Array(4)].map((_, i) => (
-              <Card key={i} className="flex flex-col overflow-hidden animate-pulse">
-                <div className="h-48 bg-gray-200"></div>
-                <CardHeader className="pb-2">
-                  <div className="h-6 bg-gray-200 rounded mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                </CardHeader>
-                <CardContent className="flex-1 pt-0">
-                  <div className="h-8 bg-gray-200 rounded w-1/2"></div>
-                </CardContent>
-                <CardFooter className="pt-0">
-                  <div className="h-10 bg-gray-200 rounded w-full"></div>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-    )
-  }
-
-  if (cars.length === 0) {
-    return (
-      <section id="car-rental" className="section-container w-full py-12 md:py-16 lg:py-24 xl:py-32">
-        <div className="section-content">
-          <div className="flex flex-col items-center justify-center space-y-4 text-center mb-8 md:mb-12">
-            <div className="space-y-2 max-w-4xl mx-auto">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tighter text-gray-700">
-                {t.carRentalSectionTitle}
-              </h2>
-              <p className="max-w-[900px] mx-auto text-muted-foreground text-sm sm:text-base md:text-lg lg:text-xl leading-relaxed">
-                {t.carRentalSectionSubtitle}
-              </p>
-            </div>
-          </div>
-          <div className="text-center py-12">
-            <p className="text-muted-foreground text-lg">No cars available at the moment. Please check back later.</p>
-          </div>
-        </div>
-      </section>
-    )
-  }
 
   return (
     <section id="car-rental" className="section-container w-full py-12 md:py-16 lg:py-24 xl:py-32">
@@ -103,17 +37,15 @@ export default function CarRentalSection({ t, handleRentNowClick }: CarRentalSec
         </div>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-w-7xl mx-auto">
           {cars.map((car: CarOutputDTO) => {
-            const images: string[] = []
+            const thumbs: string[] = []
 
-            if (Array.isArray(car.images) && car.images.length > 0) {
-              images.push(...car.images.map((i) => i.url))
-            } else {
-              images.push(`/placeholder.svg?height=300&width=400&text=${encodeURIComponent(car.title)}`)
-            }
+            Array.isArray(car.images) && car.images.length > 0
+              ? thumbs.push(...car.images.map((i) => i.url)) || thumbs
+              : thumbs.push(`/placeholder.svg?height=300&width=400&text=${car.title}`)
 
             return (
               <Card key={car.id} className="flex flex-col overflow-hidden">
-                <ImageSlider images={images} alt={car.title} />
+                <ImageSlider images={thumbs} alt="Toyota Camry" />
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg sm:text-xl">{car.title}</CardTitle>
                   <CardDescription className="flex items-center gap-1 text-sm flex-wrap">
@@ -141,12 +73,12 @@ export default function CarRentalSection({ t, handleRentNowClick }: CarRentalSec
                     className="w-full"
                     onClick={() =>
                       handleRentNowClick({
-                        images,
+                        images: thumbs,
                         title: car.title,
                         seats: car.seats,
                         transmission: car.transmission,
                         price: car.price,
-                        description: car.description,
+                        description: car.description || "No description available",
                       })
                     }
                   >
