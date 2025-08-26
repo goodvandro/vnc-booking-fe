@@ -1,39 +1,32 @@
 "use client"
 
 import { useEffect } from "react"
+import { detectBrowserLanguage, saveLanguagePreference } from "@/lib/language-utils"
 
 interface LanguageDetectorProps {
-  onLanguageDetected?: (language: string) => void
+  onLanguageDetected: (language: string) => void
+  currentLanguage: string
 }
 
-export default function LanguageDetector({ onLanguageDetected }: LanguageDetectorProps) {
+export default function LanguageDetector({ onLanguageDetected, currentLanguage }: LanguageDetectorProps) {
   useEffect(() => {
-    const detectLanguage = () => {
-      try {
-        // Get browser language
-        const browserLang = navigator.language || navigator.languages?.[0] || "en"
-        const langCode = browserLang.split("-")[0].toLowerCase()
+    // Only run on client side
+    if (typeof window === "undefined") return
 
-        // Supported languages
-        const supportedLanguages = ["en", "es", "fr", "de", "it", "pt", "ru", "zh", "ja", "ko"]
-        const detectedLang = supportedLanguages.includes(langCode) ? langCode : "en"
+    // Check if user already has a language preference
+    const storedLanguage = localStorage.getItem("preferred-language")
 
-        // Call the callback if provided and is a function
-        if (onLanguageDetected && typeof onLanguageDetected === "function") {
-          onLanguageDetected(detectedLang)
-        }
-      } catch (error) {
-        console.warn("Language detection failed:", error)
-        // Fallback to English
-        if (onLanguageDetected && typeof onLanguageDetected === "function") {
-          onLanguageDetected("en")
-        }
+    if (!storedLanguage) {
+      // No stored preference, detect from browser
+      const detectedLanguage = detectBrowserLanguage()
+
+      if (detectedLanguage !== currentLanguage) {
+        onLanguageDetected(detectedLanguage)
+        saveLanguagePreference(detectedLanguage)
       }
     }
+  }, [onLanguageDetected, currentLanguage])
 
-    // Detect language on mount
-    detectLanguage()
-  }, [onLanguageDetected])
-
-  return null // This component doesn't render anything
+  // This component doesn't render anything
+  return null
 }
