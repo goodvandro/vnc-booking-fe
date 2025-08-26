@@ -100,7 +100,7 @@ export async function createGuestHouseBooking(prevState: any, formData: FormData
 
       return {
         success: true,
-        message: `Guest house booking created successfully! Your booking ID is: ${bookingId}`,
+        message: `Booking created successfully! Your booking ID is: ${bookingId}`,
         bookingId,
       }
     } else {
@@ -110,7 +110,7 @@ export async function createGuestHouseBooking(prevState: any, formData: FormData
       }
     }
   } catch (error) {
-    console.error("Error creating guest house booking:", error)
+    console.error("Guest house booking error:", error)
     return {
       success: false,
       message: "An unexpected error occurred. Please try again.",
@@ -189,7 +189,7 @@ export async function createCarRentalBooking(prevState: any, formData: FormData)
 
       return {
         success: true,
-        message: `Car rental booking created successfully! Your booking ID is: ${bookingId}`,
+        message: `Booking created successfully! Your booking ID is: ${bookingId}`,
         bookingId,
       }
     } else {
@@ -199,7 +199,7 @@ export async function createCarRentalBooking(prevState: any, formData: FormData)
       }
     }
   } catch (error) {
-    console.error("Error creating car rental booking:", error)
+    console.error("Car rental booking error:", error)
     return {
       success: false,
       message: "An unexpected error occurred. Please try again.",

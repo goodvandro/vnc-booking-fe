@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Calendar, MapPin, Star, Users, Loader2 } from "lucide-react"
+import { MapPin, Star, Users, Calendar, Loader2 } from "lucide-react"
 import { createGuestHouseBooking } from "@/app/actions/booking-actions"
 import type { GuestHouse } from "@/lib/types"
 import type { User } from "@clerk/nextjs/server"
@@ -37,14 +37,14 @@ export default function GuestHouseBookingModal({ isOpen, onClose, guestHouse, t,
       const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
 
       if (nights > 0) {
-        setTotalPrice(nights * guestHouse.pricePerNight)
+        setTotalPrice(nights * guestHouse.pricePerNight * guests)
       } else {
         setTotalPrice(0)
       }
     }
-  }, [checkInDate, checkOutDate, guestHouse])
+  }, [checkInDate, checkOutDate, guests, guestHouse])
 
-  // Handle successful submission
+  // Handle successful booking
   useEffect(() => {
     if (state?.success) {
       // Show success message for 3 seconds then close modal
@@ -61,77 +61,74 @@ export default function GuestHouseBookingModal({ isOpen, onClose, guestHouse, t,
     }
   }, [state?.success, onClose])
 
-  // Get minimum date (today)
-  const today = new Date().toISOString().split("T")[0]
-
   if (!guestHouse) return null
 
-  const handleSubmit = (formData: FormData) => {
-    // Add calculated values to form data
-    formData.append("totalPrice", totalPrice.toString())
-    formData.append("guestHouseId", guestHouse.id.toString())
-    formData.append("guests", guests.toString())
-    if (user?.id) {
-      formData.append("userId", user.id)
-    }
-
-    formAction(formData)
-  }
+  // Get minimum date (today)
+  const today = new Date().toISOString().split("T")[0]
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold">{t?.bookGuestHouse || "Book Guest House"}</DialogTitle>
+          <DialogTitle className="text-2xl">{t?.bookGuestHouse || "Book Guest House"}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
           {/* Guest House Info */}
-          <div className="bg-muted/50 p-4 rounded-lg">
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="font-semibold text-lg">{guestHouse.name}</h3>
-              <Badge variant="secondary">
-                ${guestHouse.pricePerNight}/{t?.night || "night"}
-              </Badge>
-            </div>
-
-            <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
-              <div className="flex items-center gap-1">
-                <MapPin className="h-4 w-4" />
-                {guestHouse.location}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-start gap-4">
+                <img
+                  src={guestHouse.images?.[0] || "/placeholder.svg?height=80&width=80"}
+                  alt={guestHouse.name}
+                  className="w-20 h-20 rounded-lg object-cover"
+                />
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg">{guestHouse.name}</h3>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                    <MapPin className="h-4 w-4" />
+                    {guestHouse.location}
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-1">
+                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      <span className="text-sm">{guestHouse.rating}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Users className="h-4 w-4" />
+                      <span className="text-sm">
+                        {t?.maxGuests || "Max"} {guestHouse.maxGuests}
+                      </span>
+                    </div>
+                    <Badge variant="secondary">
+                      ${guestHouse.pricePerNight}/{t?.night || "night"}
+                    </Badge>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-1">
-                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                {guestHouse.rating}
-              </div>
-              <div className="flex items-center gap-1">
-                <Users className="h-4 w-4" />
-                {t?.maxGuests || "Max"}: {guestHouse.maxGuests}
-              </div>
-            </div>
-
-            {guestHouse.description && (
-              <p className="text-sm text-muted-foreground line-clamp-2">{guestHouse.description}</p>
-            )}
-          </div>
-
-          <Separator />
+            </CardContent>
+          </Card>
 
           {/* Success/Error Messages */}
-          {state?.message && (
-            <div
-              className={`p-4 rounded-lg ${
-                state.success
-                  ? "bg-green-50 text-green-800 border border-green-200"
-                  : "bg-red-50 text-red-800 border border-red-200"
-              }`}
-            >
-              <p className="font-medium">{state.message}</p>
+          {state?.success && (
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-green-800 font-medium">{state.message}</p>
+            </div>
+          )}
+
+          {state?.success === false && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-800">{state.message}</p>
             </div>
           )}
 
           {/* Booking Form */}
-          <form action={handleSubmit} className="space-y-4">
+          <form action={formAction} className="space-y-4">
+            {/* Hidden fields */}
+            <input type="hidden" name="guestHouseId" value={guestHouse.id} />
+            <input type="hidden" name="userId" value={user?.id || ""} />
+            <input type="hidden" name="totalPrice" value={totalPrice} />
+
             {/* Personal Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -141,7 +138,6 @@ export default function GuestHouseBookingModal({ isOpen, onClose, guestHouse, t,
                 <Input
                   id="firstName"
                   name="firstName"
-                  type="text"
                   required
                   defaultValue={user?.firstName || ""}
                   disabled={isPending}
@@ -154,7 +150,6 @@ export default function GuestHouseBookingModal({ isOpen, onClose, guestHouse, t,
                 <Input
                   id="lastName"
                   name="lastName"
-                  type="text"
                   required
                   defaultValue={user?.lastName || ""}
                   disabled={isPending}
@@ -247,20 +242,17 @@ export default function GuestHouseBookingModal({ isOpen, onClose, guestHouse, t,
 
             {/* Price Summary */}
             {totalPrice > 0 && (
-              <div className="bg-muted/50 p-4 rounded-lg">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">{t?.totalPrice || "Total Price"}:</span>
-                  <span className="text-xl font-bold">${totalPrice}</span>
-                </div>
-                {checkInDate && checkOutDate && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {Math.ceil(
-                      (new Date(checkOutDate).getTime() - new Date(checkInDate).getTime()) / (1000 * 60 * 60 * 24),
-                    )}{" "}
-                    {t?.nights || "nights"} × ${guestHouse.pricePerNight}
-                  </p>
-                )}
-              </div>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      <span className="text-sm text-muted-foreground">{t?.totalPrice || "Total Price"}</span>
+                    </div>
+                    <div className="text-xl font-bold text-primary">${totalPrice.toFixed(2)}</div>
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
             {/* Submit Button */}
@@ -281,10 +273,7 @@ export default function GuestHouseBookingModal({ isOpen, onClose, guestHouse, t,
                     {t?.processing || "Processing..."}
                   </>
                 ) : (
-                  <>
-                    <Calendar className="mr-2 h-4 w-4" />
-                    {t?.confirmBooking || "Confirm Booking"}
-                  </>
+                  t?.confirmBooking || "Confirm Booking"
                 )}
               </Button>
             </div>

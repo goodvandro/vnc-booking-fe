@@ -6,17 +6,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { CarIcon, MapPin, Users, Settings, Loader2 } from "lucide-react"
+import { Car, Users, Fuel, Calendar, Loader2 } from "lucide-react"
 import { createCarRentalBooking } from "@/app/actions/booking-actions"
-import type { Car } from "@/lib/types"
+import type { Car as CarType } from "@/lib/types"
 import type { User } from "@clerk/nextjs/server"
 
 interface CarRentalModalProps {
   isOpen: boolean
   onClose: () => void
-  car: Car | null
+  car: CarType | null
   t: any
   user: User | null | undefined
 }
@@ -42,7 +42,7 @@ export default function CarRentalModal({ isOpen, onClose, car, t, user }: CarRen
     }
   }, [startDate, endDate, car])
 
-  // Handle successful submission
+  // Handle successful booking
   useEffect(() => {
     if (state?.success) {
       // Show success message for 3 seconds then close modal
@@ -58,76 +58,75 @@ export default function CarRentalModal({ isOpen, onClose, car, t, user }: CarRen
     }
   }, [state?.success, onClose])
 
-  // Get minimum date (today)
-  const today = new Date().toISOString().split("T")[0]
-
   if (!car) return null
 
-  const handleSubmit = (formData: FormData) => {
-    // Add calculated values to form data
-    formData.append("totalPrice", totalPrice.toString())
-    formData.append("carId", car.id.toString())
-    if (user?.id) {
-      formData.append("userId", user.id)
-    }
-
-    formAction(formData)
-  }
+  // Get minimum date (today)
+  const today = new Date().toISOString().split("T")[0]
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold">{t?.rentCar || "Rent Car"}</DialogTitle>
+          <DialogTitle className="text-2xl">{t?.rentCar || "Rent Car"}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
           {/* Car Info */}
-          <div className="bg-muted/50 p-4 rounded-lg">
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="font-semibold text-lg">
-                {car.make} {car.model}
-              </h3>
-              <Badge variant="secondary">
-                ${car.pricePerDay}/{t?.day || "day"}
-              </Badge>
-            </div>
-
-            <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
-              <div className="flex items-center gap-1">
-                <Users className="h-4 w-4" />
-                {car.seats} {t?.seats || "seats"}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-start gap-4">
+                <img
+                  src={car.images?.[0] || "/placeholder.svg?height=80&width=80"}
+                  alt={car.name}
+                  className="w-20 h-20 rounded-lg object-cover"
+                />
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg">{car.name}</h3>
+                  <p className="text-sm text-muted-foreground mb-2">{car.description}</p>
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <div className="flex items-center gap-1">
+                      <Users className="h-4 w-4" />
+                      <span className="text-sm">
+                        {car.seats} {t?.seats || "seats"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Car className="h-4 w-4" />
+                      <span className="text-sm">{car.transmission}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Fuel className="h-4 w-4" />
+                      <span className="text-sm">{car.fuelType}</span>
+                    </div>
+                    <Badge variant="secondary">
+                      ${car.pricePerDay}/{t?.day || "day"}
+                    </Badge>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-1">
-                <Settings className="h-4 w-4" />
-                {car.transmission}
-              </div>
-              <div className="flex items-center gap-1">
-                <MapPin className="h-4 w-4" />
-                {car.location}
-              </div>
-            </div>
-
-            {car.description && <p className="text-sm text-muted-foreground line-clamp-2">{car.description}</p>}
-          </div>
-
-          <Separator />
+            </CardContent>
+          </Card>
 
           {/* Success/Error Messages */}
-          {state?.message && (
-            <div
-              className={`p-4 rounded-lg ${
-                state.success
-                  ? "bg-green-50 text-green-800 border border-green-200"
-                  : "bg-red-50 text-red-800 border border-red-200"
-              }`}
-            >
-              <p className="font-medium">{state.message}</p>
+          {state?.success && (
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-green-800 font-medium">{state.message}</p>
+            </div>
+          )}
+
+          {state?.success === false && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-800">{state.message}</p>
             </div>
           )}
 
           {/* Booking Form */}
-          <form action={handleSubmit} className="space-y-4">
+          <form action={formAction} className="space-y-4">
+            {/* Hidden fields */}
+            <input type="hidden" name="carId" value={car.id} />
+            <input type="hidden" name="userId" value={user?.id || ""} />
+            <input type="hidden" name="totalPrice" value={totalPrice} />
+
             {/* Personal Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -137,7 +136,6 @@ export default function CarRentalModal({ isOpen, onClose, car, t, user }: CarRen
                 <Input
                   id="firstName"
                   name="firstName"
-                  type="text"
                   required
                   defaultValue={user?.firstName || ""}
                   disabled={isPending}
@@ -150,7 +148,6 @@ export default function CarRentalModal({ isOpen, onClose, car, t, user }: CarRen
                 <Input
                   id="lastName"
                   name="lastName"
-                  type="text"
                   required
                   defaultValue={user?.lastName || ""}
                   disabled={isPending}
@@ -186,7 +183,6 @@ export default function CarRentalModal({ isOpen, onClose, car, t, user }: CarRen
               <Input
                 id="driverLicense"
                 name="driverLicense"
-                type="text"
                 placeholder={t?.driverLicensePlaceholder || "Enter your driver license number"}
                 disabled={isPending}
               />
@@ -228,18 +224,17 @@ export default function CarRentalModal({ isOpen, onClose, car, t, user }: CarRen
 
             {/* Price Summary */}
             {totalPrice > 0 && (
-              <div className="bg-muted/50 p-4 rounded-lg">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">{t?.totalPrice || "Total Price"}:</span>
-                  <span className="text-xl font-bold">${totalPrice}</span>
-                </div>
-                {startDate && endDate && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24))}{" "}
-                    {t?.days || "days"} × ${car.pricePerDay}
-                  </p>
-                )}
-              </div>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      <span className="text-sm text-muted-foreground">{t?.totalPrice || "Total Price"}</span>
+                    </div>
+                    <div className="text-xl font-bold text-primary">${totalPrice.toFixed(2)}</div>
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
             {/* Submit Button */}
@@ -260,10 +255,7 @@ export default function CarRentalModal({ isOpen, onClose, car, t, user }: CarRen
                     {t?.processing || "Processing..."}
                   </>
                 ) : (
-                  <>
-                    <CarIcon className="mr-2 h-4 w-4" />
-                    {t?.confirmRental || "Confirm Rental"}
-                  </>
+                  t?.confirmRental || "Confirm Rental"
                 )}
               </Button>
             </div>
