@@ -1,113 +1,84 @@
 "use client"
 
 import { useState } from "react"
-import { useUser } from "@clerk/nextjs"
 import { useActionState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Separator } from "@/components/ui/separator"
-import { MapPin, Star, Loader2 } from "lucide-react"
+import { MapPin, Star, Users, Loader2 } from "lucide-react"
 import { createGuestHouseBooking } from "@/app/actions/booking-actions"
-import type { SelectedItem } from "@/lib/types"
+import type { GuestHouse } from "@/lib/types"
+import type { User } from "@clerk/nextjs/server"
 
 interface GuestHouseBookingModalProps {
+  isOpen: boolean
+  onClose: () => void
+  guestHouse: GuestHouse | null
   t: any
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  selectedItem: SelectedItem | null
-  firstName: string
-  setFirstName: (value: string) => void
-  lastName: string
-  setLastName: (value: string) => void
-  phone: string
-  setPhone: (value: string) => void
-  email: string
-  setEmail: (value: string) => void
-  specialRequests: string
-  setSpecialRequests: (value: string) => void
-  checkInDate: string
-  setCheckInDate: (value: string) => void
-  checkOutDate: string
-  setCheckOutDate: (value: string) => void
-  numGuests: number
-  setNumGuests: (value: number) => void
-  totalPrice: number
+  user: User | null | undefined
 }
 
-export default function GuestHouseBookingModal({
-  t,
-  open,
-  onOpenChange,
-  selectedItem,
-  firstName,
-  setFirstName,
-  lastName,
-  setLastName,
-  phone,
-  setPhone,
-  email,
-  setEmail,
-  specialRequests,
-  setSpecialRequests,
-  checkInDate,
-  setCheckInDate,
-  checkOutDate,
-  setCheckOutDate,
-  numGuests,
-  setNumGuests,
-  totalPrice,
-}: GuestHouseBookingModalProps) {
-  const { user } = useUser()
+export default function GuestHouseBookingModal({ isOpen, onClose, guestHouse, t, user }: GuestHouseBookingModalProps) {
   const [state, formAction, isPending] = useActionState(createGuestHouseBooking, null)
+  const [firstName, setFirstName] = useState(user?.firstName || "")
+  const [lastName, setLastName] = useState(user?.lastName || "")
+  const [email, setEmail] = useState(user?.emailAddresses?.[0]?.emailAddress || "")
+  const [phone, setPhone] = useState("")
+  const [checkInDate, setCheckInDate] = useState("")
+  const [checkOutDate, setCheckOutDate] = useState("")
+  const [numGuests, setNumGuests] = useState(1)
+  const [specialRequests, setSpecialRequests] = useState("")
   const [showSuccess, setShowSuccess] = useState(false)
+  const [successMessage, setSuccessMessage] = useState("")
 
-  // Pre-fill user data from Clerk
-  useState(() => {
-    if (user && open) {
-      if (!firstName && user.firstName) setFirstName(user.firstName)
-      if (!lastName && user.lastName) setLastName(user.lastName)
-      if (!email && user.primaryEmailAddress?.emailAddress) {
-        setEmail(user.primaryEmailAddress.emailAddress)
-      }
+  // Calculate total price
+  const totalPrice = (() => {
+    if (guestHouse && checkInDate && checkOutDate) {
+      const checkIn = new Date(checkInDate)
+      const checkOut = new Date(checkOutDate)
+      const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
+      return nights > 0 ? nights * guestHouse.price : 0
     }
-  })
+    return 0
+  })()
 
-  // Handle successful booking
-  useState(() => {
-    if (state?.success && !showSuccess) {
+  const handleSubmit = async (formData: FormData) => {
+    // Add additional data to form
+    formData.append("totalPrice", totalPrice.toString())
+    formData.append("guestHouseId", guestHouse?.id?.toString() || "")
+    formData.append("userId", user?.id || "")
+    formData.append("guests", numGuests.toString())
+
+    const result = await formAction(formData)
+
+    if (result?.success) {
+      setSuccessMessage(result.message)
       setShowSuccess(true)
-      // Auto-close modal after 3 seconds
+
+      // Reset form
+      setFirstName(user?.firstName || "")
+      setLastName(user?.lastName || "")
+      setEmail(user?.emailAddresses?.[0]?.emailAddress || "")
+      setPhone("")
+      setCheckInDate("")
+      setCheckOutDate("")
+      setNumGuests(1)
+      setSpecialRequests("")
+
+      // Close modal after 3 seconds
       setTimeout(() => {
         setShowSuccess(false)
-        onOpenChange(false)
-        // Reset form
-        setFirstName("")
-        setLastName("")
-        setPhone("")
-        setEmail("")
-        setSpecialRequests("")
-        setCheckInDate("")
-        setCheckOutDate("")
-        setNumGuests(1)
+        onClose()
       }, 3000)
     }
-  })
+  }
 
-  if (!selectedItem || selectedItem.type !== "guestHouse") return null
-
-  const guestHouse = selectedItem.data
-
-  // Calculate number of nights
-  const nights =
-    checkInDate && checkOutDate
-      ? Math.ceil((new Date(checkOutDate).getTime() - new Date(checkInDate).getTime()) / (1000 * 60 * 60 * 24))
-      : 0
+  if (!guestHouse) return null
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">
@@ -117,50 +88,48 @@ export default function GuestHouseBookingModal({
 
         {showSuccess ? (
           <div className="text-center py-8">
-            <div className="text-green-600 text-6xl mb-4">✓</div>
-            <h3 className="text-xl font-semibold text-green-600 mb-2">{t.bookingConfirmed || "Booking Confirmed!"}</h3>
-            <p className="text-muted-foreground">{state?.message || "Your booking has been confirmed."}</p>
+            <div className="text-green-600 text-lg font-semibold mb-2">✅ {successMessage}</div>
+            <p className="text-muted-foreground">This window will close automatically...</p>
           </div>
         ) : (
           <>
             {/* Guest House Info */}
-            <div className="bg-muted/50 rounded-lg p-4 mb-6">
+            <div className="bg-muted/50 p-4 rounded-lg mb-6">
               <div className="flex items-start gap-4">
                 <img
-                  src={guestHouse.image || "/placeholder.svg?height=80&width=80"}
-                  alt={guestHouse.title}
+                  src={guestHouse.images?.[0] || "/placeholder.svg?height=80&width=80"}
+                  alt={guestHouse.name}
                   className="w-20 h-20 rounded-lg object-cover"
                 />
                 <div className="flex-1">
-                  <h3 className="font-semibold text-lg">{guestHouse.title}</h3>
+                  <h3 className="font-semibold text-lg">{guestHouse.name}</h3>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                     <MapPin className="h-4 w-4" />
                     <span>{guestHouse.location}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    <span>{guestHouse.rating}</span>
+                  <div className="flex items-center gap-4 mt-2">
+                    <div className="flex items-center gap-1">
+                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      <span className="text-sm">{guestHouse.rating}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Users className="h-4 w-4" />
+                      <span className="text-sm">Up to {guestHouse.maxGuests} guests</span>
+                    </div>
                   </div>
-                  <div className="text-lg font-semibold text-primary mt-2">
-                    ${guestHouse.price}
-                    {t.perNight || "/night"}
+                  <div className="mt-2">
+                    <span className="text-2xl font-bold">${guestHouse.price}</span>
+                    <span className="text-muted-foreground">{t.perNight || "/night"}</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Booking Form */}
-            <form action={formAction} className="space-y-4">
-              {/* Hidden fields */}
-              <input type="hidden" name="guestHouseId" value={guestHouse.id} />
-              <input type="hidden" name="totalPrice" value={totalPrice} />
-
+            <form action={handleSubmit} className="space-y-6">
               {/* Personal Information */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="firstName">
-                    {t.firstName || "First Name"} <span className="text-red-500">*</span>
-                  </Label>
+                  <Label htmlFor="firstName">{t.firstName || "First Name"} *</Label>
                   <Input
                     id="firstName"
                     name="firstName"
@@ -171,9 +140,7 @@ export default function GuestHouseBookingModal({
                   />
                 </div>
                 <div>
-                  <Label htmlFor="lastName">
-                    {t.lastName || "Last Name"} <span className="text-red-500">*</span>
-                  </Label>
+                  <Label htmlFor="lastName">{t.lastName || "Last Name"} *</Label>
                   <Input
                     id="lastName"
                     name="lastName"
@@ -187,9 +154,7 @@ export default function GuestHouseBookingModal({
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="email">
-                    {t.email || "Email"} <span className="text-red-500">*</span>
-                  </Label>
+                  <Label htmlFor="email">{t.email || "Email"} *</Label>
                   <Input
                     id="email"
                     name="email"
@@ -201,9 +166,7 @@ export default function GuestHouseBookingModal({
                   />
                 </div>
                 <div>
-                  <Label htmlFor="phone">
-                    {t.phone || "Phone"} <span className="text-red-500">*</span>
-                  </Label>
+                  <Label htmlFor="phone">{t.phone || "Phone"} *</Label>
                   <Input
                     id="phone"
                     name="phone"
@@ -219,12 +182,10 @@ export default function GuestHouseBookingModal({
               {/* Booking Details */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="checkInDate">
-                    {t.checkIn || "Check-in"} <span className="text-red-500">*</span>
-                  </Label>
+                  <Label htmlFor="checkIn">{t.checkIn || "Check-in"} *</Label>
                   <Input
-                    id="checkInDate"
-                    name="checkInDate"
+                    id="checkIn"
+                    name="checkIn"
                     type="date"
                     value={checkInDate}
                     onChange={(e) => setCheckInDate(e.target.value)}
@@ -234,12 +195,10 @@ export default function GuestHouseBookingModal({
                   />
                 </div>
                 <div>
-                  <Label htmlFor="checkOutDate">
-                    {t.checkOut || "Check-out"} <span className="text-red-500">*</span>
-                  </Label>
+                  <Label htmlFor="checkOut">{t.checkOut || "Check-out"} *</Label>
                   <Input
-                    id="checkOutDate"
-                    name="checkOutDate"
+                    id="checkOut"
+                    name="checkOut"
                     type="date"
                     value={checkOutDate}
                     onChange={(e) => setCheckOutDate(e.target.value)}
@@ -251,17 +210,15 @@ export default function GuestHouseBookingModal({
               </div>
 
               <div>
-                <Label htmlFor="numGuests">
-                  {t.guests || "Number of Guests"} <span className="text-red-500">*</span>
-                </Label>
+                <Label htmlFor="guests">{t.guests || "Number of Guests"} *</Label>
                 <Input
-                  id="numGuests"
-                  name="numGuests"
+                  id="guests"
+                  name="guests"
                   type="number"
                   min="1"
-                  max="10"
+                  max={guestHouse.maxGuests}
                   value={numGuests}
-                  onChange={(e) => setNumGuests(Number.parseInt(e.target.value) || 1)}
+                  onChange={(e) => setNumGuests(Number.parseInt(e.target.value))}
                   required
                   disabled={isPending}
                 />
@@ -275,49 +232,38 @@ export default function GuestHouseBookingModal({
                   value={specialRequests}
                   onChange={(e) => setSpecialRequests(e.target.value)}
                   placeholder={t.anySpecialRequests || "Any special requests?"}
+                  rows={3}
                   disabled={isPending}
                 />
               </div>
 
-              {/* Error Message */}
-              {state?.error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                  <p className="text-red-600 text-sm">{state.error}</p>
+              {/* Price Summary */}
+              {totalPrice > 0 && (
+                <div className="bg-muted/50 p-4 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold">{t.total || "Total"}:</span>
+                    <span className="text-2xl font-bold">${totalPrice}</span>
+                  </div>
+                  {checkInDate && checkOutDate && (
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {Math.ceil(
+                        (new Date(checkOutDate).getTime() - new Date(checkInDate).getTime()) / (1000 * 60 * 60 * 24),
+                      )}{" "}
+                      nights × ${guestHouse.price}
+                    </div>
+                  )}
                 </div>
               )}
 
-              <Separator />
-
-              {/* Booking Summary */}
-              <div className="bg-muted/50 rounded-lg p-4">
-                <h4 className="font-semibold mb-3">{t.bookingSummary || "Booking Summary"}</h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>{t.pricePerNight || "Price per night"}:</span>
-                    <span>${guestHouse.price}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>{t.numberOfNights || "Number of nights"}:</span>
-                    <span>{nights > 0 ? nights : 0}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>{t.numberOfGuests || "Number of guests"}:</span>
-                    <span>{numGuests}</span>
-                  </div>
-                  <Separator />
-                  <div className="flex justify-between font-semibold text-lg">
-                    <span>{t.total || "Total"}:</span>
-                    <span>${totalPrice}</span>
-                  </div>
-                </div>
-              </div>
+              {/* Error Message */}
+              {state?.error && <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">{state.error}</div>}
 
               {/* Submit Button */}
               <Button type="submit" className="w-full" size="lg" disabled={isPending || totalPrice <= 0}>
                 {isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {t.processing || "Processing..."}
+                    Processing...
                   </>
                 ) : (
                   t.confirmBooking || "Confirm Booking"

@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import { detectBrowserLanguage, saveLanguagePreference } from "@/lib/language-utils"
 
 interface LanguageDetectorProps {
-  onLanguageDetected?: (language: string) => void
+  onLanguageDetected: (language: string) => void
   currentLanguage: string
 }
 
@@ -12,11 +12,6 @@ export default function LanguageDetector({ onLanguageDetected, currentLanguage }
   useEffect(() => {
     // Only run on client side
     if (typeof window === "undefined") return
-
-    // Check if onLanguageDetected is provided and is a function
-    if (!onLanguageDetected || typeof onLanguageDetected !== "function") {
-      return
-    }
 
     // Check if user already has a language preference
     const storedLanguage = localStorage.getItem("preferred-language")
