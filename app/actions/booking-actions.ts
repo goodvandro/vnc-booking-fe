@@ -1,194 +1,208 @@
 "use server"
 
-import { strapiAPI } from "@/lib/strapi-api"
 import { revalidatePath } from "next/cache"
-import { auth } from "@clerk/nextjs/server"
+import { strapiAPI } from "@/lib/strapi-api"
 
-export interface GuestHouseBookingData {
-  firstName: string
-  lastName: string
-  email: string
-  phone: string
-  checkInDate: string
-  checkOutDate: string
-  numGuests: number
-  specialRequests?: string
-  guestHouseId: number
-  totalPrice: number
-}
-
-export interface CarRentalBookingData {
-  firstName: string
-  lastName: string
-  email: string
-  phone: string
-  driverLicense?: string
-  pickupDate: string
-  returnDate: string
-  pickupLocation: string
-  specialRequests?: string
-  carId: number
-  totalPrice: number
-}
-
-// Generate a unique booking ID
+// Generate unique booking ID
 function generateBookingId(type: "GH" | "CR"): string {
-  const timestamp = Date.now().toString(36)
-  const random = Math.random().toString(36).substring(2, 8)
-  return `${type}-${timestamp}-${random}`.toUpperCase()
+  const timestamp = Date.now()
+  const random = Math.random().toString(36).substring(2, 8).toUpperCase()
+  return `${type}-${timestamp}-${random}`
 }
 
-export async function createGuestHouseBooking(data: GuestHouseBookingData) {
+// Guest House Booking Action
+export async function createGuestHouseBooking(prevState: any, formData: FormData) {
   try {
-    // Get current user from Clerk
-    const { userId } = auth()
+    // Extract form data
+    const firstName = formData.get("firstName") as string
+    const lastName = formData.get("lastName") as string
+    const email = formData.get("email") as string
+    const phone = formData.get("phone") as string
+    const guests = Number.parseInt(formData.get("guests") as string)
+    const specialRequests = formData.get("specialRequests") as string
+    const checkInDate = formData.get("checkInDate") as string
+    const checkOutDate = formData.get("checkOutDate") as string
+    const totalPrice = Number.parseFloat(formData.get("totalPrice") as string)
+    const guestHouseId = formData.get("guestHouseId") as string
+    const userId = formData.get("userId") as string
 
-    // Validate required fields
-    if (!data.firstName || !data.lastName || !data.email || !data.checkInDate || !data.checkOutDate) {
+    // Validation
+    if (
+      !firstName ||
+      !lastName ||
+      !email ||
+      !phone ||
+      !guests ||
+      !checkInDate ||
+      !checkOutDate ||
+      !totalPrice ||
+      !guestHouseId
+    ) {
       return {
         success: false,
-        error: "Please fill in all required fields",
+        message: "All required fields must be filled out.",
       }
     }
 
-    // Validate dates
-    const checkIn = new Date(data.checkInDate)
-    const checkOut = new Date(data.checkOutDate)
+    // Date validation
+    const checkIn = new Date(checkInDate)
+    const checkOut = new Date(checkOutDate)
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
     if (checkIn < today) {
       return {
         success: false,
-        error: "Check-in date cannot be in the past",
+        message: "Check-in date cannot be in the past.",
       }
     }
 
     if (checkOut <= checkIn) {
       return {
         success: false,
-        error: "Check-out date must be after check-in date",
+        message: "Check-out date must be after check-in date.",
       }
     }
 
-    // Validate number of guests
-    if (data.numGuests < 1) {
+    if (guests < 1 || guests > 20) {
       return {
         success: false,
-        error: "Number of guests must be at least 1",
+        message: "Number of guests must be between 1 and 20.",
       }
     }
 
-    // Generate unique booking ID
+    // Generate booking ID
     const bookingId = generateBookingId("GH")
 
-    // Prepare data for Strapi - matching the exact collection structure
+    // Prepare booking data for Strapi
     const bookingData = {
       bookingId,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      email: data.email,
-      phone: data.phone || "",
-      guests: data.numGuests,
-      specialRequests: data.specialRequests || "",
-      checkIn: data.checkInDate,
-      checkOut: data.checkOutDate,
-      totalPrice: data.totalPrice,
+      firstName,
+      lastName,
+      email,
+      phone,
+      guests,
+      specialRequests: specialRequests || "",
+      checkIn: checkInDate,
+      checkOut: checkOutDate,
+      totalPrice,
       bookingStatus: "pending",
-      guest_house: data.guestHouseId,
-      // Add user relation if user is authenticated
-      ...(userId && { user: userId }),
+      user: userId ? Number.parseInt(userId) : null,
+      guest_house: Number.parseInt(guestHouseId),
     }
 
+    // Create booking in Strapi
     const result = await strapiAPI.createGuestHouseBooking(bookingData)
 
-    // Revalidate the bookings page to show the new booking
-    revalidatePath("/admin/bookings")
+    if (result.success) {
+      // Revalidate admin pages to show new booking
+      revalidatePath("/admin/bookings")
 
-    return {
-      success: true,
-      data: result.data,
-      bookingId,
-      message: "Guest house booking created successfully!",
+      return {
+        success: true,
+        message: `Guest house booking created successfully! Your booking ID is: ${bookingId}`,
+        bookingId,
+      }
+    } else {
+      return {
+        success: false,
+        message: result.error || "Failed to create booking. Please try again.",
+      }
     }
   } catch (error) {
     console.error("Error creating guest house booking:", error)
     return {
       success: false,
-      error: "Failed to create booking. Please try again.",
+      message: "An unexpected error occurred. Please try again.",
     }
   }
 }
 
-export async function createCarRentalBooking(data: CarRentalBookingData) {
+// Car Rental Booking Action
+export async function createCarRentalBooking(prevState: any, formData: FormData) {
   try {
-    // Get current user from Clerk
-    const { userId } = auth()
+    // Extract form data
+    const firstName = formData.get("firstName") as string
+    const lastName = formData.get("lastName") as string
+    const email = formData.get("email") as string
+    const phone = formData.get("phone") as string
+    const driverLicense = formData.get("driverLicense") as string
+    const startDate = formData.get("startDate") as string
+    const endDate = formData.get("endDate") as string
+    const totalPrice = Number.parseFloat(formData.get("totalPrice") as string)
+    const carId = formData.get("carId") as string
+    const userId = formData.get("userId") as string
 
-    // Validate required fields
-    if (!data.firstName || !data.lastName || !data.email || !data.pickupDate || !data.returnDate) {
+    // Validation
+    if (!firstName || !lastName || !email || !phone || !startDate || !endDate || !totalPrice || !carId) {
       return {
         success: false,
-        error: "Please fill in all required fields",
+        message: "All required fields must be filled out.",
       }
     }
 
-    // Validate dates
-    const pickup = new Date(data.pickupDate)
-    const returnDate = new Date(data.returnDate)
+    // Date validation
+    const pickup = new Date(startDate)
+    const returnDate = new Date(endDate)
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
     if (pickup < today) {
       return {
         success: false,
-        error: "Pickup date cannot be in the past",
+        message: "Pickup date cannot be in the past.",
       }
     }
 
     if (returnDate <= pickup) {
       return {
         success: false,
-        error: "Return date must be after pickup date",
+        message: "Return date must be after pickup date.",
       }
     }
 
-    // Generate unique booking ID
+    // Generate booking ID
     const bookingId = generateBookingId("CR")
 
-    // Prepare data for Strapi - matching the exact collection structure
+    // Prepare booking data for Strapi
     const bookingData = {
       bookingId,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      email: data.email,
-      phone: data.phone || "",
-      driverLicense: data.driverLicense || "",
-      startDate: data.pickupDate,
-      endDate: data.returnDate,
-      totalPrice: data.totalPrice,
+      firstName,
+      lastName,
+      email,
+      phone,
+      driverLicense: driverLicense || "",
+      startDate,
+      endDate,
+      totalPrice,
       bookingStatus: "pending",
-      car: data.carId,
-      // Add user relation if user is authenticated
-      ...(userId && { user: userId }),
+      user: userId ? Number.parseInt(userId) : null,
+      car: Number.parseInt(carId),
     }
 
+    // Create booking in Strapi
     const result = await strapiAPI.createCarRentalBooking(bookingData)
 
-    // Revalidate the bookings page to show the new booking
-    revalidatePath("/admin/bookings")
+    if (result.success) {
+      // Revalidate admin pages to show new booking
+      revalidatePath("/admin/bookings")
 
-    return {
-      success: true,
-      data: result.data,
-      bookingId,
-      message: "Car rental booking created successfully!",
+      return {
+        success: true,
+        message: `Car rental booking created successfully! Your booking ID is: ${bookingId}`,
+        bookingId,
+      }
+    } else {
+      return {
+        success: false,
+        message: result.error || "Failed to create booking. Please try again.",
+      }
     }
   } catch (error) {
     console.error("Error creating car rental booking:", error)
     return {
       success: false,
-      error: "Failed to create booking. Please try again.",
+      message: "An unexpected error occurred. Please try again.",
     }
   }
 }
