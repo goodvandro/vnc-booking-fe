@@ -13,9 +13,8 @@ export default function LanguageDetector({ onLanguageDetected, currentLanguage }
     // Only run on client side
     if (typeof window === "undefined") return
 
-    // Check if onLanguageDetected is provided
+    // Check if onLanguageDetected is provided and is a function
     if (!onLanguageDetected || typeof onLanguageDetected !== "function") {
-      console.warn("LanguageDetector: onLanguageDetected prop is not a function")
       return
     }
 
