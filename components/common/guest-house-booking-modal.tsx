@@ -62,7 +62,11 @@ export default function GuestHouseBookingModal({
 }: GuestHouseBookingModalProps) {
   const { user, isLoaded } = useUser()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submitMessage, setSubmitMessage] = useState<{ type: "success" | "error"; message: string } | null>(null)
+  const [submitMessage, setSubmitMessage] = useState<{
+    type: "success" | "error"
+    message: string
+    bookingId?: string
+  } | null>(null)
 
   // Auto-fill user information when modal opens and user is signed in
   useEffect(() => {
@@ -113,7 +117,11 @@ export default function GuestHouseBookingModal({
       const result = await createGuestHouseBooking(bookingData)
 
       if (result.success) {
-        setSubmitMessage({ type: "success", message: result.message || "Booking created successfully!" })
+        setSubmitMessage({
+          type: "success",
+          message: result.message || "Booking created successfully!",
+          bookingId: result.bookingId,
+        })
         // Reset form after successful submission
         setTimeout(() => {
           onOpenChange(false)
@@ -126,7 +134,7 @@ export default function GuestHouseBookingModal({
           setCheckInDate("")
           setCheckOutDate("")
           setNumGuests(1)
-        }, 2000)
+        }, 3000)
       } else {
         setSubmitMessage({ type: "error", message: result.error || "Failed to create booking" })
       }
@@ -149,7 +157,8 @@ export default function GuestHouseBookingModal({
             <div className="p-4 sm:p-6 bg-muted/40 flex flex-col justify-between">
               <DialogHeader className="mb-4">
                 <DialogTitle className="text-xl sm:text-2xl font-bold text-gray-700">
-                  {t.bookGuestHouseTitle.replace("{title}", selectedItem.data.title)}
+                  {t.bookGuestHouseTitle?.replace("{title}", selectedItem.data.title) ||
+                    `Book ${selectedItem.data.title}`}
                 </DialogTitle>
                 <DialogDescription asChild>
                   <div>
@@ -177,7 +186,9 @@ export default function GuestHouseBookingModal({
                     </div>
                     <div className="text-xl sm:text-2xl font-bold mt-2">
                       €{selectedItem.data.price}
-                      <span className="text-sm sm:text-base font-normal text-muted-foreground">{t.perNight}</span>
+                      <span className="text-sm sm:text-base font-normal text-muted-foreground">
+                        {t.perNight || "/night"}
+                      </span>
                     </div>
                   </div>
                 </DialogDescription>
@@ -187,7 +198,7 @@ export default function GuestHouseBookingModal({
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
                   <Label htmlFor="first-name" className="sm:text-right text-sm">
-                    {t.firstName} *
+                    {t.firstName || "First Name"} *
                   </Label>
                   <Input
                     id="first-name"
@@ -201,7 +212,7 @@ export default function GuestHouseBookingModal({
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
                   <Label htmlFor="last-name" className="sm:text-right text-sm">
-                    {t.lastName} *
+                    {t.lastName || "Last Name"} *
                   </Label>
                   <Input
                     id="last-name"
@@ -214,21 +225,8 @@ export default function GuestHouseBookingModal({
                   />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
-                  <Label htmlFor="phone" className="sm:text-right text-sm">
-                    {t.phone}
-                  </Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="sm:col-span-3 text-sm"
-                    disabled={isSubmitting}
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
                   <Label htmlFor="email" className="sm:text-right text-sm">
-                    {t.email} *
+                    {t.email || "Email"} *
                   </Label>
                   <Input
                     id="email"
@@ -241,8 +239,22 @@ export default function GuestHouseBookingModal({
                   />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+                  <Label htmlFor="phone" className="sm:text-right text-sm">
+                    {t.phone || "Phone"} *
+                  </Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="sm:col-span-3 text-sm"
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
                   <Label htmlFor="check-in" className="sm:text-right text-sm">
-                    {t.checkIn} *
+                    {t.checkIn || "Check In"} *
                   </Label>
                   <Input
                     id="check-in"
@@ -256,7 +268,7 @@ export default function GuestHouseBookingModal({
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
                   <Label htmlFor="check-out" className="sm:text-right text-sm">
-                    {t.checkOut} *
+                    {t.checkOut || "Check Out"} *
                   </Label>
                   <Input
                     id="check-out"
@@ -270,7 +282,7 @@ export default function GuestHouseBookingModal({
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
                   <Label htmlFor="guests" className="sm:text-right text-sm">
-                    {t.guests}
+                    {t.guests || "Guests"} *
                   </Label>
                   <Input
                     id="guests"
@@ -279,30 +291,31 @@ export default function GuestHouseBookingModal({
                     onChange={(e) => setNumGuests(Number.parseInt(e.target.value))}
                     min={1}
                     className="sm:col-span-3 text-sm"
+                    required
                     disabled={isSubmitting}
                   />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-4 items-start gap-2 sm:gap-4">
                   <Label htmlFor="special-requests" className="sm:text-right text-sm">
-                    {t.requests}
+                    {t.requests || "Special Requests"}
                   </Label>
                   <textarea
                     id="special-requests"
                     rows={3}
                     value={specialRequests}
                     onChange={(e) => setSpecialRequests(e.target.value)}
-                    placeholder={t.anySpecialRequests}
+                    placeholder={t.anySpecialRequests || "Any special requests..."}
                     className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-3"
                     disabled={isSubmitting}
                   ></textarea>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4 font-bold text-base sm:text-lg">
-                  <div className="sm:col-span-1 sm:text-right">{t.total}:</div>
+                  <div className="sm:col-span-1 sm:text-right">{t.total || "Total"}:</div>
                   <div className="sm:col-span-3 sm:text-left">€{totalPrice.toFixed(2)}</div>
                 </div>
 
                 {submitMessage && (
-                  <div className={`grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4`}>
+                  <div className={`grid grid-cols-1 sm:grid-cols-4 items-start gap-2 sm:gap-4`}>
                     <div className="sm:col-span-1"></div>
                     <div
                       className={`sm:col-span-3 text-sm p-3 rounded-md ${
@@ -311,7 +324,10 @@ export default function GuestHouseBookingModal({
                           : "bg-red-50 text-red-700 border border-red-200"
                       }`}
                     >
-                      {submitMessage.message}
+                      <div>{submitMessage.message}</div>
+                      {submitMessage.bookingId && (
+                        <div className="mt-1 font-mono text-xs">Booking ID: {submitMessage.bookingId}</div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -323,7 +339,7 @@ export default function GuestHouseBookingModal({
                     {t.processing || "Processing..."}
                   </>
                 ) : (
-                  t.confirmBooking
+                  t.confirmBooking || "Confirm Booking"
                 )}
               </Button>
             </div>
