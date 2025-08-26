@@ -1,239 +1,246 @@
-"use client";
+"use client"
 
-import type React from "react";
-import { useEffect, useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import MediaInput, {
-  type UploadedMedia,
-} from "@/components/common/media-input";
-import type { GuestHouse } from "@/lib/types";
-import { useRouter } from "next/navigation";
-import { getGuestHouseByIdData, getGuestHousesData } from "@/lib/strapi-data";
-import { createGuestHouse, getGuestHouse, updateGuestHouse } from "../actions";
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Switch } from "@/components/ui/switch"
+import { ArrowLeft, Loader2 } from "lucide-react"
+import Link from "next/link"
+import MediaInput from "@/components/common/media-input"
+import type { GuestHouse } from "@/lib/types"
+import { createGuestHouse, updateGuestHouse } from "../actions"
 
 interface GuestHouseFormProps {
-  initialData?: GuestHouse;
+  guestHouse?: GuestHouse
 }
 
-export default function GuestHouseForm({ initialData }: GuestHouseFormProps) {
-  const isEditing = !!initialData;
-  const router = useRouter();
-  const [guestHouse, setGuestHouse] = useState<GuestHouse | null>(null);
-  const [media, setMedia] = useState<UploadedMedia[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+export default function GuestHouseForm({ guestHouse }: GuestHouseFormProps) {
+  const router = useRouter()
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [images, setImages] = useState<string[]>(guestHouse?.images || [])
+  const [amenities, setAmenities] = useState<string[]>(guestHouse?.amenities || [])
 
-  useEffect(() => {
-    if (!isEditing || !initialData) return;
-    setGuestHouse(initialData);
-    const nextMedia: UploadedMedia[] = Array.isArray(initialData.images)
-      ? initialData.images.map((image) => {
-          return {
-            id: image.id,
-            url: image.url,
-            name: image.name,
-            width: image.width,
-            height: image.height,
-            mime: image.mime,
-          };
-        })
-      : [];
-    setMedia(nextMedia);
-  }, [isEditing, initialData]);
-
-  // Hydrate existing media and description for editing
-  useEffect(() => {
-    const documentId = (initialData as any)?.documentId;
-    if (!isEditing || !documentId) return;
-
-    let cancelled = false;
-    (async () => {
-      try {
-        const guestHouse = await getGuestHouse(documentId);
-
-        if (!guestHouse) return;
-        if (cancelled) return;
-
-        const fromServer = Array.isArray(guestHouse.images)
-          ? guestHouse.images.map((img: any) => {
-              // Check if img is already a string URL or an object
-              if (typeof img === "string") {
-                return { url: img };
-              }
-              // Handle case where img is a full media object
-              return {
-                id: img.id,
-                url: img.url,
-                name: img.name,
-                width: img.width,
-                height: img.height,
-                mime: img.mime,
-              };
-            })
-          : [];
-
-        if (fromServer.length > 0) {
-          setMedia(fromServer);
-        }
-      } catch {
-        // ignore; keep any existing media
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [isEditing, initialData]);
-
-  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage(null);
-    const form = e.currentTarget;
-    const payload = {
-      guestHouseId: (initialData as GuestHouse)?.guestHouseId,
-      title: (form.elements.namedItem("title") as HTMLInputElement)?.value,
-      location: (form.elements.namedItem("location") as HTMLInputElement)
-        ?.value,
-      rating: Number(
-        (form.elements.namedItem("rating") as HTMLInputElement)?.value
-      ),
-      price: Number(
-        (form.elements.namedItem("price") as HTMLInputElement)?.value
-      ),
-      description:
-        (form.elements.namedItem("description") as HTMLTextAreaElement)
-          ?.value || "",
-      images: media
-        .filter((m) => typeof m.id === "number")
-        .map((m) => m.id) as number[],
-    };
-
-    console.log("payload", payload);
+  const handleSubmit = async (formData: FormData) => {
+    setIsLoading(true)
+    setError("")
 
     try {
-      const documentId = (initialData as any)?.documentId;
+      // Add images and amenities to form data
+      formData.append("images", JSON.stringify(images))
+      formData.append("amenities", JSON.stringify(amenities))
 
-      (await documentId)
-        ? updateGuestHouse(documentId, payload)
-        : createGuestHouse(payload);
+      const result = guestHouse
+        ? await updateGuestHouse(guestHouse.id.toString(), formData)
+        : await createGuestHouse(formData)
 
-      setMessage("Saved successfully.");
-      setTimeout(() => {
-        router.push("/admin/guest-houses");
-      }, 600);
-    } catch (err: any) {
-      setMessage(err?.message || "Save failed");
+      if (result.success) {
+        router.push("/admin/guest-houses")
+      } else {
+        setError(result.error || "An error occurred")
+      }
+    } catch (err) {
+      setError("An unexpected error occurred")
     } finally {
-      setLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
+
+  const handleAmenityChange = (amenity: string, checked: boolean) => {
+    if (checked) {
+      setAmenities([...amenities, amenity])
+    } else {
+      setAmenities(amenities.filter((a) => a !== amenity))
+    }
+  }
+
+  const commonAmenities = [
+    "WiFi",
+    "Kitchen",
+    "Parking",
+    "Pool",
+    "Air Conditioning",
+    "Heating",
+    "TV",
+    "Washing Machine",
+    "Balcony",
+    "Garden",
+  ]
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle>
-          {isEditing ? "Edit Guest House" : "Add New Guest House"}
-        </CardTitle>
-        <CardDescription>
-          {isEditing
-            ? "Edit your guest house listing."
-            : "Add a new guest house listing."}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={onSubmit} className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="title">Title</Label>
-            <Input
-              id="title"
-              name="title"
-              defaultValue={guestHouse?.title}
-              required
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="location">Location</Label>
-            <Input
-              id="location"
-              name="location"
-              defaultValue={guestHouse?.location}
-              required
-            />
-          </div>
+    <div className="max-w-2xl">
+      <div className="mb-6">
+        <Link href="/admin/guest-houses">
+          <Button variant="outline" size="sm">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Guest Houses
+          </Button>
+        </Link>
+      </div>
 
-          <MediaInput
-            label="Guest House Images"
-            description="Upload images. These are saved in Strapi and linked by media IDs."
-            initialMedia={media}
-            onChange={setMedia}
-            maxFiles={16}
-          />
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="price">Price per Night</Label>
-              <Input
-                id="price"
-                name="price"
-                type="number"
-                step="0.01"
-                defaultValue={guestHouse?.price}
-                required
-              />
+      <Card>
+        <CardHeader>
+          <CardTitle>{guestHouse ? "Edit Guest House" : "Add New Guest House"}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form action={handleSubmit} className="space-y-6">
+            <div>
+              <Label htmlFor="name">Name *</Label>
+              <Input id="name" name="name" defaultValue={guestHouse?.name} required disabled={isLoading} />
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="rating">Rating (0-5)</Label>
+
+            <div>
+              <Label htmlFor="location">Location *</Label>
+              <Input id="location" name="location" defaultValue={guestHouse?.location} required disabled={isLoading} />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="pricePerNight">Price per Night ($) *</Label>
+                <Input
+                  id="pricePerNight"
+                  name="pricePerNight"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  defaultValue={guestHouse?.pricePerNight}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+              <div>
+                <Label htmlFor="maxGuests">Max Guests *</Label>
+                <Input
+                  id="maxGuests"
+                  name="maxGuests"
+                  type="number"
+                  min="1"
+                  max="20"
+                  defaultValue={guestHouse?.maxGuests}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="bedrooms">Bedrooms *</Label>
+                <Input
+                  id="bedrooms"
+                  name="bedrooms"
+                  type="number"
+                  min="1"
+                  max="10"
+                  defaultValue={guestHouse?.bedrooms}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+              <div>
+                <Label htmlFor="bathrooms">Bathrooms *</Label>
+                <Input
+                  id="bathrooms"
+                  name="bathrooms"
+                  type="number"
+                  min="1"
+                  max="10"
+                  defaultValue={guestHouse?.bathrooms}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="rating">Rating (1-5)</Label>
               <Input
                 id="rating"
                 name="rating"
                 type="number"
-                step="0.1"
-                min="0"
+                min="1"
                 max="5"
+                step="0.1"
                 defaultValue={guestHouse?.rating}
-                required
+                disabled={isLoading}
               />
             </div>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              name="description"
-              placeholder={"Write the guest house details..."}
-              defaultValue={guestHouse?.description as any}
-            />
-          </div>
-          <Button type="submit" disabled={loading}>
-            {loading
-              ? "Saving..."
-              : isEditing
-              ? "Update Guest House"
-              : "Create Guest House"}
-          </Button>
-          {message && (
-            <p
-              className={`text-sm ${
-                /successfully/i.test(message)
-                  ? "text-green-600"
-                  : "text-red-500"
-              }`}
-            >
-              {message}
-            </p>
-          )}
-        </form>
-      </CardContent>
-    </Card>
-  );
+
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                name="description"
+                defaultValue={guestHouse?.description}
+                rows={4}
+                disabled={isLoading}
+              />
+            </div>
+
+            <div>
+              <Label>Amenities</Label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-2">
+                {commonAmenities.map((amenity) => (
+                  <div key={amenity} className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id={amenity}
+                      checked={amenities.includes(amenity)}
+                      onChange={(e) => handleAmenityChange(amenity, e.target.checked)}
+                      className="rounded"
+                      disabled={isLoading}
+                    />
+                    <Label htmlFor={amenity} className="text-sm">
+                      {amenity}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <Label>Images</Label>
+              <MediaInput images={images} onImagesChange={setImages} maxImages={10} />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="available"
+                name="available"
+                defaultChecked={guestHouse?.available !== false}
+                disabled={isLoading}
+              />
+              <Label htmlFor="available">Available for booking</Label>
+            </div>
+
+            {error && <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">{error}</div>}
+
+            <div className="flex gap-4">
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    {guestHouse ? "Updating..." : "Creating..."}
+                  </>
+                ) : guestHouse ? (
+                  "Update Guest House"
+                ) : (
+                  "Create Guest House"
+                )}
+              </Button>
+              <Link href="/admin/guest-houses">
+                <Button type="button" variant="outline" disabled={isLoading}>
+                  Cancel
+                </Button>
+              </Link>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  )
 }

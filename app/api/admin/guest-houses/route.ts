@@ -1,65 +1,41 @@
-import { NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
+import { auth } from "@clerk/nextjs/server"
+import { strapiAPI } from "@/lib/strapi-api"
 
-const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL
-const STRAPI_ADMIN_TOKEN = process.env.STRAPI_ADMIN_TOKEN
+export async function GET() {
+  try {
+    const { userId } = auth()
 
-function getStrapiUrl() {
-  const base = STRAPI_URL || "http://localhost:1337"
-  return base.replace(/\/$/, "")
-}
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
 
-function authHeaders() {
-  if (!STRAPI_ADMIN_TOKEN) throw new Error("Missing STRAPI_ADMIN_TOKEN")
-  return {
-    Authorization: `Bearer ${STRAPI_ADMIN_TOKEN}`,
-    "Content-Type": "application/json",
+    const guestHouses = await strapiAPI.getGuestHouses()
+    return NextResponse.json(guestHouses)
+  } catch (error) {
+    console.error("Error fetching guest houses:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
-function toRichTextBlocksFromString(input: unknown): any[] {
-  if (Array.isArray(input)) return input
-  const str = typeof input === "string" ? input : ""
-  const paragraphs = str.split(/\r?\n/)
-  return paragraphs.map((line) => ({
-    type: "paragraph",
-    children: [{ type: "text", text: line }],
-  }))
-}
-
-function normalizeNumbers(n: any): number | undefined {
-  const v = typeof n === "string" ? n.trim() : n
-  const num = Number(v)
-  return Number.isFinite(num) ? num : undefined
-}
-
-export async function POST(req: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const payload = await req.json()
-    const data: any = {
-      ghId: payload.ghId || `gh-${Date.now()}`,
-      title: payload.title ?? "",
-      location: payload.location ?? "",
-      rating: normalizeNumbers(payload.rating),
-      price: normalizeNumbers(payload.price),
-      description: toRichTextBlocksFromString(payload.description),
-      images: Array.isArray(payload.images) ? payload.images : [],
+    const { userId } = auth()
+
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const res = await fetch(`${getStrapiUrl()}/api/guest-houses`, {
-      method: "POST",
-      headers: authHeaders(),
-      body: JSON.stringify({ data }),
-    })
-    const json = await res.json()
-    if (!res.ok) {
-      return NextResponse.json(
-        { error: `Strapi request failed: ${res.status} ${res.statusText} ${JSON.stringify(json)}` },
-        { status: res.status },
-      )
-    }
+    const data = await request.json()
+    const result = await strapiAPI.createGuestHouse(data)
 
-    return NextResponse.json({ ok: true, data: json.data })
-  } catch (err: any) {
-    return NextResponse.json({ error: err?.message || "Failed to create guest house" }, { status: 500 })
+    if (result.success) {
+      return NextResponse.json(result.data, { status: 201 })
+    } else {
+      return NextResponse.json({ error: result.error }, { status: 400 })
+    }
+  } catch (error) {
+    console.error("Error creating guest house:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

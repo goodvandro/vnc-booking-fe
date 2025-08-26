@@ -1,189 +1,105 @@
 "use client"
 
-import type React from "react"
-
-import Link from "next/link"
-import { Home, Globe, Menu, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet"
-import { languageNames } from "@/lib/translations"
-import AuthButtons from "@/components/auth/auth-buttons"
 import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Menu, Home, Car, Info, Mail, User } from "lucide-react"
+import Link from "next/link"
+import AuthButtons from "@/components/auth/auth-buttons"
+import type { User as ClerkUser } from "@clerk/nextjs/server"
 
 interface HeaderProps {
-  t: any // Translation object
-  currentLanguage: string
-  setCurrentLanguage: (lang: string) => void
-  isLanguageLoading?: boolean
+  t: any
+  user: ClerkUser | null | undefined
 }
 
-export default function Header({ t, currentLanguage, setCurrentLanguage, isLanguageLoading = false }: HeaderProps) {
+export default function Header({ t, user }: HeaderProps) {
   const [isOpen, setIsOpen] = useState(false)
 
-  const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
-    e.preventDefault()
-    const targetElement = document.getElementById(targetId.replace("#", ""))
-    if (targetElement) {
-      const headerOffset = 80 // Account for fixed header height
-      const elementPosition = targetElement.getBoundingClientRect().top
-      const offsetPosition = elementPosition + window.pageYOffset - headerOffset
-
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: "smooth",
-      })
-    }
-    // Close mobile menu if open
-    setIsOpen(false)
-  }
-
-  const NavLinks = ({ mobile = false, onLinkClick = () => {} }) => (
-    <>
-      <Link
-        href="#guest-houses"
-        className={`${mobile ? "block py-2 px-4 text-base" : ""} text-sm font-medium hover:underline underline-offset-4`}
-        onClick={(e) => {
-          handleSmoothScroll(e, "#guest-houses")
-          onLinkClick()
-        }}
-      >
-        {t.guestHouses}
-      </Link>
-      <Link
-        href="#car-rental"
-        className={`${mobile ? "block py-2 px-4 text-base" : ""} text-sm font-medium hover:underline underline-offset-4`}
-        onClick={(e) => {
-          handleSmoothScroll(e, "#car-rental")
-          onLinkClick()
-        }}
-      >
-        {t.carRental}
-      </Link>
-      <Link
-        href="#marketing-section"
-        className={`${mobile ? "block py-2 px-4 text-base" : ""} text-sm font-medium hover:underline underline-offset-4`}
-        onClick={(e) => {
-          handleSmoothScroll(e, "#marketing-section")
-          onLinkClick()
-        }}
-      >
-        {t.whyChooseUs}
-      </Link>
-      <Link
-        href="#about-us"
-        className={`${mobile ? "block py-2 px-4 text-base" : ""} text-sm font-medium hover:underline underline-offset-4`}
-        onClick={(e) => {
-          handleSmoothScroll(e, "#about-us")
-          onLinkClick()
-        }}
-      >
-        {t.aboutUs}
-      </Link>
-      <Link
-        href="#contact-form"
-        className={`${mobile ? "block py-2 px-4 text-base" : ""} text-sm font-medium hover:underline underline-offset-4`}
-        onClick={(e) => {
-          handleSmoothScroll(e, "#contact-form")
-          onLinkClick()
-        }}
-      >
-        {t.contact}
-      </Link>
-    </>
-  )
+  const navItems = [
+    { href: "#guest-houses", label: t.guestHouses || "Guest Houses", icon: Home },
+    { href: "#car-rental", label: t.carRental || "Car Rental", icon: Car },
+    { href: "#about", label: t.aboutUs || "About Us", icon: Info },
+    { href: "#contact", label: t.contact || "Contact", icon: Mail },
+  ]
 
   return (
-    <header className="sticky top-0 z-50 px-4 lg:px-6 h-16 flex items-center justify-between border-b bg-background shadow-sm">
-      {/* Logo */}
-      <Link href="#" className="flex items-center gap-2 text-lg font-semibold">
-        <Home className="h-6 w-6" />
-        <span className="sr-only">{t.siteTitle}</span>
-        <span className="hidden sm:inline">{t.siteTitle}</span>
-      </Link>
-
-      {/* Desktop Navigation */}
-      <nav className="hidden lg:flex gap-6">
-        <NavLinks />
-      </nav>
-
-      {/* Right side controls */}
-      <div className="flex items-center gap-2 sm:gap-4">
-        {/* Language Selector */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex items-center gap-1 text-xs sm:text-sm"
-              disabled={isLanguageLoading}
-            >
-              <Globe className="h-4 w-4" />
-              <span className="hidden sm:inline">{isLanguageLoading ? "..." : languageNames[currentLanguage]}</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              onClick={() => setCurrentLanguage("en")}
-              className={currentLanguage === "en" ? "bg-accent" : ""}
-            >
-              {languageNames["en"]} {currentLanguage === "en" && "✓"}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => setCurrentLanguage("fr")}
-              className={currentLanguage === "fr" ? "bg-accent" : ""}
-            >
-              {languageNames["fr"]} {currentLanguage === "fr" && "✓"}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => setCurrentLanguage("pt")}
-              className={currentLanguage === "pt" ? "bg-accent" : ""}
-            >
-              {languageNames["pt"]} {currentLanguage === "pt" && "✓"}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {/* Auth Buttons - Hidden on mobile */}
-        <div className="hidden sm:flex">
-          <AuthButtons t={t} />
-        </div>
-
-        {/* Mobile Menu */}
-        <Sheet open={isOpen} onOpenChange={setIsOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="sm" className="lg:hidden">
-              <Menu className="h-5 w-5" />
-              <span className="sr-only">Open menu</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="w-[300px] sm:w-[400px]">
-            <div className="flex flex-col h-full">
-              {/* Header */}
-              <div className="flex items-center justify-between pb-4 border-b">
-                <div className="flex items-center gap-2">
-                  <Home className="h-5 w-5" />
-                  <span className="font-semibold">{t.siteTitle}</span>
-                </div>
-                <SheetClose asChild>
-                  <Button variant="ghost" size="sm">
-                    <X className="h-4 w-4" />
-                  </Button>
-                </SheetClose>
-              </div>
-
-              {/* Navigation Links */}
-              <nav className="flex flex-col py-4 space-y-1">
-                <NavLinks mobile onLinkClick={() => setIsOpen(false)} />
-              </nav>
-
-              {/* Auth Buttons */}
-              <div className="mt-auto pt-4 border-t">
-                <AuthButtons t={t} mobile />
-              </div>
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container mx-auto px-4">
+        <div className="flex h-16 items-center justify-between">
+          {/* Logo */}
+          <Link href="/" className="flex items-center space-x-2">
+            <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
+              <span className="text-primary-foreground font-bold text-sm">MB</span>
             </div>
-          </SheetContent>
-        </Sheet>
+            <span className="font-bold text-xl hidden sm:inline-block">{t.siteName || "Modern Booking"}</span>
+          </Link>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-6">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+
+          {/* Auth Buttons */}
+          <div className="hidden md:flex items-center space-x-4">
+            <AuthButtons t={t} />
+            {user && (
+              <Link href="/profile">
+                <Button variant="outline" size="sm">
+                  <User className="h-4 w-4 mr-2" />
+                  {t.profile || "Profile"}
+                </Button>
+              </Link>
+            )}
+          </div>
+
+          {/* Mobile Menu */}
+          <Sheet open={isOpen} onOpenChange={setIsOpen}>
+            <SheetTrigger asChild className="md:hidden">
+              <Button variant="outline" size="icon">
+                <Menu className="h-4 w-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+              <div className="flex flex-col space-y-4 mt-8">
+                {navItems.map((item) => {
+                  const Icon = item.icon
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className="flex items-center space-x-2 text-lg font-medium"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      <Icon className="h-5 w-5" />
+                      <span>{item.label}</span>
+                    </Link>
+                  )
+                })}
+
+                <div className="pt-4 border-t">
+                  <AuthButtons t={t} />
+                  {user && (
+                    <Link href="/profile" className="mt-4 block">
+                      <Button variant="outline" className="w-full bg-transparent">
+                        <User className="h-4 w-4 mr-2" />
+                        {t.profile || "Profile"}
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
     </header>
   )

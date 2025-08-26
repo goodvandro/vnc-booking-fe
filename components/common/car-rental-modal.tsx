@@ -1,301 +1,274 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useActionState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Car, Users, Settings, Calendar, Loader2, CheckCircle } from "lucide-react"
+import { Car, Users, Fuel, Loader2 } from "lucide-react"
 import { createCarRentalBooking } from "@/app/actions/booking-actions"
-import type { SelectedItem } from "@/lib/types"
+import type { Car as CarType } from "@/lib/types"
 import type { User } from "@clerk/nextjs/server"
 
 interface CarRentalModalProps {
   isOpen: boolean
   onClose: () => void
-  selectedItem: SelectedItem | null
+  car: CarType | null
   t: any
   user: User | null | undefined
 }
 
-export default function CarRentalModal({ isOpen, onClose, selectedItem, t, user }: CarRentalModalProps) {
-  const [state, formAction, isPending] = useActionState(createCarRentalBooking, null)
-  const [startDate, setStartDate] = useState("")
-  const [endDate, setEndDate] = useState("")
-  const [totalPrice, setTotalPrice] = useState(0)
+export default function CarRentalModal({ isOpen, onClose, car, t, user }: CarRentalModalProps) {
+  const [firstName, setFirstName] = useState(user?.firstName || "")
+  const [lastName, setLastName] = useState(user?.lastName || "")
+  const [email, setEmail] = useState(user?.emailAddresses?.[0]?.emailAddress || "")
+  const [phone, setPhone] = useState("")
+  const [driverLicense, setDriverLicense] = useState("")
+  const [pickupDate, setPickupDate] = useState("")
+  const [returnDate, setReturnDate] = useState("")
+  const [specialRequests, setSpecialRequests] = useState("")
   const [showSuccess, setShowSuccess] = useState(false)
+  const [successMessage, setSuccessMessage] = useState("")
 
-  // Calculate total price when dates change
-  useEffect(() => {
-    if (startDate && endDate && selectedItem) {
-      const pickup = new Date(startDate)
-      const returnDate = new Date(endDate)
-      const days = Math.ceil((returnDate.getTime() - pickup.getTime()) / (1000 * 60 * 60 * 24))
+  const [state, formAction, isPending] = useActionState(createCarRentalBooking, null)
 
-      if (days > 0) {
-        setTotalPrice(days * selectedItem.data.price)
-      } else {
-        setTotalPrice(0)
-      }
+  // Calculate total price
+  const totalPrice = (() => {
+    if (car && pickupDate && returnDate) {
+      const pickup = new Date(pickupDate)
+      const returnD = new Date(returnDate)
+      const days = Math.ceil((returnD.getTime() - pickup.getTime()) / (1000 * 60 * 60 * 24))
+      return days > 0 ? days * car.pricePerDay : 0
     }
-  }, [startDate, endDate, selectedItem])
+    return 0
+  })()
 
-  // Handle successful booking
-  useEffect(() => {
-    if (state?.success && !showSuccess) {
+  const handleSubmit = async (formData: FormData) => {
+    // Add additional data to form
+    formData.append("totalPrice", totalPrice.toString())
+    formData.append("carId", car?.id?.toString() || "")
+
+    const result = await formAction(formData)
+
+    if (result?.success) {
+      setSuccessMessage(result.message)
       setShowSuccess(true)
-      // Auto-close modal after 4 seconds
+
+      // Reset form
+      setFirstName(user?.firstName || "")
+      setLastName(user?.lastName || "")
+      setEmail(user?.emailAddresses?.[0]?.emailAddress || "")
+      setPhone("")
+      setDriverLicense("")
+      setPickupDate("")
+      setReturnDate("")
+      setSpecialRequests("")
+
+      // Close modal after 3 seconds
       setTimeout(() => {
         setShowSuccess(false)
         onClose()
-        // Reset form
-        setStartDate("")
-        setEndDate("")
-        setTotalPrice(0)
-      }, 4000)
+      }, 3000)
     }
-  }, [state?.success, showSuccess, onClose])
+  }
 
-  if (!selectedItem || selectedItem.type !== "car") return null
-
-  const car = selectedItem.data
-  const today = new Date().toISOString().split("T")[0]
-  const days =
-    startDate && endDate
-      ? Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24))
-      : 0
+  if (!car) return null
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">{t?.rentCar || "Rent Car"}</DialogTitle>
+          <DialogTitle className="text-2xl font-bold">
+            {t.rentCarTitle?.replace("{title}", car.name) || `Rent ${car.name}`}
+          </DialogTitle>
         </DialogHeader>
 
         {showSuccess ? (
-          <div className="text-center py-12">
-            <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
-            <h3 className="text-2xl font-bold text-green-600 mb-2">{t?.rentalConfirmed || "Rental Confirmed!"}</h3>
-            <p className="text-muted-foreground mb-4">{state?.message}</p>
-            <div className="text-sm text-muted-foreground">
-              {t?.closingAutomatically || "This window will close automatically..."}
-            </div>
+          <div className="text-center py-8">
+            <div className="text-green-600 text-lg font-semibold mb-2">✅ {successMessage}</div>
+            <p className="text-muted-foreground">This window will close automatically...</p>
           </div>
         ) : (
-          <div className="space-y-6">
+          <>
             {/* Car Info */}
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-start gap-4">
-                  <img
-                    src={car.images?.[0] || "/placeholder.svg?height=80&width=80"}
-                    alt={car.title}
-                    className="w-20 h-20 rounded-lg object-cover"
-                  />
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg">{car.title}</h3>
-                    <p className="text-sm text-muted-foreground mb-2">{car.description}</p>
-                    <div className="flex items-center gap-4 flex-wrap">
-                      <div className="flex items-center gap-1">
-                        <Users className="h-4 w-4" />
-                        <span className="text-sm">
-                          {car.seats} {t?.seats || "seats"}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Settings className="h-4 w-4" />
-                        <span className="text-sm">{car.transmission}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Car className="h-4 w-4" />
-                        <span className="text-sm">{t?.automatic || "Automatic"}</span>
-                      </div>
-                      <Badge variant="secondary">
-                        ${car.price}/{t?.day || "day"}
-                      </Badge>
+            <div className="bg-muted/50 p-4 rounded-lg mb-6">
+              <div className="flex items-start gap-4">
+                <img
+                  src={car.images?.[0] || "/placeholder.svg?height=80&width=80"}
+                  alt={car.name}
+                  className="w-20 h-20 rounded-lg object-cover"
+                />
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg">{car.name}</h3>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
+                    <div className="flex items-center gap-1">
+                      <Users className="h-4 w-4" />
+                      <span>
+                        {car.seats} {t?.seats || "seats"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Car className="h-4 w-4" />
+                      <span>{car.transmission}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Fuel className="h-4 w-4" />
+                      <span>{car.fuelType}</span>
                     </div>
                   </div>
+                  <div className="mt-2">
+                    <span className="text-2xl font-bold">${car.pricePerDay}</span>
+                    <span className="text-muted-foreground">{t.perDay || "/day"}</span>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Error Message */}
-            {state?.success === false && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-800">{state.message}</p>
               </div>
-            )}
+            </div>
 
-            {/* Booking Form */}
-            <form action={formAction} className="space-y-4">
-              {/* Hidden fields */}
-              <input type="hidden" name="carId" value={car.id || ""} />
-              <input type="hidden" name="totalPrice" value={totalPrice} />
-
+            <form action={handleSubmit} className="space-y-6">
               {/* Personal Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="firstName">
-                    {t?.firstName || "First Name"} <span className="text-red-500">*</span>
-                  </Label>
+                  <Label htmlFor="firstName">{t.firstName || "First Name"} *</Label>
                   <Input
                     id="firstName"
                     name="firstName"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
                     required
-                    defaultValue={user?.firstName || ""}
                     disabled={isPending}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="lastName">
-                    {t?.lastName || "Last Name"} <span className="text-red-500">*</span>
-                  </Label>
+                  <Label htmlFor="lastName">{t.lastName || "Last Name"} *</Label>
                   <Input
                     id="lastName"
                     name="lastName"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
                     required
-                    defaultValue={user?.lastName || ""}
                     disabled={isPending}
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="email">
-                    {t?.email || "Email"} <span className="text-red-500">*</span>
-                  </Label>
+                  <Label htmlFor="email">{t.email || "Email"} *</Label>
                   <Input
                     id="email"
                     name="email"
                     type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     required
-                    defaultValue={user?.emailAddresses?.[0]?.emailAddress || ""}
                     disabled={isPending}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="phone">
-                    {t?.phone || "Phone"} <span className="text-red-500">*</span>
-                  </Label>
-                  <Input id="phone" name="phone" type="tel" required disabled={isPending} />
+                  <Label htmlFor="phone">{t.phone || "Phone"} *</Label>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    required
+                    disabled={isPending}
+                  />
                 </div>
               </div>
 
-              {/* Driver License */}
               <div>
-                <Label htmlFor="driverLicense">{t?.driverLicense || "Driver License"}</Label>
+                <Label htmlFor="driverLicense">Driver License</Label>
                 <Input
                   id="driverLicense"
                   name="driverLicense"
-                  placeholder={t?.driverLicensePlaceholder || "Enter your driver license number (optional)"}
+                  value={driverLicense}
+                  onChange={(e) => setDriverLicense(e.target.value)}
+                  placeholder="Driver license number (optional)"
                   disabled={isPending}
                 />
               </div>
 
               {/* Rental Details */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="startDate">
-                    {t?.pickupDate || "Pickup Date"} <span className="text-red-500">*</span>
-                  </Label>
+                  <Label htmlFor="startDate">{t.pickupDate || "Pickup Date"} *</Label>
                   <Input
                     id="startDate"
                     name="startDate"
                     type="date"
+                    value={pickupDate}
+                    onChange={(e) => setPickupDate(e.target.value)}
+                    min={new Date().toISOString().split("T")[0]}
                     required
-                    min={today}
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
                     disabled={isPending}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="endDate">
-                    {t?.returnDate || "Return Date"} <span className="text-red-500">*</span>
-                  </Label>
+                  <Label htmlFor="endDate">{t.returnDate || "Return Date"} *</Label>
                   <Input
                     id="endDate"
                     name="endDate"
                     type="date"
+                    value={returnDate}
+                    onChange={(e) => setReturnDate(e.target.value)}
+                    min={pickupDate || new Date().toISOString().split("T")[0]}
                     required
-                    min={startDate || today}
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
                     disabled={isPending}
                   />
                 </div>
               </div>
 
-              {/* Special Requests */}
               <div>
-                <Label htmlFor="specialRequests">{t?.specialRequests || "Special Requests"}</Label>
+                <Label htmlFor="specialRequests">{t.requests || "Special Requests"}</Label>
                 <Textarea
                   id="specialRequests"
                   name="specialRequests"
-                  placeholder={t?.specialRequestsPlaceholder || "Any special requests or requirements..."}
+                  value={specialRequests}
+                  onChange={(e) => setSpecialRequests(e.target.value)}
+                  placeholder={t.anySpecialRequests || "Any special requests?"}
+                  rows={3}
                   disabled={isPending}
                 />
               </div>
 
-              <Separator />
-
               {/* Price Summary */}
               {totalPrice > 0 && (
-                <Card>
-                  <CardContent className="p-4">
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <Calendar className="h-4 w-4" />
-                      {t?.rentalSummary || "Rental Summary"}
-                    </h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span>{t?.pricePerDay || "Price per day"}:</span>
-                        <span>${car.price}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>{t?.numberOfDays || "Number of days"}:</span>
-                        <span>{days}</span>
-                      </div>
-                      <Separator />
-                      <div className="flex justify-between font-semibold text-lg">
-                        <span>{t?.total || "Total"}:</span>
-                        <span className="text-primary">${totalPrice}</span>
-                      </div>
+                <div className="bg-muted/50 p-4 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold">{t.total || "Total"}:</span>
+                    <span className="text-2xl font-bold">${totalPrice}</span>
+                  </div>
+                  {pickupDate && returnDate && (
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {Math.ceil(
+                        (new Date(returnDate).getTime() - new Date(pickupDate).getTime()) / (1000 * 60 * 60 * 24),
+                      )}{" "}
+                      days × ${car.pricePerDay}
                     </div>
-                  </CardContent>
-                </Card>
+                  )}
+                </div>
               )}
 
+              {/* Error Message */}
+              {state?.error && <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">{state.error}</div>}
+
               {/* Submit Button */}
-              <div className="flex gap-3 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={onClose}
-                  disabled={isPending}
-                  className="flex-1 bg-transparent"
-                >
-                  {t?.cancel || "Cancel"}
-                </Button>
-                <Button type="submit" disabled={isPending || totalPrice <= 0} className="flex-1">
-                  {isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {t?.processing || "Processing..."}
-                    </>
-                  ) : (
-                    t?.confirmRental || "Confirm Rental"
-                  )}
-                </Button>
-              </div>
+              <Button type="submit" className="w-full" size="lg" disabled={isPending || totalPrice <= 0}>
+                {isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  t.confirmRental || "Confirm Rental"
+                )}
+              </Button>
             </form>
-          </div>
+          </>
         )}
       </DialogContent>
     </Dialog>

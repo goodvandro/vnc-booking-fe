@@ -1,276 +1,244 @@
 "use client"
 
 import type React from "react"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+
+import { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { X, UploadCloud, Trash2, Plus, GripVertical, ArrowUp, ArrowDown } from "lucide-react"
-
-export type UploadedMedia = {
-  id?: number
-  url: string
-  name?: string
-  width?: number
-  height?: number
-  mime?: string
-}
+import { Card, CardContent } from "@/components/ui/card"
+import { X, Upload, LinkIcon, ImageIcon, Loader2 } from "lucide-react"
 
 interface MediaInputProps {
+  images: string[]
+  onImagesChange: (images: string[]) => void
+  maxImages?: number
   label?: string
-  description?: string
-  initialMedia?: UploadedMedia[]
-  onChange?: (media: UploadedMedia[]) => void
-  maxFiles?: number
 }
 
-export default function MediaInput({
-  label = "Images",
-  description,
-  initialMedia = [],
-  onChange,
-  maxFiles = 10,
-}: MediaInputProps) {
-  const [items, setItems] = useState<UploadedMedia[]>(initialMedia)
+export default function MediaInput({ images, onImagesChange, maxImages = 10, label = "Images" }: MediaInputProps) {
+  const [urlInput, setUrlInput] = useState("")
+  const [isUploading, setIsUploading] = useState(false)
+  const [dragActive, setDragActive] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
-    // Sync with parent-provided media list (useful when editing and data loads async)
-    setItems(initialMedia)
-  }, [initialMedia])
+  const handleFileUpload = async (files: FileList | null) => {
+    if (!files || images.length >= maxImages) return
 
-  const [isDragging, setIsDragging] = useState(false)
-  const [progress, setProgress] = useState(0)
-  const [error, setError] = useState<string | null>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const [addUrl, setAddUrl] = useState("")
-  const dragSourceIndex = useRef<number | null>(null)
+    setIsUploading(true)
+    const newImages: string[] = []
 
-  const countMessage = useMemo(() => {
-    if (!maxFiles) return null
-    return `${items.length}/${maxFiles} selected`
-  }, [items.length, maxFiles])
+    for (let i = 0; i < Math.min(files.length, maxImages - images.length); i++) {
+      const file = files[i]
 
-  const update = (next: UploadedMedia[]) => {
-    setItems(next)
-    onChange?.(next)
-  }
+      if (!file.type.startsWith("image/")) continue
 
-  const handleFiles = async (files: FileList | null) => {
-    if (!files || files.length === 0) return
-    setError(null)
-    const filesArray = Array.from(files)
-    const remaining = Math.max(0, maxFiles - items.length)
-    const toUpload = filesArray.slice(0, remaining)
+      try {
+        const formData = new FormData()
+        formData.append("file", file)
 
-    const formData = new FormData()
-    toUpload.forEach((f) => formData.append("files", f))
+        const response = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        })
 
-    // Fake progress while uploading
-    setProgress(10)
-
-    try {
-      const res = await fetch("/api/upload", { method: "POST", body: formData })
-      if (!res.ok) {
-        const maybe = await res.json().catch(() => null)
-        const msg = maybe?.error || "Upload failed"
-        throw new Error(msg)
+        if (response.ok) {
+          const data = await response.json()
+          newImages.push(data.url)
+        } else {
+          console.error("Upload failed:", response.statusText)
+        }
+      } catch (error) {
+        console.error("Upload error:", error)
       }
-      setProgress(85)
-      const { files } = (await res.json()) as { files: UploadedMedia[] }
+    }
 
-      const next = [...items, ...files]
-      update(next)
-      setProgress(100)
-      setTimeout(() => setProgress(0), 600)
-    } catch (e: any) {
-      setError(e?.message || "Upload failed")
-      setProgress(0)
+    onImagesChange([...images, ...newImages])
+    setIsUploading(false)
+  }
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true)
+    } else if (e.type === "dragleave") {
+      setDragActive(false)
     }
   }
 
-  const onDropZoneDrop = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault()
-      setIsDragging(false)
-      handleFiles(e.dataTransfer.files)
-    },
-    [items],
-  )
-
-  const onAddUrl = () => {
-    if (!addUrl.trim()) return
-    const next = [...items, { url: addUrl.trim(), name: addUrl.trim() }]
-    update(next)
-    setAddUrl("")
-  }
-
-  const removeAt = (index: number) => {
-    const next = items.filter((_, i) => i !== index)
-    update(next)
-  }
-
-  const moveItem = (from: number, to: number) => {
-    if (from === to || from < 0 || to < 0 || from >= items.length || to >= items.length) return
-    const next = items.slice()
-    const [spliced] = next.splice(from, 1)
-    next.splice(to, 0, spliced)
-    update(next)
-  }
-
-  // DnD handlers for image tiles
-  const onTileDragStart = (index: number) => (e: React.DragEvent) => {
-    dragSourceIndex.current = index
-    e.dataTransfer.effectAllowed = "move"
-    try {
-      e.dataTransfer.setData("text/plain", String(index))
-    } catch {}
-  }
-  const onTileDragOver = (e: React.DragEvent) => {
+  const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
-    e.dataTransfer.dropEffect = "move"
-  }
-  const onTileDrop = (index: number) => (e: React.DragEvent) => {
-    e.preventDefault()
-    const source = dragSourceIndex.current ?? Number(e.dataTransfer.getData("text/plain") || Number.NaN)
-    if (!Number.isNaN(source)) {
-      moveItem(source, index)
+    e.stopPropagation()
+    setDragActive(false)
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileUpload(e.dataTransfer.files)
     }
-    dragSourceIndex.current = null
   }
-  const onTileDragEnd = () => {
-    dragSourceIndex.current = null
+
+  const handleUrlAdd = () => {
+    if (urlInput.trim() && images.length < maxImages) {
+      onImagesChange([...images, urlInput.trim()])
+      setUrlInput("")
+    }
+  }
+
+  const removeImage = (index: number) => {
+    onImagesChange(images.filter((_, i) => i !== index))
+  }
+
+  const moveImage = (fromIndex: number, toIndex: number) => {
+    const newImages = [...images]
+    const [movedImage] = newImages.splice(fromIndex, 1)
+    newImages.splice(toIndex, 0, movedImage)
+    onImagesChange(newImages)
   }
 
   return (
-    <div className="grid gap-3">
-      <div className="flex items-center justify-between">
-        <Label>{label}</Label>
-        {countMessage && <span className="text-xs text-muted-foreground">{countMessage}</span>}
-      </div>
-      {description && <p className="text-sm text-muted-foreground">{description}</p>}
+    <div className="space-y-4">
+      <Label>{label}</Label>
 
+      {/* Upload Area */}
       <div
-        className={[
-          "rounded-md border border-dashed p-6 transition-colors",
-          isDragging ? "bg-muted/40 border-primary" : "bg-muted/20",
-        ].join(" ")}
-        onDragOver={(e) => {
-          e.preventDefault()
-          setIsDragging(true)
-        }}
-        onDragLeave={() => setIsDragging(false)}
-        onDrop={onDropZoneDrop}
-        role="button"
-        aria-label="Upload images by dropping files here"
-        onClick={() => inputRef.current?.click()}
+        className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+          dragActive ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-muted-foreground/50"
+        }`}
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
       >
-        <div className="flex flex-col items-center justify-center gap-2 text-center">
-          <UploadCloud className="h-6 w-6 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">Drag and drop images here, or click to select files</p>
-          <Button type="button" variant="outline" className="mt-2 bg-transparent">
-            Choose files
-          </Button>
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            className="hidden"
-            onChange={(e) => handleFiles(e.target.files)}
-          />
-          {progress > 0 && (
-            <div className="w-full max-w-sm mt-3">
-              <Progress value={progress} className="h-2" />
-            </div>
-          )}
-          {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
-        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept="image/*"
+          onChange={(e) => handleFileUpload(e.target.files)}
+          className="hidden"
+        />
+
+        {isUploading ? (
+          <div className="flex flex-col items-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+            <p className="text-sm text-muted-foreground">Uploading images...</p>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center">
+            <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+            <p className="text-sm text-muted-foreground mb-2">
+              Drag and drop images here, or{" "}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="text-primary hover:underline"
+                disabled={images.length >= maxImages}
+              >
+                browse files
+              </button>
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {images.length}/{maxImages} images • PNG, JPG, GIF up to 10MB
+            </p>
+          </div>
+        )}
       </div>
 
-      {/* Add by URL (optional) */}
+      {/* URL Input */}
       <div className="flex gap-2">
-        <Input placeholder="https://example.com/image.jpg" value={addUrl} onChange={(e) => setAddUrl(e.target.value)} />
-        <Button type="button" variant="outline" onClick={onAddUrl}>
-          <Plus className="h-4 w-4 mr-1" /> Add URL
+        <Input
+          type="url"
+          placeholder="Or paste image URL..."
+          value={urlInput}
+          onChange={(e) => setUrlInput(e.target.value)}
+          disabled={images.length >= maxImages}
+          onKeyDown={(e) => e.key === "Enter" && handleUrlAdd()}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleUrlAdd}
+          disabled={!urlInput.trim() || images.length >= maxImages}
+        >
+          <LinkIcon className="h-4 w-4" />
         </Button>
       </div>
 
-      {items.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          {items.map((m, idx) => (
-            <Card
-              key={`${m.url}-${idx}`}
-              className="relative overflow-hidden group"
-              draggable
-              onDragStart={onTileDragStart(idx)}
-              onDragOver={onTileDragOver}
-              onDrop={onTileDrop(idx)}
-              onDragEnd={onTileDragEnd}
-            >
-              <div className="absolute left-1 top-1 z-10 inline-flex items-center gap-1 rounded bg-background/80 px-1.5 py-0.5 shadow text-[10px] text-muted-foreground">
-                <GripVertical className="h-3.5 w-3.5" />
-                Drag to reorder
-              </div>
+      {/* Image Grid */}
+      {images.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {images.map((image, index) => (
+            <Card key={index} className="relative group">
+              <CardContent className="p-2">
+                <div className="aspect-square relative">
+                  <img
+                    src={image || "/placeholder.svg"}
+                    alt={`Image ${index + 1}`}
+                    className="w-full h-full object-cover rounded"
+                  />
 
-              <div className="absolute right-1 top-1 z-10 inline-flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => moveItem(idx, Math.max(0, idx - 1))}
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-background/80 shadow hover:bg-background"
-                  aria-label={`Move image ${idx + 1} up`}
-                >
-                  <ArrowUp className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => moveItem(idx, Math.min(items.length - 1, idx + 1))}
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-background/80 shadow hover:bg-background"
-                  aria-label={`Move image ${idx + 1} down`}
-                >
-                  <ArrowDown className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => removeAt(idx)}
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-background/80 shadow hover:bg-background"
-                  aria-label={`Remove image ${idx + 1}`}
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
+                  {/* Remove Button */}
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => removeImage(index)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
 
-              {/* Image preview */}
-              <div className="relative h-28 w-full">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={m.url || "/placeholder.svg?height=120&width=160&query=preview"}
-                  alt={m.name || `Image ${idx + 1}`}
-                  className="h-full w-full object-cover"
-                  onError={(e) => {
-                    const t = e.target as HTMLImageElement
-                    t.src = "/placeholder.svg?height=120&width=160"
-                  }}
-                />
-              </div>
-              <div className="p-2">
-                <p className="truncate text-xs text-muted-foreground">{m.name || m.url}</p>
-                {typeof m.id === "number" && (
-                  <span className="mt-1 inline-flex items-center gap-1 rounded bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-                    <Trash2 className="h-3 w-3" /> Uploaded (#{m.id})
-                  </span>
-                )}
-              </div>
+                  {/* Move Buttons */}
+                  {images.length > 1 && (
+                    <div className="absolute bottom-1 left-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {index > 0 && (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          className="h-6 w-6 p-0 text-xs"
+                          onClick={() => moveImage(index, index - 1)}
+                        >
+                          ←
+                        </Button>
+                      )}
+                      {index < images.length - 1 && (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          className="h-6 w-6 p-0 text-xs"
+                          onClick={() => moveImage(index, index + 1)}
+                        >
+                          →
+                        </Button>
+                      )}
+                    </div>
+                  )}
 
-              {/* Hidden inputs so server actions receive IDs/URLs in current order */}
-              <div className="hidden">
-                {typeof m.id === "number" && <input name={`imageId-${idx}`} defaultValue={String(m.id)} readOnly />}
-                <input name={`imageUrl-${idx}`} defaultValue={m.url} readOnly />
-              </div>
+                  {/* Primary Badge */}
+                  {index === 0 && (
+                    <div className="absolute top-1 left-1 bg-primary text-primary-foreground text-xs px-2 py-1 rounded">
+                      Primary
+                    </div>
+                  )}
+                </div>
+              </CardContent>
             </Card>
           ))}
         </div>
+      )}
+
+      {/* Empty State */}
+      {images.length === 0 && !isUploading && (
+        <Card className="border-dashed">
+          <CardContent className="flex flex-col items-center justify-center py-8">
+            <ImageIcon className="h-12 w-12 text-muted-foreground mb-4" />
+            <p className="text-muted-foreground text-center">
+              No images added yet. Upload files or add URLs to get started.
+            </p>
+          </CardContent>
+        </Card>
       )}
     </div>
   )

@@ -1,110 +1,67 @@
-import { NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
+import { auth } from "@clerk/nextjs/server"
+import { strapiAPI } from "@/lib/strapi-api"
 
-const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL
-const STRAPI_ADMIN_TOKEN = process.env.STRAPI_ADMIN_TOKEN
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const { userId } = auth()
 
-function getStrapiUrl() {
-  const base = STRAPI_URL || "http://localhost:1337"
-  return base.replace(/\/$/, "")
-}
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
 
-function authHeaders() {
-  if (!STRAPI_ADMIN_TOKEN) throw new Error("Missing STRAPI_ADMIN_TOKEN")
-  return {
-    Authorization: `Bearer ${STRAPI_ADMIN_TOKEN}`,
-    "Content-Type": "application/json",
+    const car = await strapiAPI.getCarById(params.id)
+
+    if (!car) {
+      return NextResponse.json({ error: "Car not found" }, { status: 404 })
+    }
+
+    return NextResponse.json(car)
+  } catch (error) {
+    console.error("Error fetching car:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
-function absUrl(path?: string | null) {
-  if (!path) return ""
-  return path.startsWith("http") ? path : `${getStrapiUrl()}${path}`
-}
-
-function normalizeNumbers(n: any): number | undefined {
-  const v = typeof n === "string" ? n.trim() : n
-  const num = Number(v)
-  return Number.isFinite(num) ? num : undefined
-}
-
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const res = await fetch(
-      `${getStrapiUrl()}/api/cars/${params.id}?populate[images][fields][0]=url&populate[images][fields][1]=name&populate[images][fields][2]=width&populate[images][fields][3]=height&populate[images][fields][4]=mime`,
-      {
-        headers: { Authorization: `Bearer ${STRAPI_ADMIN_TOKEN}` },
-        cache: "no-store",
-      },
-    )
-    const json = await res.json()
-    if (!res.ok) {
-      return NextResponse.json(
-        { error: `Strapi request failed: ${res.status} ${res.statusText}`, details: json },
-        { status: res.status },
-      )
+    const { userId } = auth()
+
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-    const d = json?.data
-    if (!d) return NextResponse.json({ error: "Not found" }, { status: 404 })
-    const a = d.attributes || {}
 
-    const imagesData = a.images?.data
-    const images = Array.isArray(imagesData)
-      ? imagesData.map((img: any) => ({
-          id: img.id,
-          url: absUrl(img.attributes?.url),
-          name: img.attributes?.name,
-          width: img.attributes?.width,
-          height: img.attributes?.height,
-          mime: img.attributes?.mime,
-        }))
-      : []
+    const data = await request.json()
+    const result = await strapiAPI.updateCar(params.id, data)
 
-    return NextResponse.json({
-      id: a.carId || undefined,
-      documentId: d.id,
-      title: a.title ?? "",
-      seats: a.seats ?? null,
-      transmission: a.transmission ?? "",
-      price: a.price ?? null,
-      // Return description as-is (string from Strapi)
-      description: typeof a.description === "string" ? a.description : "",
-      images,
-    })
-  } catch (err: any) {
-    return NextResponse.json({ error: err?.message || "Failed to fetch car" }, { status: 500 })
+    if (result.success) {
+      return NextResponse.json(result.data)
+    } else {
+      return NextResponse.json({ error: result.error }, { status: 400 })
+    }
+  } catch (error) {
+    console.error("Error updating car:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const payload = await req.json()
+    const { userId } = auth()
 
-    const data: any = {
-      carId: payload.carId || undefined,
-      title: payload.title ?? "",
-      seats: normalizeNumbers(payload.seats),
-      transmission: payload.transmission ?? "",
-      price: normalizeNumbers(payload.price),
-      // Pass description as string (Markdown)
-      description: typeof payload.description === "string" ? payload.description : "",
-      images: Array.isArray(payload.images) ? payload.images : [],
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const res = await fetch(`${getStrapiUrl()}/api/cars/${params.id}`, {
-      method: "PUT",
-      headers: authHeaders(),
-      body: JSON.stringify({ data }),
-    })
-    const json = await res.json()
-    if (!res.ok) {
-      return NextResponse.json(
-        { error: `Strapi request failed: ${res.status} ${res.statusText} ${JSON.stringify(json)}` },
-        { status: res.status },
-      )
-    }
+    const result = await strapiAPI.deleteCar(params.id)
 
-    return NextResponse.json({ ok: true, data: json.data })
-  } catch (err: any) {
-    return NextResponse.json({ error: err?.message || "Failed to update car" }, { status: 500 })
+    if (result.success) {
+      return NextResponse.json({ message: "Car deleted successfully" })
+    } else {
+      return NextResponse.json({ error: result.error }, { status: 400 })
+    }
+  } catch (error) {
+    console.error("Error deleting car:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

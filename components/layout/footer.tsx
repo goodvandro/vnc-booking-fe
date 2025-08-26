@@ -1,77 +1,110 @@
-"use client"
-
+import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
+import { Facebook, Twitter, Instagram, Mail, Phone, MapPin } from "lucide-react"
 import Link from "next/link"
-import { Home, Facebook, Twitter, Instagram } from "lucide-react"
 
 interface FooterProps {
-  t: any // Translation object
+  t: any
 }
 
 export default function Footer({ t }: FooterProps) {
   return (
-    <footer
-      id="footer-contact"
-      className="flex flex-col gap-6 py-8 w-full shrink-0 px-4 md:px-6 border-t bg-background"
-    >
-      {/* Main Footer Content */}
-      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-        {/* Logo and Brand */}
-        <div className="flex items-center gap-2 lg:flex-shrink-0">
-          <Home className="h-6 w-6" />
-          <span className="font-semibold text-lg">{t.siteTitle}</span>
+    <footer className="bg-muted/50 border-t">
+      <div className="container mx-auto px-4 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {/* Company Info */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">{t.companyName || "Modern Booking"}</h3>
+            <p className="text-sm text-muted-foreground">
+              {t.companyDescription ||
+                "Your trusted partner for guest house bookings and car rentals. Experience comfort and convenience with our premium services."}
+            </p>
+            <div className="flex space-x-2">
+              <Button variant="outline" size="icon">
+                <Facebook className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon">
+                <Twitter className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon">
+                <Instagram className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Quick Links */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">{t.quickLinks || "Quick Links"}</h3>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <Link href="#guest-houses" className="text-muted-foreground hover:text-foreground transition-colors">
+                  {t.guestHouses || "Guest Houses"}
+                </Link>
+              </li>
+              <li>
+                <Link href="#car-rental" className="text-muted-foreground hover:text-foreground transition-colors">
+                  {t.carRental || "Car Rental"}
+                </Link>
+              </li>
+              <li>
+                <Link href="#about" className="text-muted-foreground hover:text-foreground transition-colors">
+                  {t.aboutUs || "About Us"}
+                </Link>
+              </li>
+              <li>
+                <Link href="#contact" className="text-muted-foreground hover:text-foreground transition-colors">
+                  {t.contact || "Contact"}
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Services */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">{t.services || "Services"}</h3>
+            <ul className="space-y-2 text-sm">
+              <li className="text-muted-foreground">{t.luxuryAccommodation || "Luxury Accommodation"}</li>
+              <li className="text-muted-foreground">{t.carRentalService || "Car Rental Service"}</li>
+              <li className="text-muted-foreground">{t.customerSupport || "24/7 Customer Support"}</li>
+              <li className="text-muted-foreground">{t.flexibleBooking || "Flexible Booking"}</li>
+            </ul>
+          </div>
+
+          {/* Contact Info */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">{t.contactInfo || "Contact Info"}</h3>
+            <div className="space-y-3 text-sm">
+              <div className="flex items-center space-x-2">
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">{t.address || "123 Business Street, City, Country"}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Phone className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">{t.phoneNumber || "+1 (555) 123-4567"}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">{t.emailAddress || "info@modernbooking.com"}</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Navigation Links */}
-        <nav className="flex flex-wrap gap-4 sm:gap-6 text-sm lg:ml-auto">
-          <Link href="#guest-houses" className="hover:underline underline-offset-4">
-            {t.guestHouses}
-          </Link>
-          <Link href="#car-rental" className="hover:underline underline-offset-4">
-            {t.carRental}
-          </Link>
-          <Link href="#marketing-section" className="hover:underline underline-offset-4">
-            {t.whyChooseUs}
-          </Link>
-          <Link href="#about-us" className="hover:underline underline-offset-4">
-            {t.aboutUs}
-          </Link>
-          <Link href="#contact-form" className="hover:underline underline-offset-4">
-            {t.contact}
-          </Link>
-          <Link href="#" className="hover:underline underline-offset-4">
-            {t.privacyPolicy}
-          </Link>
-        </nav>
-      </div>
+        <Separator className="my-8" />
 
-      {/* Contact Info and Social */}
-      <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-between items-start sm:items-center">
-        {/* Contact Information */}
-        <div className="flex flex-col gap-1 text-sm text-muted-foreground">
-          <span>{t.email}: info@v0booking.com</span>
-          <span>{t.phone}: +1 (123) 456-7890</span>
-          <span className="hidden sm:inline">{t.address}: 123 Booking Lane, Travel City, TC 12345</span>
+        <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+          <p className="text-sm text-muted-foreground">
+            © 2024 {t.companyName || "Modern Booking"}. {t.allRightsReserved || "All rights reserved."}
+          </p>
+          <div className="flex space-x-4 text-sm">
+            <Link href="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">
+              {t.privacyPolicy || "Privacy Policy"}
+            </Link>
+            <Link href="/terms" className="text-muted-foreground hover:text-foreground transition-colors">
+              {t.termsOfService || "Terms of Service"}
+            </Link>
+          </div>
         </div>
-
-        {/* Social Media Links */}
-        <div className="flex gap-4">
-          <Link href="#" aria-label="Facebook">
-            <Facebook className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
-          </Link>
-          <Link href="#" aria-label="Twitter">
-            <Twitter className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
-          </Link>
-          <Link href="#" aria-label="Instagram">
-            <Instagram className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
-          </Link>
-        </div>
-      </div>
-
-      {/* Copyright */}
-      <div className="pt-4 border-t">
-        <p className="text-xs text-muted-foreground text-center sm:text-left">
-          &copy; {new Date().getFullYear()} {t.siteTitle}. {t.allRightsReserved}
-        </p>
       </div>
     </footer>
   )

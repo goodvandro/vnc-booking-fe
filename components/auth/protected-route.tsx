@@ -5,43 +5,33 @@ import type React from "react"
 import { useUser } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
+import { Loader2 } from "lucide-react"
 
 interface ProtectedRouteProps {
   children: React.ReactNode
-  fallback?: React.ReactNode
+  redirectTo?: string
 }
 
-export default function ProtectedRoute({ children, fallback }: ProtectedRouteProps) {
-  const { isSignedIn, isLoaded } = useUser()
+export default function ProtectedRoute({ children, redirectTo = "/sign-in" }: ProtectedRouteProps) {
+  const { isLoaded, isSignedIn } = useUser()
   const router = useRouter()
 
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
-      router.push("/sign-in")
+      router.push(redirectTo)
     }
-  }, [isLoaded, isSignedIn, router])
+  }, [isLoaded, isSignedIn, router, redirectTo])
 
   if (!isLoaded) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     )
   }
 
   if (!isSignedIn) {
-    return (
-      fallback || (
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <p className="text-muted-foreground">Redirecting to sign in...</p>
-          </div>
-        </div>
-      )
-    )
+    return null
   }
 
   return <>{children}</>

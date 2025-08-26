@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server"
-import { getCarsData } from "@/lib/strapi-data"
+import { strapiAPI } from "@/lib/strapi-api"
 
 export async function GET() {
   try {
-    const cars = await getCarsData()
+    const cars = await strapiAPI.getCars()
     return NextResponse.json(cars)
   } catch (error) {
-    console.error("API Error - Cars:", error)
-    return NextResponse.json({ error: "Failed to fetch cars" }, { status: 500 })
+    console.error("Error fetching cars:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
