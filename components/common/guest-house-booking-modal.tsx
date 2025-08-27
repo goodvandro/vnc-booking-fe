@@ -1,277 +1,292 @@
 "use client"
 
-import { useState } from "react"
-import { useActionState } from "react"
+import type React from "react"
+
+import { useState, useTransition, useMemo } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { MapPin, Star, Users, Loader2 } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Separator } from "@/components/ui/separator"
+import { MapPin, CheckCircle, AlertCircle } from "lucide-react"
 import { createGuestHouseBooking } from "@/app/actions/booking-actions"
-import type { GuestHouse } from "@/lib/types"
-import type { User } from "@clerk/nextjs/server"
+import type { SelectedItem } from "@/lib/types"
 
 interface GuestHouseBookingModalProps {
   isOpen: boolean
   onClose: () => void
-  guestHouse: GuestHouse | null
+  selectedItem: SelectedItem | null
   t: any
-  user: User | null | undefined
+  user: any
 }
 
-export default function GuestHouseBookingModal({ isOpen, onClose, guestHouse, t, user }: GuestHouseBookingModalProps) {
-  const [firstName, setFirstName] = useState(user?.firstName || "")
-  const [lastName, setLastName] = useState(user?.lastName || "")
-  const [email, setEmail] = useState(user?.emailAddresses?.[0]?.emailAddress || "")
-  const [phone, setPhone] = useState("")
-  const [checkInDate, setCheckInDate] = useState("")
-  const [checkOutDate, setCheckOutDate] = useState("")
-  const [numGuests, setNumGuests] = useState(1)
-  const [specialRequests, setSpecialRequests] = useState("")
-  const [showSuccess, setShowSuccess] = useState(false)
-  const [successMessage, setSuccessMessage] = useState("")
+export default function GuestHouseBookingModal({
+  isOpen,
+  onClose,
+  selectedItem,
+  t,
+  user,
+}: GuestHouseBookingModalProps) {
+  const [isPending, startTransition] = useTransition()
+  const [result, setResult] = useState<{
+    success: boolean
+    error?: string
+    bookingId?: string
+    message?: string
+  } | null>(null)
 
-  const [state, formAction, isPending] = useActionState(createGuestHouseBooking, null)
+  // Form state
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
+  const [email, setEmail] = useState("")
+  const [phone, setPhone] = useState("")
+  const [guests, setGuests] = useState(1)
+  const [specialRequests, setSpecialRequests] = useState("")
+  const [checkIn, setCheckIn] = useState("")
+  const [checkOut, setCheckOut] = useState("")
+
+  // Pre-fill user data when modal opens
+  useState(() => {
+    if (user && isOpen) {
+      setFirstName(user.firstName || "")
+      setLastName(user.lastName || "")
+      setEmail(user.emailAddresses?.[0]?.emailAddress || "")
+      setPhone(user.phoneNumbers?.[0]?.phoneNumber || "")
+    }
+  }, [user, isOpen])
 
   // Calculate total price
-  const totalPrice = (() => {
-    if (guestHouse && checkInDate && checkOutDate) {
-      const checkIn = new Date(checkInDate)
-      const checkOut = new Date(checkOutDate)
-      const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
-      return nights > 0 ? nights * guestHouse.pricePerNight : 0
+  const totalPrice = useMemo(() => {
+    if (selectedItem && checkIn && checkOut) {
+      const checkInDate = new Date(checkIn)
+      const checkOutDate = new Date(checkOut)
+      if (checkOutDate <= checkInDate) return 0
+      const timeDiff = checkOutDate.getTime() - checkInDate.getTime()
+      const numNights = Math.ceil(timeDiff / (1000 * 3600 * 24))
+      return numNights * selectedItem.data.price
     }
     return 0
-  })()
+  }, [selectedItem, checkIn, checkOut])
 
-  const handleSubmit = async (formData: FormData) => {
-    // Add additional data to form
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!selectedItem) return
+
+    const formData = new FormData()
+    formData.append("firstName", firstName)
+    formData.append("lastName", lastName)
+    formData.append("email", email)
+    formData.append("phone", phone)
+    formData.append("guests", guests.toString())
+    formData.append("specialRequests", specialRequests)
+    formData.append("checkIn", checkIn)
+    formData.append("checkOut", checkOut)
     formData.append("totalPrice", totalPrice.toString())
-    formData.append("guestHouseId", guestHouse?.id?.toString() || "")
-    formData.append("guests", numGuests.toString())
+    formData.append("guestHouseId", selectedItem.data.id.toString())
 
-    const result = await formAction(formData)
+    startTransition(async () => {
+      const result = await createGuestHouseBooking(formData)
+      setResult(result)
 
-    if (result?.success) {
-      setSuccessMessage(result.message)
-      setShowSuccess(true)
-
-      // Reset form
-      setFirstName(user?.firstName || "")
-      setLastName(user?.lastName || "")
-      setEmail(user?.emailAddresses?.[0]?.emailAddress || "")
-      setPhone("")
-      setCheckInDate("")
-      setCheckOutDate("")
-      setNumGuests(1)
-      setSpecialRequests("")
-
-      // Close modal after 3 seconds
-      setTimeout(() => {
-        setShowSuccess(false)
-        onClose()
-      }, 3000)
-    }
+      if (result.success) {
+        // Auto-close after 4 seconds
+        setTimeout(() => {
+          onClose()
+          setResult(null)
+          // Reset form
+          setFirstName("")
+          setLastName("")
+          setEmail("")
+          setPhone("")
+          setGuests(1)
+          setSpecialRequests("")
+          setCheckIn("")
+          setCheckOut("")
+        }, 4000)
+      }
+    })
   }
 
-  if (!guestHouse) return null
+  const handleClose = () => {
+    onClose()
+    setResult(null)
+  }
+
+  if (!selectedItem) return null
+
+  // Success state
+  if (result?.success) {
+    return (
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent className="sm:max-w-md">
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <div className="mb-4 rounded-full bg-green-100 p-3">
+              <CheckCircle className="h-8 w-8 text-green-600" />
+            </div>
+            <h3 className="mb-2 text-lg font-semibold text-green-900">Booking Confirmed!</h3>
+            <p className="mb-4 text-sm text-gray-600">Your booking has been successfully created.</p>
+            <div className="mb-4 rounded-lg bg-gray-50 p-4">
+              <p className="text-sm font-medium text-gray-900">
+                Booking ID: <span className="font-mono">{result.bookingId}</span>
+              </p>
+            </div>
+            <p className="text-xs text-gray-500">This window will close automatically in a few seconds.</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+    )
+  }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">
-            {t.bookGuestHouseTitle?.replace("{title}", guestHouse.name) || `Book ${guestHouse.name}`}
+          <DialogTitle className="flex items-center gap-2">
+            <MapPin className="h-5 w-5" />
+            Book {selectedItem.data.name}
           </DialogTitle>
         </DialogHeader>
 
-        {showSuccess ? (
-          <div className="text-center py-8">
-            <div className="text-green-600 text-lg font-semibold mb-2">✅ {successMessage}</div>
-            <p className="text-muted-foreground">This window will close automatically...</p>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Guest House Info */}
+          <div className="rounded-lg border p-4">
+            <h3 className="font-semibold mb-2">{selectedItem.data.name}</h3>
+            <p className="text-sm text-gray-600 mb-2">{selectedItem.data.location}</p>
+            <p className="text-lg font-bold text-primary">${selectedItem.data.price}/night</p>
           </div>
-        ) : (
-          <>
-            {/* Guest House Info */}
-            <div className="bg-muted/50 p-4 rounded-lg mb-6">
-              <div className="flex items-start gap-4">
-                <img
-                  src={guestHouse.images?.[0] || "/placeholder.svg?height=80&width=80"}
-                  alt={guestHouse.name}
-                  className="w-20 h-20 rounded-lg object-cover"
+
+          {/* Personal Information */}
+          <div className="space-y-4">
+            <h3 className="font-semibold">Personal Information</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="firstName">First Name *</Label>
+                <Input id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+              </div>
+              <div>
+                <Label htmlFor="lastName">Last Name *</Label>
+                <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="email">Email *</Label>
+                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              </div>
+              <div>
+                <Label htmlFor="phone">Phone *</Label>
+                <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} required />
+              </div>
+            </div>
+          </div>
+
+          {/* Booking Details */}
+          <div className="space-y-4">
+            <h3 className="font-semibold">Booking Details</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="checkIn">Check-in Date *</Label>
+                <Input
+                  id="checkIn"
+                  type="date"
+                  value={checkIn}
+                  onChange={(e) => setCheckIn(e.target.value)}
+                  min={new Date().toISOString().split("T")[0]}
+                  required
                 />
-                <div className="flex-1">
-                  <h3 className="font-semibold text-lg">{guestHouse.name}</h3>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                    <MapPin className="h-4 w-4" />
-                    <span>{guestHouse.location}</span>
-                  </div>
-                  <div className="flex items-center gap-4 mt-2">
-                    <div className="flex items-center gap-1">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span className="text-sm">{guestHouse.rating}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Users className="h-4 w-4" />
-                      <span className="text-sm">Up to {guestHouse.maxGuests} guests</span>
-                    </div>
-                  </div>
-                  <div className="mt-2">
-                    <span className="text-2xl font-bold">${guestHouse.pricePerNight}</span>
-                    <span className="text-muted-foreground">{t.perNight || "/night"}</span>
-                  </div>
+              </div>
+              <div>
+                <Label htmlFor="checkOut">Check-out Date *</Label>
+                <Input
+                  id="checkOut"
+                  type="date"
+                  value={checkOut}
+                  onChange={(e) => setCheckOut(e.target.value)}
+                  min={checkIn || new Date().toISOString().split("T")[0]}
+                  required
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="guests">Number of Guests *</Label>
+              <Select value={guests.toString()} onValueChange={(value) => setGuests(Number.parseInt(value))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
+                    <SelectItem key={num} value={num.toString()}>
+                      {num} {num === 1 ? "Guest" : "Guests"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="specialRequests">Special Requests</Label>
+              <Textarea
+                id="specialRequests"
+                value={specialRequests}
+                onChange={(e) => setSpecialRequests(e.target.value)}
+                placeholder="Any special requests or requirements..."
+                rows={3}
+              />
+            </div>
+          </div>
+
+          {/* Booking Summary */}
+          {totalPrice > 0 && (
+            <div className="rounded-lg border p-4 bg-gray-50">
+              <h3 className="font-semibold mb-3">Booking Summary</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span>Check-in:</span>
+                  <span>{checkIn}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Check-out:</span>
+                  <span>{checkOut}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Guests:</span>
+                  <span>{guests}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Nights:</span>
+                  <span>
+                    {Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (1000 * 3600 * 24))}
+                  </span>
+                </div>
+                <Separator />
+                <div className="flex justify-between font-semibold text-lg">
+                  <span>Total:</span>
+                  <span>${totalPrice}</span>
                 </div>
               </div>
             </div>
+          )}
 
-            <form action={handleSubmit} className="space-y-6">
-              {/* Personal Information */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="firstName">{t.firstName || "First Name"} *</Label>
-                  <Input
-                    id="firstName"
-                    name="firstName"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    required
-                    disabled={isPending}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="lastName">{t.lastName || "Last Name"} *</Label>
-                  <Input
-                    id="lastName"
-                    name="lastName"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    required
-                    disabled={isPending}
-                  />
-                </div>
-              </div>
+          {/* Error Message */}
+          {result?.error && (
+            <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-red-800">
+              <AlertCircle className="h-4 w-4" />
+              <span className="text-sm">{result.error}</span>
+            </div>
+          )}
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="email">{t.email || "Email"} *</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={isPending}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="phone">{t.phone || "Phone"} *</Label>
-                  <Input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    required
-                    disabled={isPending}
-                  />
-                </div>
-              </div>
-
-              {/* Booking Details */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="checkIn">{t.checkIn || "Check-in"} *</Label>
-                  <Input
-                    id="checkIn"
-                    name="checkIn"
-                    type="date"
-                    value={checkInDate}
-                    onChange={(e) => setCheckInDate(e.target.value)}
-                    min={new Date().toISOString().split("T")[0]}
-                    required
-                    disabled={isPending}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="checkOut">{t.checkOut || "Check-out"} *</Label>
-                  <Input
-                    id="checkOut"
-                    name="checkOut"
-                    type="date"
-                    value={checkOutDate}
-                    onChange={(e) => setCheckOutDate(e.target.value)}
-                    min={checkInDate || new Date().toISOString().split("T")[0]}
-                    required
-                    disabled={isPending}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="guests">{t.guests || "Number of Guests"} *</Label>
-                <Input
-                  id="guests"
-                  name="guests"
-                  type="number"
-                  min="1"
-                  max={guestHouse.maxGuests}
-                  value={numGuests}
-                  onChange={(e) => setNumGuests(Number.parseInt(e.target.value))}
-                  required
-                  disabled={isPending}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="specialRequests">{t.requests || "Special Requests"}</Label>
-                <Textarea
-                  id="specialRequests"
-                  name="specialRequests"
-                  value={specialRequests}
-                  onChange={(e) => setSpecialRequests(e.target.value)}
-                  placeholder={t.anySpecialRequests || "Any special requests?"}
-                  rows={3}
-                  disabled={isPending}
-                />
-              </div>
-
-              {/* Price Summary */}
-              {totalPrice > 0 && (
-                <div className="bg-muted/50 p-4 rounded-lg">
-                  <div className="flex justify-between items-center">
-                    <span className="font-semibold">{t.total || "Total"}:</span>
-                    <span className="text-2xl font-bold">${totalPrice}</span>
-                  </div>
-                  {checkInDate && checkOutDate && (
-                    <div className="text-sm text-muted-foreground mt-1">
-                      {Math.ceil(
-                        (new Date(checkOutDate).getTime() - new Date(checkInDate).getTime()) / (1000 * 60 * 60 * 24),
-                      )}{" "}
-                      nights × ${guestHouse.pricePerNight}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Error Message */}
-              {state?.error && <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">{state.error}</div>}
-
-              {/* Submit Button */}
-              <Button type="submit" className="w-full" size="lg" disabled={isPending || totalPrice <= 0}>
-                {isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  t.confirmBooking || "Confirm Booking"
-                )}
-              </Button>
-            </form>
-          </>
-        )}
+          {/* Submit Button */}
+          <div className="flex gap-3">
+            <Button type="button" variant="outline" onClick={handleClose} className="flex-1 bg-transparent">
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isPending || totalPrice <= 0} className="flex-1">
+              {isPending ? "Creating Booking..." : `Confirm Booking - $${totalPrice}`}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   )
