@@ -14,6 +14,7 @@ import { Car, Users, Settings, Calendar, Loader2, CheckCircle } from "lucide-rea
 import { createCarRentalBooking } from "@/app/actions/booking-actions"
 import type { SelectedCar } from "@/lib/types"
 import type { User } from "@clerk/nextjs/server"
+import ImageSlider from "./image-slider"
 
 interface CarRentalModalProps {
   isOpen: boolean
@@ -96,15 +97,16 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t, user }
             {/* Car Info */}
             <Card>
               <CardContent className="p-4">
-                <div className="flex items-start gap-4">
-                  <img
-                    src={car.images?.[0] || "/placeholder.svg?height=80&width=80"}
-                    alt={car.title}
-                    className="w-20 h-20 rounded-lg object-cover"
-                  />
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg">{car.title}</h3>
-                    <p className="text-sm text-muted-foreground mb-2">{car.description}</p>
+                <div className="space-y-4">
+                  {/* Image Slider */}
+                  {car.images && car.images.length > 0 && (
+                    <ImageSlider images={car.images} alt={car.title} className="w-full" enableFullscreen={true} />
+                  )}
+
+                  {/* Car Details */}
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2">{car.title}</h3>
+                    <p className="text-sm text-muted-foreground mb-3">{car.description}</p>
                     <div className="flex items-center gap-4 flex-wrap">
                       <div className="flex items-center gap-1">
                         <Users className="h-4 w-4" />

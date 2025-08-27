@@ -14,6 +14,7 @@ import { MapPin, Star, Users, Calendar, Loader2, CheckCircle } from "lucide-reac
 import { createGuestHouseBooking } from "@/app/actions/booking-actions"
 import type { SelectedGuestHouse } from "@/lib/types"
 import type { User } from "@clerk/nextjs/server"
+import ImageSlider from "./image-slider"
 
 interface GuestHouseBookingModalProps {
   isOpen: boolean
@@ -104,19 +105,25 @@ export default function GuestHouseBookingModal({
             {/* Guest House Info */}
             <Card>
               <CardContent className="p-4">
-                <div className="flex items-start gap-4">
-                  <img
-                    src={guestHouse.images?.[0] || "/placeholder.svg?height=80&width=80"}
-                    alt={guestHouse.title}
-                    className="w-20 h-20 rounded-lg object-cover"
-                  />
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg">{guestHouse.title}</h3>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                <div className="space-y-4">
+                  {/* Image Slider */}
+                  {guestHouse.images && guestHouse.images.length > 0 && (
+                    <ImageSlider
+                      images={guestHouse.images}
+                      alt={guestHouse.title}
+                      className="w-full"
+                      enableFullscreen={true}
+                    />
+                  )}
+
+                  {/* Guest House Details */}
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2">{guestHouse.title}</h3>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
                       <MapPin className="h-4 w-4" />
                       {guestHouse.location}
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 flex-wrap">
                       <div className="flex items-center gap-1">
                         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                         <span className="text-sm">{guestHouse.rating}</span>
