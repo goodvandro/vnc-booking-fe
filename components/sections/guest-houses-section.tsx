@@ -4,13 +4,13 @@ import { MapPin, Star } from "lucide-react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import ImageSlider from "@/components/common/image-slider"
-import type { GuestHouseOutputDTO, SelectedItem } from "@/lib/types"
+import type { GuestHouseOutputDTO, SelectedGuestHouse } from "@/lib/types"
 import { getGuestHouses } from "@/app/admin/actions"
 import { useEffect, useState } from "react"
 
 interface GuestHousesSectionProps {
   t: any // Translation object
-  handleBookNowClick: (itemData: SelectedItem["data"]) => void
+  handleBookNowClick: (itemData: SelectedGuestHouse["data"]) => void
 }
 
 export default function GuestHousesSection({ t, handleBookNowClick }: GuestHousesSectionProps) {
@@ -144,6 +144,7 @@ export default function GuestHousesSection({ t, handleBookNowClick }: GuestHouse
                     className="w-full"
                     onClick={() =>
                       handleBookNowClick({
+                        id: gh.id,
                         images,
                         title: gh.title,
                         location: gh.location,

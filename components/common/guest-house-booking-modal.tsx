@@ -12,13 +12,13 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { MapPin, Star, Users, Calendar, Loader2, CheckCircle } from "lucide-react"
 import { createGuestHouseBooking } from "@/app/actions/booking-actions"
-import type { SelectedItem } from "@/lib/types"
+import type { SelectedGuestHouse } from "@/lib/types"
 import type { User } from "@clerk/nextjs/server"
 
 interface GuestHouseBookingModalProps {
   isOpen: boolean
   onClose: () => void
-  selectedItem: SelectedItem | null
+  selectedGuestHouse: SelectedGuestHouse | null
   t: any
   user: User | null | undefined
 }
@@ -26,7 +26,7 @@ interface GuestHouseBookingModalProps {
 export default function GuestHouseBookingModal({
   isOpen,
   onClose,
-  selectedItem,
+  selectedGuestHouse,
   t,
   user,
 }: GuestHouseBookingModalProps) {
@@ -39,18 +39,18 @@ export default function GuestHouseBookingModal({
 
   // Calculate total price when dates or guests change
   useEffect(() => {
-    if (checkInDate && checkOutDate && selectedItem) {
+    if (checkInDate && checkOutDate && selectedGuestHouse) {
       const checkIn = new Date(checkInDate)
       const checkOut = new Date(checkOutDate)
       const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
 
       if (nights > 0) {
-        setTotalPrice(nights * selectedItem.data.price)
+        setTotalPrice(nights * selectedGuestHouse.data.price)
       } else {
         setTotalPrice(0)
       }
     }
-  }, [checkInDate, checkOutDate, guests, selectedItem])
+  }, [checkInDate, checkOutDate, guests, selectedGuestHouse])
 
   // Handle successful booking
   useEffect(() => {
@@ -69,9 +69,9 @@ export default function GuestHouseBookingModal({
     }
   }, [state?.success, showSuccess, onClose])
 
-  if (!selectedItem || selectedItem.type !== "guestHouse") return null
+  if (!selectedGuestHouse) return null
 
-  const guestHouse = selectedItem.data
+  const guestHouse = selectedGuestHouse.data
   const today = new Date().toISOString().split("T")[0]
   const nights =
     checkInDate && checkOutDate
@@ -90,7 +90,12 @@ export default function GuestHouseBookingModal({
             <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
             <h3 className="text-2xl font-bold text-green-600 mb-2">{t?.bookingConfirmed || "Booking Confirmed!"}</h3>
             <p className="text-muted-foreground mb-4">{state?.message}</p>
-            <div className="text-sm text-muted-foreground">
+            {state?.bookingId && (
+              <p className="text-sm text-muted-foreground">
+                Booking ID: <span className="font-mono font-semibold">{state.bookingId}</span>
+              </p>
+            )}
+            <div className="text-sm text-muted-foreground mt-4">
               {t?.closingAutomatically || "This window will close automatically..."}
             </div>
           </div>
@@ -121,7 +126,7 @@ export default function GuestHouseBookingModal({
                         <span className="text-sm">{t?.maxGuests || "Max guests"}: 8</span>
                       </div>
                       <Badge variant="secondary">
-                        ${guestHouse.price}/{t?.night || "night"}
+                        €{guestHouse.price}/{t?.night || "night"}
                       </Badge>
                     </div>
                   </div>
@@ -266,7 +271,7 @@ export default function GuestHouseBookingModal({
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span>{t?.pricePerNight || "Price per night"}:</span>
-                        <span>${guestHouse.price}</span>
+                        <span>€{guestHouse.price}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>{t?.numberOfNights || "Number of nights"}:</span>
@@ -279,7 +284,7 @@ export default function GuestHouseBookingModal({
                       <Separator />
                       <div className="flex justify-between font-semibold text-lg">
                         <span>{t?.total || "Total"}:</span>
-                        <span className="text-primary">${totalPrice}</span>
+                        <span className="text-primary">€{totalPrice}</span>
                       </div>
                     </div>
                   </CardContent>
@@ -304,7 +309,7 @@ export default function GuestHouseBookingModal({
                       {t?.processing || "Processing..."}
                     </>
                   ) : (
-                    t?.confirmBooking || "Confirm Booking"
+                    `${t?.confirmBooking || "Confirm Booking"} - €${totalPrice}`
                   )}
                 </Button>
               </div>

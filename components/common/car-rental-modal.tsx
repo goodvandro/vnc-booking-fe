@@ -12,18 +12,18 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Car, Users, Settings, Calendar, Loader2, CheckCircle } from "lucide-react"
 import { createCarRentalBooking } from "@/app/actions/booking-actions"
-import type { SelectedItem } from "@/lib/types"
+import type { SelectedCar } from "@/lib/types"
 import type { User } from "@clerk/nextjs/server"
 
 interface CarRentalModalProps {
   isOpen: boolean
   onClose: () => void
-  selectedItem: SelectedItem | null
+  selectedCar: SelectedCar | null
   t: any
   user: User | null | undefined
 }
 
-export default function CarRentalModal({ isOpen, onClose, selectedItem, t, user }: CarRentalModalProps) {
+export default function CarRentalModal({ isOpen, onClose, selectedCar, t, user }: CarRentalModalProps) {
   const [state, formAction, isPending] = useActionState(createCarRentalBooking, null)
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
@@ -32,19 +32,18 @@ export default function CarRentalModal({ isOpen, onClose, selectedItem, t, user 
 
   // Calculate total price when dates change
   useEffect(() => {
-    if (startDate && endDate && selectedItem) {
+    if (startDate && endDate && selectedCar) {
       const pickup = new Date(startDate)
       const returnDate = new Date(endDate)
       const days = Math.ceil((returnDate.getTime() - pickup.getTime()) / (1000 * 60 * 60 * 24))
-      console.log(days)
 
       if (days > 0) {
-        setTotalPrice(days * selectedItem.data.price)
+        setTotalPrice(days * selectedCar.data.price)
       } else {
         setTotalPrice(0)
       }
     }
-  }, [startDate, endDate, selectedItem])
+  }, [startDate, endDate, selectedCar])
 
   // Handle successful booking
   useEffect(() => {
@@ -62,9 +61,9 @@ export default function CarRentalModal({ isOpen, onClose, selectedItem, t, user 
     }
   }, [state?.success, showSuccess, onClose])
 
-  if (!selectedItem || selectedItem.type !== "car") return null
+  if (!selectedCar) return null
 
-  const car = selectedItem.data
+  const car = selectedCar.data
   const today = new Date().toISOString().split("T")[0]
   const days =
     startDate && endDate
@@ -83,7 +82,12 @@ export default function CarRentalModal({ isOpen, onClose, selectedItem, t, user 
             <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
             <h3 className="text-2xl font-bold text-green-600 mb-2">{t?.rentalConfirmed || "Rental Confirmed!"}</h3>
             <p className="text-muted-foreground mb-4">{state?.message}</p>
-            <div className="text-sm text-muted-foreground">
+            {state?.bookingId && (
+              <p className="text-sm text-muted-foreground">
+                Booking ID: <span className="font-mono font-semibold">{state.bookingId}</span>
+              </p>
+            )}
+            <div className="text-sm text-muted-foreground mt-4">
               {t?.closingAutomatically || "This window will close automatically..."}
             </div>
           </div>
@@ -117,7 +121,7 @@ export default function CarRentalModal({ isOpen, onClose, selectedItem, t, user 
                         <span className="text-sm">{t?.automatic || "Automatic"}</span>
                       </div>
                       <Badge variant="secondary">
-                        ${car.price}/{t?.day || "day"}
+                        €{car.price}/{t?.day || "day"}
                       </Badge>
                     </div>
                   </div>
@@ -257,7 +261,7 @@ export default function CarRentalModal({ isOpen, onClose, selectedItem, t, user 
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span>{t?.pricePerDay || "Price per day"}:</span>
-                        <span>${car.price}</span>
+                        <span>€{car.price}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>{t?.numberOfDays || "Number of days"}:</span>
@@ -266,7 +270,7 @@ export default function CarRentalModal({ isOpen, onClose, selectedItem, t, user 
                       <Separator />
                       <div className="flex justify-between font-semibold text-lg">
                         <span>{t?.total || "Total"}:</span>
-                        <span className="text-primary">${totalPrice}</span>
+                        <span className="text-primary">€{totalPrice}</span>
                       </div>
                     </div>
                   </CardContent>
@@ -291,7 +295,7 @@ export default function CarRentalModal({ isOpen, onClose, selectedItem, t, user 
                       {t?.processing || "Processing..."}
                     </>
                   ) : (
-                    t?.confirmRental || "Confirm Rental"
+                    `${t?.confirmRental || "Confirm Rental"} - €${totalPrice}`
                   )}
                 </Button>
               </div>
