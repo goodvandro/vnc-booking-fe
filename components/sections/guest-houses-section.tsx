@@ -5,7 +5,7 @@ import ImageSlider from "@/components/common/image-slider"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import type { GuestHouseOutputDTO, SelectedItem } from "@/lib/types"
-import { MapPin, Users } from "lucide-react"
+import { MapPin, Star } from "lucide-react"
 
 interface GuestHousesSectionProps {
   t: any // Translation object
@@ -32,7 +32,7 @@ export default function GuestHousesSection({ t, handleBookNowClick }: GuestHouse
 
   if (loading) {
     return (
-      <section id="guest-houses" className="section-container w-full py-12 md:py-16 lg:py-24 xl:py-32">
+      <section id="guest-houses" className="section-container w-full py-12 md:py-16 lg:py-24 xl:py-32 bg-muted">
         <div className="section-content">
           <div className="flex flex-col items-center justify-center space-y-4 text-center mb-8 md:mb-12">
             <div className="space-y-2 max-w-4xl mx-auto">
@@ -53,6 +53,7 @@ export default function GuestHousesSection({ t, handleBookNowClick }: GuestHouse
                   <div className="h-4 bg-gray-200 rounded w-3/4"></div>
                 </CardHeader>
                 <CardContent className="flex-1 pt-0">
+                  <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
                   <div className="h-8 bg-gray-200 rounded w-1/2"></div>
                 </CardContent>
                 <CardFooter className="pt-0">
@@ -68,7 +69,7 @@ export default function GuestHousesSection({ t, handleBookNowClick }: GuestHouse
 
   if (guestHouses.length === 0) {
     return (
-      <section id="guest-houses" className="section-container w-full py-12 md:py-16 lg:py-24 xl:py-32">
+      <section id="guest-houses" className="section-container w-full py-12 md:py-16 lg:py-24 xl:py-32 bg-muted">
         <div className="section-content">
           <div className="flex flex-col items-center justify-center space-y-4 text-center mb-8 md:mb-12">
             <div className="space-y-2 max-w-4xl mx-auto">
@@ -91,7 +92,7 @@ export default function GuestHousesSection({ t, handleBookNowClick }: GuestHouse
   }
 
   return (
-    <section id="guest-houses" className="section-container w-full py-12 md:py-16 lg:py-24 xl:py-32">
+    <section id="guest-houses" className="section-container w-full py-12 md:py-16 lg:py-24 xl:py-32 bg-muted">
       <div className="section-content">
         <div className="flex flex-col items-center justify-center space-y-4 text-center mb-8 md:mb-12">
           <div className="space-y-2 max-w-4xl mx-auto">
@@ -118,21 +119,21 @@ export default function GuestHousesSection({ t, handleBookNowClick }: GuestHouse
                 <ImageSlider images={images} alt={guestHouse.title} />
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg sm:text-xl">{guestHouse.title}</CardTitle>
-                  <CardDescription className="flex items-center gap-1 text-sm flex-wrap">
-                    <div className="flex items-center gap-1">
-                      <MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                      <span>{guestHouse.location}</span>
-                    </div>
-                    <span className="mx-1">•</span>
-                    <div className="flex items-center gap-1">
-                      <Users className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                      <span>
-                        {guestHouse.capacity} {t.guests}
-                      </span>
-                    </div>
+                  <CardDescription className="flex items-center gap-1 text-sm">
+                    <MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                    <span>{guestHouse.location}</span>
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 pt-0">
+                  <div className="flex items-center gap-1 text-sm text-yellow-500 mb-2">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`w-4 h-4 ${i < Math.floor(guestHouse.rating) ? "fill-yellow-500" : "fill-gray-200"}`}
+                      />
+                    ))}
+                    <span className="text-muted-foreground ml-1">({guestHouse.rating})</span>
+                  </div>
                   <p className="text-xl sm:text-2xl font-bold">
                     €{guestHouse.price}
                     <span className="text-sm sm:text-base font-normal text-muted-foreground">{t.perNight}</span>
@@ -147,7 +148,7 @@ export default function GuestHousesSection({ t, handleBookNowClick }: GuestHouse
                         images,
                         title: guestHouse.title,
                         location: guestHouse.location,
-                        capacity: guestHouse.capacity,
+                        rating: guestHouse.rating,
                         price: guestHouse.price,
                         description: guestHouse.description,
                       })
