@@ -1,60 +1,113 @@
 import type React from "react"
+import { auth } from "@clerk/nextjs/server"
+import { redirect } from "next/navigation"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
+import { LayoutDashboard, Car, Home, Calendar, ArrowLeft } from "lucide-react"
 import Link from "next/link"
-import { Home, Car, CalendarCheck, LayoutDashboard } from "lucide-react"
-import ProtectedRoute from "@/components/auth/protected-route"
+import StrapiStatus from "@/components/admin/strapi-status"
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+const adminEmails = ["admin@example.com", "owner@example.com"]
+
+export default async function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  const { userId, sessionClaims } = auth()
+
+  if (!userId) {
+    redirect("/sign-in")
+  }
+
+  const userEmail = sessionClaims?.email as string
+  const isAdmin = adminEmails.includes(userEmail)
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-center">Access Denied</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <p className="text-muted-foreground">You don't have permission to access the admin panel.</p>
+            <Link href="/">
+              <Button>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Home
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   return (
-    <ProtectedRoute>
-      <div className="flex min-h-screen w-full flex-col bg-muted/40">
-        <aside className="fixed inset-y-0 left-0 z-10 hidden w-64 flex-col border-r bg-background sm:flex">
-          <div className="flex h-16 items-center border-b px-4 lg:px-6">
-            <Link href="/admin" className="flex items-center gap-2 font-semibold">
+    <div className="min-h-screen bg-gray-50">
+      <div className="flex">
+        {/* Sidebar */}
+        <div className="w-64 bg-white shadow-sm border-r min-h-screen">
+          <div className="p-6">
+            <Link href="/admin" className="flex items-center gap-2 font-semibold text-lg">
               <LayoutDashboard className="h-6 w-6" />
-              <span>Admin Dashboard</span>
+              Admin Panel
             </Link>
           </div>
-          <nav className="flex flex-col gap-2 p-4 lg:p-6">
-            <Link
-              href="/admin"
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-            >
-              <LayoutDashboard className="h-4 w-4" />
-              Dashboard
+
+          <nav className="px-4 space-y-2">
+            <Link href="/admin">
+              <Button variant="ghost" className="w-full justify-start">
+                <LayoutDashboard className="h-4 w-4 mr-2" />
+                Dashboard
+              </Button>
             </Link>
-            <Link
-              href="/admin/guest-houses"
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-            >
-              <Home className="h-4 w-4" />
-              Guest Houses
+
+            <Link href="/admin/bookings">
+              <Button variant="ghost" className="w-full justify-start">
+                <Calendar className="h-4 w-4 mr-2" />
+                Bookings
+              </Button>
             </Link>
-            <Link
-              href="/admin/cars"
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-            >
-              <Car className="h-4 w-4" />
-              Cars
+
+            <Link href="/admin/guest-houses">
+              <Button variant="ghost" className="w-full justify-start">
+                <Home className="h-4 w-4 mr-2" />
+                Guest Houses
+              </Button>
             </Link>
-            <Link
-              href="/admin/bookings"
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-            >
-              <CalendarCheck className="h-4 w-4" />
-              Bookings
+
+            <Link href="/admin/cars">
+              <Button variant="ghost" className="w-full justify-start">
+                <Car className="h-4 w-4 mr-2" />
+                Cars
+              </Button>
             </Link>
           </nav>
-        </aside>
-        <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-64">
-          <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-            <Link href="/" className="ml-auto flex items-center gap-2 text-sm font-medium">
-              <Home className="h-4 w-4" />
-              Back to Main Site
+
+          <Separator className="my-4" />
+
+          <div className="px-4">
+            <StrapiStatus />
+          </div>
+
+          <Separator className="my-4" />
+
+          <div className="px-4">
+            <Link href="/">
+              <Button variant="ghost" className="w-full justify-start">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Site
+              </Button>
             </Link>
-          </header>
-          <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">{children}</main>
+          </div>
         </div>
+
+        {/* Main Content */}
+        <div className="flex-1">{children}</div>
       </div>
-    </ProtectedRoute>
+    </div>
   )
 }

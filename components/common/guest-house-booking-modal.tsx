@@ -1,234 +1,277 @@
 "use client"
 
-import { MapPin, Star } from "lucide-react"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
+import { useState } from "react"
+import { useActionState } from "react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { useUser } from "@clerk/nextjs"
-import ImageSlider from "@/components/common/image-slider"
-import type { SelectedItem } from "@/lib/types"
-import { useEffect } from "react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { MapPin, Star, Users, Loader2 } from "lucide-react"
+import { createGuestHouseBooking } from "@/app/actions/booking-actions"
+import type { GuestHouse } from "@/lib/types"
+import type { User } from "@clerk/nextjs/server"
 
 interface GuestHouseBookingModalProps {
-  t: any // Translation object
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  selectedItem: SelectedItem | null
-  firstName: string
-  setFirstName: (value: string) => void
-  lastName: string
-  setLastName: (value: string) => void
-  phone: string
-  setPhone: (value: string) => void
-  email: string
-  setEmail: (value: string) => void
-  specialRequests: string
-  setSpecialRequests: (value: string) => void
-  checkInDate: string
-  setCheckInDate: (value: string) => void
-  checkOutDate: string
-  setCheckOutDate: (value: string) => void
-  numGuests: number
-  setNumGuests: (value: number) => void
-  totalPrice: number
+  isOpen: boolean
+  onClose: () => void
+  guestHouse: GuestHouse | null
+  t: any
+  user: User | null | undefined
 }
 
-export default function GuestHouseBookingModal({
-  t,
-  open,
-  onOpenChange,
-  selectedItem,
-  firstName,
-  setFirstName,
-  lastName,
-  setLastName,
-  phone,
-  setPhone,
-  email,
-  setEmail,
-  specialRequests,
-  setSpecialRequests,
-  checkInDate,
-  setCheckInDate,
-  checkOutDate,
-  setCheckOutDate,
-  numGuests,
-  setNumGuests,
-  totalPrice,
-}: GuestHouseBookingModalProps) {
-  const { user, isLoaded } = useUser()
+export default function GuestHouseBookingModal({ isOpen, onClose, guestHouse, t, user }: GuestHouseBookingModalProps) {
+  const [firstName, setFirstName] = useState(user?.firstName || "")
+  const [lastName, setLastName] = useState(user?.lastName || "")
+  const [email, setEmail] = useState(user?.emailAddresses?.[0]?.emailAddress || "")
+  const [phone, setPhone] = useState("")
+  const [checkInDate, setCheckInDate] = useState("")
+  const [checkOutDate, setCheckOutDate] = useState("")
+  const [numGuests, setNumGuests] = useState(1)
+  const [specialRequests, setSpecialRequests] = useState("")
+  const [showSuccess, setShowSuccess] = useState(false)
+  const [successMessage, setSuccessMessage] = useState("")
 
-  // Auto-fill user information when modal opens and user is signed in
-  useEffect(() => {
-    if (isLoaded && user && open) {
-      const userFirstName = user.firstName || ""
-      const userLastName = user.lastName || ""
-      const userEmail = user.emailAddresses[0]?.emailAddress || ""
-      const userPhone = user.phoneNumbers[0]?.phoneNumber || ""
+  const [state, formAction, isPending] = useActionState(createGuestHouseBooking, null)
 
-      if (!firstName) setFirstName(userFirstName)
-      if (!lastName) setLastName(userLastName)
-      if (!email) setEmail(userEmail)
-      if (!phone) setPhone(userPhone)
+  // Calculate total price
+  const totalPrice = (() => {
+    if (guestHouse && checkInDate && checkOutDate) {
+      const checkIn = new Date(checkInDate)
+      const checkOut = new Date(checkOutDate)
+      const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
+      return nights > 0 ? nights * guestHouse.pricePerNight : 0
     }
-  }, [isLoaded, user, open, firstName, lastName, email, phone, setFirstName, setLastName, setEmail, setPhone])
+    return 0
+  })()
 
-  if (!selectedItem || selectedItem.type !== "guestHouse") {
-    return null
+  const handleSubmit = async (formData: FormData) => {
+    // Add additional data to form
+    formData.append("totalPrice", totalPrice.toString())
+    formData.append("guestHouseId", guestHouse?.id?.toString() || "")
+    formData.append("guests", numGuests.toString())
+
+    const result = await formAction(formData)
+
+    if (result?.success) {
+      setSuccessMessage(result.message)
+      setShowSuccess(true)
+
+      // Reset form
+      setFirstName(user?.firstName || "")
+      setLastName(user?.lastName || "")
+      setEmail(user?.emailAddresses?.[0]?.emailAddress || "")
+      setPhone("")
+      setCheckInDate("")
+      setCheckOutDate("")
+      setNumGuests(1)
+      setSpecialRequests("")
+
+      // Close modal after 3 seconds
+      setTimeout(() => {
+        setShowSuccess(false)
+        onClose()
+      }, 3000)
+    }
   }
 
+  if (!guestHouse) return null
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[95vw] md:max-w-[900px] p-0 max-h-[95vh] overflow-y-auto">
-        <div className="grid lg:grid-cols-2 gap-0">
-          <div className="p-4 sm:p-6 bg-muted/40 flex flex-col justify-between">
-            <DialogHeader className="mb-4">
-              <DialogTitle className="text-xl sm:text-2xl font-bold text-gray-700">
-                {t.bookGuestHouseTitle.replace("{title}", selectedItem.data.title)}
-              </DialogTitle>
-              <DialogDescription asChild>
-                <div>
-                  <ImageSlider
-                    images={selectedItem.data.images}
-                    alt={selectedItem.data.title}
-                    className="mb-4"
-                    enableFullscreen={true}
-                  />
-                  <div className="text-sm text-muted-foreground mb-2 leading-relaxed">
-                    {selectedItem.data.description}
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold">
+            {t.bookGuestHouseTitle?.replace("{title}", guestHouse.name) || `Book ${guestHouse.name}`}
+          </DialogTitle>
+        </DialogHeader>
+
+        {showSuccess ? (
+          <div className="text-center py-8">
+            <div className="text-green-600 text-lg font-semibold mb-2">✅ {successMessage}</div>
+            <p className="text-muted-foreground">This window will close automatically...</p>
+          </div>
+        ) : (
+          <>
+            {/* Guest House Info */}
+            <div className="bg-muted/50 p-4 rounded-lg mb-6">
+              <div className="flex items-start gap-4">
+                <img
+                  src={guestHouse.images?.[0] || "/placeholder.svg?height=80&width=80"}
+                  alt={guestHouse.name}
+                  className="w-20 h-20 rounded-lg object-cover"
+                />
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg">{guestHouse.name}</h3>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                    <MapPin className="h-4 w-4" />
+                    <span>{guestHouse.location}</span>
                   </div>
-                  <div className="flex items-center gap-1 text-muted-foreground text-sm">
-                    <MapPin className="w-4 h-4 flex-shrink-0" />
-                    <span>{selectedItem.data.location}</span>
+                  <div className="flex items-center gap-4 mt-2">
+                    <div className="flex items-center gap-1">
+                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      <span className="text-sm">{guestHouse.rating}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Users className="h-4 w-4" />
+                      <span className="text-sm">Up to {guestHouse.maxGuests} guests</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1 text-sm text-yellow-500 mt-1">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`w-4 h-4 ${i < Math.floor(selectedItem.data.rating || 0) ? "fill-yellow-500" : ""}`}
-                      />
-                    ))}
-                    <span className="text-muted-foreground ml-1">({selectedItem.data.rating})</span>
-                  </div>
-                  <div className="text-xl sm:text-2xl font-bold mt-2">
-                    €{selectedItem.data.price}
-                    <span className="text-sm sm:text-base font-normal text-muted-foreground">{t.perNight}</span>
+                  <div className="mt-2">
+                    <span className="text-2xl font-bold">${guestHouse.pricePerNight}</span>
+                    <span className="text-muted-foreground">{t.perNight || "/night"}</span>
                   </div>
                 </div>
-              </DialogDescription>
-            </DialogHeader>
-          </div>
-          <div className="p-4 sm:p-6">
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
-                <Label htmlFor="first-name" className="sm:text-right text-sm">
-                  {t.firstName}
-                </Label>
-                <Input
-                  id="first-name"
-                  type="text"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  className="sm:col-span-3 text-sm"
-                />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
-                <Label htmlFor="last-name" className="sm:text-right text-sm">
-                  {t.lastName}
-                </Label>
-                <Input
-                  id="last-name"
-                  type="text"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  className="sm:col-span-3 text-sm"
-                />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
-                <Label htmlFor="phone" className="sm:text-right text-sm">
-                  {t.phone}
-                </Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="sm:col-span-3 text-sm"
-                />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
-                <Label htmlFor="email" className="sm:text-right text-sm">
-                  {t.email}
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="sm:col-span-3 text-sm"
-                />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
-                <Label htmlFor="check-in" className="sm:text-right text-sm">
-                  {t.checkIn}
-                </Label>
-                <Input
-                  id="check-in"
-                  type="date"
-                  value={checkInDate}
-                  onChange={(e) => setCheckInDate(e.target.value)}
-                  className="sm:col-span-3 text-sm"
-                />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
-                <Label htmlFor="check-out" className="sm:text-right text-sm">
-                  {t.checkOut}
-                </Label>
-                <Input
-                  id="check-out"
-                  type="date"
-                  value={checkOutDate}
-                  onChange={(e) => setCheckOutDate(e.target.value)}
-                  className="sm:col-span-3 text-sm"
-                />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
-                <Label htmlFor="guests" className="sm:text-right text-sm">
-                  {t.guests}
-                </Label>
-                <Input
-                  id="guests"
-                  type="number"
-                  value={numGuests}
-                  onChange={(e) => setNumGuests(Number.parseInt(e.target.value))}
-                  min={1}
-                  className="sm:col-span-3 text-sm"
-                />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-4 items-start gap-2 sm:gap-4">
-                <Label htmlFor="special-requests" className="sm:text-right text-sm">
-                  {t.requests}
-                </Label>
-                <textarea
-                  id="special-requests"
-                  rows={3}
-                  value={specialRequests}
-                  onChange={(e) => setSpecialRequests(e.target.value)}
-                  placeholder={t.anySpecialRequests}
-                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-3"
-                ></textarea>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4 font-bold text-base sm:text-lg">
-                <div className="sm:col-span-1 sm:text-right">{t.total}:</div>
-                <div className="sm:col-span-3 sm:text-left">€{totalPrice.toFixed(2)}</div>
               </div>
             </div>
-            <Button type="submit" className="w-full">
-              {t.confirmBooking}
-            </Button>
-          </div>
-        </div>
+
+            <form action={handleSubmit} className="space-y-6">
+              {/* Personal Information */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="firstName">{t.firstName || "First Name"} *</Label>
+                  <Input
+                    id="firstName"
+                    name="firstName"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    required
+                    disabled={isPending}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="lastName">{t.lastName || "Last Name"} *</Label>
+                  <Input
+                    id="lastName"
+                    name="lastName"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    required
+                    disabled={isPending}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="email">{t.email || "Email"} *</Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    disabled={isPending}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="phone">{t.phone || "Phone"} *</Label>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    required
+                    disabled={isPending}
+                  />
+                </div>
+              </div>
+
+              {/* Booking Details */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="checkIn">{t.checkIn || "Check-in"} *</Label>
+                  <Input
+                    id="checkIn"
+                    name="checkIn"
+                    type="date"
+                    value={checkInDate}
+                    onChange={(e) => setCheckInDate(e.target.value)}
+                    min={new Date().toISOString().split("T")[0]}
+                    required
+                    disabled={isPending}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="checkOut">{t.checkOut || "Check-out"} *</Label>
+                  <Input
+                    id="checkOut"
+                    name="checkOut"
+                    type="date"
+                    value={checkOutDate}
+                    onChange={(e) => setCheckOutDate(e.target.value)}
+                    min={checkInDate || new Date().toISOString().split("T")[0]}
+                    required
+                    disabled={isPending}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="guests">{t.guests || "Number of Guests"} *</Label>
+                <Input
+                  id="guests"
+                  name="guests"
+                  type="number"
+                  min="1"
+                  max={guestHouse.maxGuests}
+                  value={numGuests}
+                  onChange={(e) => setNumGuests(Number.parseInt(e.target.value))}
+                  required
+                  disabled={isPending}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="specialRequests">{t.requests || "Special Requests"}</Label>
+                <Textarea
+                  id="specialRequests"
+                  name="specialRequests"
+                  value={specialRequests}
+                  onChange={(e) => setSpecialRequests(e.target.value)}
+                  placeholder={t.anySpecialRequests || "Any special requests?"}
+                  rows={3}
+                  disabled={isPending}
+                />
+              </div>
+
+              {/* Price Summary */}
+              {totalPrice > 0 && (
+                <div className="bg-muted/50 p-4 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold">{t.total || "Total"}:</span>
+                    <span className="text-2xl font-bold">${totalPrice}</span>
+                  </div>
+                  {checkInDate && checkOutDate && (
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {Math.ceil(
+                        (new Date(checkOutDate).getTime() - new Date(checkInDate).getTime()) / (1000 * 60 * 60 * 24),
+                      )}{" "}
+                      nights × ${guestHouse.pricePerNight}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Error Message */}
+              {state?.error && <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">{state.error}</div>}
+
+              {/* Submit Button */}
+              <Button type="submit" className="w-full" size="lg" disabled={isPending || totalPrice <= 0}>
+                {isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  t.confirmBooking || "Confirm Booking"
+                )}
+              </Button>
+            </form>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   )

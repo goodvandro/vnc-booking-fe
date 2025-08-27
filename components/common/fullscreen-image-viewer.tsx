@@ -1,13 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import Image from "next/image"
-import { X, ChevronLeft, ChevronRight } from "lucide-react"
+import type React from "react"
+
+import { useState } from "react"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { ChevronLeft, ChevronRight, X } from "lucide-react"
 
 interface FullscreenImageViewerProps {
   images: string[]
-  alt: string
   isOpen: boolean
   onClose: () => void
   initialIndex?: number
@@ -15,150 +16,81 @@ interface FullscreenImageViewerProps {
 
 export default function FullscreenImageViewer({
   images,
-  alt,
   isOpen,
   onClose,
   initialIndex = 0,
 }: FullscreenImageViewerProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex)
 
-  // Update current index when initialIndex changes
-  useEffect(() => {
-    setCurrentIndex(initialIndex)
-  }, [initialIndex])
-
-  // Handle keyboard navigation
-  useEffect(() => {
-    if (!isOpen) return
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      switch (event.key) {
-        case "Escape":
-          onClose()
-          break
-        case "ArrowLeft":
-          goToPrevious()
-          break
-        case "ArrowRight":
-          goToNext()
-          break
-      }
-    }
-
-    document.addEventListener("keydown", handleKeyDown)
-    return () => document.removeEventListener("keydown", handleKeyDown)
-  }, [isOpen, onClose])
-
-  // Prevent body scroll when fullscreen is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden"
-    } else {
-      document.body.style.overflow = "unset"
-    }
-
-    return () => {
-      document.body.style.overflow = "unset"
-    }
-  }, [isOpen])
-
   const goToPrevious = () => {
-    setCurrentIndex((prevIndex) => (prevIndex === 0 ? images.length - 1 : prevIndex - 1))
+    setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1))
   }
 
   const goToNext = () => {
-    setCurrentIndex((prevIndex) => (prevIndex === images.length - 1 ? 0 : prevIndex + 1))
+    setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1))
   }
 
-  const goToSlide = (index: number) => {
-    setCurrentIndex(index)
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowLeft") goToPrevious()
+    if (e.key === "ArrowRight") goToNext()
+    if (e.key === "Escape") onClose()
   }
 
-  if (!isOpen || !images || images.length === 0) {
-    return null
-  }
+  if (!images.length) return null
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center">
-      {/* Close Button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="absolute top-4 right-4 z-10 text-white hover:bg-white/20 h-10 w-10"
-        onClick={onClose}
-        aria-label="Close fullscreen"
-      >
-        <X className="h-6 w-6" />
-      </Button>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 bg-black/90" onKeyDown={handleKeyDown}>
+        <div className="relative w-full h-full flex items-center justify-center">
+          {/* Close Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-4 right-4 z-10 text-white hover:bg-white/20"
+            onClick={onClose}
+          >
+            <X className="h-6 w-6" />
+          </Button>
 
-      {/* Image Counter */}
-      <div className="absolute top-4 left-4 z-10 bg-black/50 text-white px-3 py-1 rounded text-sm">
-        {currentIndex + 1} / {images.length}
-      </div>
-
-      {/* Main Image */}
-      <div className="relative w-full h-full flex items-center justify-center p-4">
-        <Image
-          src={images[currentIndex] || "/placeholder.svg"}
-          width={1200}
-          height={800}
-          alt={`${alt} - Image ${currentIndex + 1}`}
-          className="max-w-full max-h-full object-contain"
-          priority
-        />
-
-        {/* Navigation Arrows - Only show if more than 1 image */}
-        {images.length > 1 && (
-          <>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:bg-white/20 h-12 w-12"
-              onClick={goToPrevious}
-              aria-label="Previous image"
-            >
-              <ChevronLeft className="h-6 w-6" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:bg-white/20 h-12 w-12"
-              onClick={goToNext}
-              aria-label="Next image"
-            >
-              <ChevronRight className="h-6 w-6" />
-            </Button>
-          </>
-        )}
-      </div>
-
-      {/* Thumbnail Navigation - Only show if more than 1 image */}
-      {images.length > 1 && (
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 max-w-full overflow-x-auto px-4">
-          <div className="flex gap-2">
-            {images.map((image, index) => (
-              <button
-                key={index}
-                onClick={() => goToSlide(index)}
-                className={`flex-shrink-0 w-16 h-12 sm:w-20 sm:h-16 rounded border-2 overflow-hidden transition-all duration-200 ${
-                  index === currentIndex ? "border-white" : "border-transparent opacity-60 hover:opacity-100"
-                }`}
+          {/* Navigation Buttons */}
+          {images.length > 1 && (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute left-4 z-10 text-white hover:bg-white/20"
+                onClick={goToPrevious}
               >
-                <Image
-                  src={image || "/placeholder.svg"}
-                  width={80}
-                  height={64}
-                  alt={`${alt} thumbnail ${index + 1}`}
-                  className="w-full h-full object-cover"
-                />
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+                <ChevronLeft className="h-8 w-8" />
+              </Button>
 
-      {/* Click outside to close */}
-      <div className="absolute inset-0 -z-10" onClick={onClose} aria-label="Click to close fullscreen" />
-    </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-4 z-10 text-white hover:bg-white/20"
+                onClick={goToNext}
+              >
+                <ChevronRight className="h-8 w-8" />
+              </Button>
+            </>
+          )}
+
+          {/* Image */}
+          <img
+            src={images[currentIndex] || "/placeholder.svg"}
+            alt={`Image ${currentIndex + 1}`}
+            className="max-w-full max-h-full object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+
+          {/* Image Counter */}
+          {images.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+              {currentIndex + 1} / {images.length}
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }

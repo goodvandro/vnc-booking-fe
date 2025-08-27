@@ -1,66 +1,51 @@
-import { NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
+import { auth } from "@clerk/nextjs/server"
 
-const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL
-const STRAPI_ADMIN_TOKEN = process.env.STRAPI_ADMIN_TOKEN
+const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337"
+const STRAPI_TOKEN = process.env.STRAPI_ADMIN_TOKEN
 
-function getStrapiUrl() {
-  const base = STRAPI_URL || "http://localhost:1337"
-  return base.replace(/\/$/, "")
-}
-
-export async function POST(req: Request) {
+export async function POST(request: NextRequest) {
   try {
-    if (!STRAPI_ADMIN_TOKEN) {
-      return NextResponse.json({ error: "Missing STRAPI_ADMIN_TOKEN" }, { status: 500 })
+    const { userId } = auth()
+
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Expecting multipart/form-data with "files" (one or multiple)
-    const contentType = req.headers.get("content-type") || ""
-    if (!contentType.includes("multipart/form-data")) {
-      return NextResponse.json({ error: "Content-Type must be multipart/form-data" }, { status: 400 })
+    const formData = await request.formData()
+    const file = formData.get("file") as File
+
+    if (!file) {
+      return NextResponse.json({ error: "No file provided" }, { status: 400 })
     }
 
-    const incoming = await req.formData()
-    const form = new FormData()
-    // Forward all fields; Strapi expects "files" or "files[]"
-    // We'll support both by appending exactly as provided
-    for (const [key, value] of incoming.entries()) {
-      form.append(key, value as any)
-    }
+    // Create form data for Strapi
+    const strapiFormData = new FormData()
+    strapiFormData.append("files", file)
 
-    const res = await fetch(`${getStrapiUrl()}/api/upload`, {
+    // Upload to Strapi
+    const response = await fetch(`${STRAPI_URL}/api/upload`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${STRAPI_ADMIN_TOKEN}`,
+        Authorization: `Bearer ${STRAPI_TOKEN}`,
       },
-      body: form,
-      // do not set content-type manually, let fetch set boundary
+      body: strapiFormData,
     })
 
-    const data = await res.json()
-    if (!res.ok) {
-      return NextResponse.json(
-        { error: `Strapi upload failed: ${res.status} ${res.statusText}`, details: data },
-        { status: res.status },
-      )
+    if (!response.ok) {
+      throw new Error(`Strapi upload failed: ${response.status}`)
     }
 
-    // Normalize response to { files: [{ id, url, ...}] }
-    const arr = Array.isArray(data) ? data : [data]
-    const files = arr.map((f: any) => ({
-      id: f.id,
-      url: typeof f.url === "string" ? (f.url.startsWith("http") ? f.url : `${getStrapiUrl()}${f.url}`) : "",
-      name: f.name,
-      size: f.size,
-      width: f.width,
-      height: f.height,
-      mime: f.mime,
-      hash: f.hash,
-      ext: f.ext,
-    }))
+    const uploadedFiles = await response.json()
 
-    return NextResponse.json({ files })
-  } catch (err: any) {
-    return NextResponse.json({ error: err?.message || "Upload failed" }, { status: 500 })
+    if (uploadedFiles && uploadedFiles.length > 0) {
+      const fileUrl = `${STRAPI_URL}${uploadedFiles[0].url}`
+      return NextResponse.json({ url: fileUrl })
+    } else {
+      throw new Error("No files returned from Strapi")
+    }
+  } catch (error) {
+    console.error("Upload error:", error)
+    return NextResponse.json({ error: "Upload failed" }, { status: 500 })
   }
 }

@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server"
-import { getGuestHousesData } from "@/lib/strapi-data"
+import { strapiAPI } from "@/lib/strapi-api"
 
 export async function GET() {
   try {
-    const guestHouses = await getGuestHousesData()
+    const guestHouses = await strapiAPI.getGuestHouses()
     return NextResponse.json(guestHouses)
   } catch (error) {
-    console.error("API Error - Guest Houses:", error)
-    return NextResponse.json({ error: "Failed to fetch guest houses" }, { status: 500 })
+    console.error("Error fetching guest houses:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

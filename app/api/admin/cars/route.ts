@@ -1,57 +1,41 @@
-import { NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
+import { auth } from "@clerk/nextjs/server"
+import { strapiAPI } from "@/lib/strapi-api"
 
-const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL
-const STRAPI_ADMIN_TOKEN = process.env.STRAPI_ADMIN_TOKEN
+export async function GET() {
+  try {
+    const { userId } = auth()
 
-function getStrapiUrl() {
-  const base = STRAPI_URL || "http://localhost:1337"
-  return base.replace(/\/$/, "")
-}
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
 
-function authHeaders() {
-  if (!STRAPI_ADMIN_TOKEN) throw new Error("Missing STRAPI_ADMIN_TOKEN")
-  return {
-    Authorization: `Bearer ${STRAPI_ADMIN_TOKEN}`,
-    "Content-Type": "application/json",
+    const cars = await strapiAPI.getCars()
+    return NextResponse.json(cars)
+  } catch (error) {
+    console.error("Error fetching cars:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
-function normalizeNumbers(n: any): number | undefined {
-  const v = typeof n === "string" ? n.trim() : n
-  const num = Number(v)
-  return Number.isFinite(num) ? num : undefined
-}
-
-export async function POST(req: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const payload = await req.json()
-    const data: any = {
-      carId: payload.carId || `car-${Date.now()}`,
-      title: payload.title ?? "",
-      seats: normalizeNumbers(payload.seats),
-      transmission: payload.transmission ?? "",
-      price: normalizeNumbers(payload.price),
-      // Pass description as string (Markdown)
-      description: typeof payload.description === "string" ? payload.description : "",
-      // Pass media relation IDs as-is
-      images: Array.isArray(payload.images) ? payload.images : [],
+    const { userId } = auth()
+
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const res = await fetch(`${getStrapiUrl()}/api/cars`, {
-      method: "POST",
-      headers: authHeaders(),
-      body: JSON.stringify({ data }),
-    })
-    const json = await res.json()
-    if (!res.ok) {
-      return NextResponse.json(
-        { error: `Strapi request failed: ${res.status} ${res.statusText} ${JSON.stringify(json)}` },
-        { status: res.status },
-      )
-    }
+    const data = await request.json()
+    const result = await strapiAPI.createCar(data)
 
-    return NextResponse.json({ ok: true, data: json.data })
-  } catch (err: any) {
-    return NextResponse.json({ error: err?.message || "Failed to create car" }, { status: 500 })
+    if (result.success) {
+      return NextResponse.json(result.data, { status: 201 })
+    } else {
+      return NextResponse.json({ error: result.error }, { status: 400 })
+    }
+  } catch (error) {
+    console.error("Error creating car:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

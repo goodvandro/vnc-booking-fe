@@ -1,58 +1,47 @@
 "use client"
 
-import { MapPin, Star, Users, CalendarDays } from "lucide-react"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
+import type React from "react"
+
+import { useState } from "react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { useUser } from "@clerk/nextjs"
-import ImageSlider from "@/components/common/image-slider"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Separator } from "@/components/ui/separator"
+import { Calendar, MapPin, Star, Users, Fuel, Settings } from "lucide-react"
 import type { SelectedItem } from "@/lib/types"
-import { useEffect } from "react"
+import type { User } from "@clerk/nextjs/server"
 
 interface BookingRentalModalProps {
-  t: any // Translation object
+  t: any
   open: boolean
   onOpenChange: (open: boolean) => void
   selectedItem: SelectedItem | null
-
-  // Guest House specific props
-  ghFirstName: string
-  setGhFirstName: (value: string) => void
-  ghLastName: string
-  setGhLastName: (value: string) => void
-  ghPhone: string
-  setGhPhone: (value: string) => void
-  ghEmail: string
-  setGhEmail: (value: string) => void
-  ghSpecialRequests: string
-  setGhSpecialRequests: (value: string) => void
-  ghCheckInDate: string
-  setGhCheckInDate: (value: string) => void
-  ghCheckOutDate: string
-  setGhCheckOutDate: (value: string) => void
-  ghNumGuests: number
-  setGhNumGuests: (value: number) => void
-  ghTotalPrice: number
-
-  // Car Rental specific props
-  crFirstName: string
-  setCrFirstName: (value: string) => void
-  crLastName: string
-  setCrLastName: (value: string) => void
-  crEmail: string
-  setCrEmail: (value: string) => void
-  crPhone: string
-  setCrPhone: (value: string) => void
-  crSpecialRequests: string
-  setCrSpecialRequests: (value: string) => void
-  crPickupDate: string
-  setCrPickupDate: (value: string) => void
-  crReturnDate: string
-  setCrReturnDate: (value: string) => void
-  crPickupLocation: string
-  setCrPickupLocation: (value: string) => void
-  crTotalPrice: number
+  firstName: string
+  setFirstName: (value: string) => void
+  lastName: string
+  setLastName: (value: string) => void
+  phone: string
+  setPhone: (value: string) => void
+  email: string
+  setEmail: (value: string) => void
+  specialRequests: string
+  setSpecialRequests: (value: string) => void
+  checkInDate: string
+  setCheckInDate: (value: string) => void
+  checkOutDate: string
+  setCheckOutDate: (value: string) => void
+  numGuests: number
+  setNumGuests: (value: number) => void
+  pickupDate: string
+  setPickupDate: (value: string) => void
+  returnDate: string
+  setReturnDate: (value: string) => void
+  pickupLocation: string
+  setPickupLocation: (value: string) => void
+  totalPrice: number
+  user: User | null | undefined
 }
 
 export default function BookingRentalModal({
@@ -60,385 +49,375 @@ export default function BookingRentalModal({
   open,
   onOpenChange,
   selectedItem,
-  ghFirstName,
-  setGhFirstName,
-  ghLastName,
-  setGhLastName,
-  ghPhone,
-  setGhPhone,
-  ghEmail,
-  setGhEmail,
-  ghSpecialRequests,
-  setGhSpecialRequests,
-  ghCheckInDate,
-  setGhCheckInDate,
-  ghCheckOutDate,
-  setGhCheckOutDate,
-  ghNumGuests,
-  setGhNumGuests,
-  ghTotalPrice,
-  crFirstName,
-  setCrFirstName,
-  crLastName,
-  setCrLastName,
-  crEmail,
-  setCrEmail,
-  crPhone,
-  setCrPhone,
-  crSpecialRequests,
-  setCrSpecialRequests,
-  crPickupDate,
-  setCrPickupDate,
-  crReturnDate,
-  setCrReturnDate,
-  crPickupLocation,
-  setCrPickupLocation,
-  crTotalPrice,
+  firstName,
+  setFirstName,
+  lastName,
+  setLastName,
+  phone,
+  setPhone,
+  email,
+  setEmail,
+  specialRequests,
+  setSpecialRequests,
+  checkInDate,
+  setCheckInDate,
+  checkOutDate,
+  setCheckOutDate,
+  numGuests,
+  setNumGuests,
+  pickupDate,
+  setPickupDate,
+  returnDate,
+  setReturnDate,
+  pickupLocation,
+  setPickupLocation,
+  totalPrice,
+  user,
 }: BookingRentalModalProps) {
-  const { user, isLoaded } = useUser()
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Auto-fill user information when modal opens and user is signed in
-  useEffect(() => {
-    if (isLoaded && user && open) {
-      const firstName = user.firstName || ""
-      const lastName = user.lastName || ""
-      const email = user.emailAddresses[0]?.emailAddress || ""
-      const phone = user.phoneNumbers[0]?.phoneNumber || ""
+  if (!selectedItem) return null
 
-      if (selectedItem?.type === "guestHouse") {
-        if (!ghFirstName) setGhFirstName(firstName)
-        if (!ghLastName) setGhLastName(lastName)
-        if (!ghEmail) setGhEmail(email)
-        if (!ghPhone) setGhPhone(phone)
-      } else if (selectedItem?.type === "car") {
-        if (!crFirstName) setCrFirstName(firstName)
-        if (!crLastName) setCrLastName(lastName)
-        if (!crEmail) setCrEmail(email)
-        if (!crPhone) setCrPhone(phone)
-      }
+  const isGuestHouse = selectedItem.type === "guestHouse"
+  const item = selectedItem.data
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+
+    try {
+      // Here you would submit the booking data to your API
+      console.log("Submitting booking:", {
+        type: selectedItem.type,
+        item,
+        firstName,
+        lastName,
+        phone,
+        email,
+        specialRequests,
+        ...(isGuestHouse
+          ? {
+              checkInDate,
+              checkOutDate,
+              numGuests,
+            }
+          : {
+              pickupDate,
+              returnDate,
+              pickupLocation,
+            }),
+        totalPrice,
+        userId: user?.id,
+      })
+
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+
+      // Close modal and reset form
+      onOpenChange(false)
+
+      // Show success message (you might want to use a toast library)
+      alert(t.bookingConfirmed || "Booking confirmed!")
+    } catch (error) {
+      console.error("Booking error:", error)
+      alert(t.bookingError || "Booking failed. Please try again.")
+    } finally {
+      setIsSubmitting(false)
     }
-  }, [
-    isLoaded,
-    user,
-    open,
-    selectedItem,
-    ghFirstName,
-    ghLastName,
-    ghEmail,
-    ghPhone,
-    crFirstName,
-    crLastName,
-    crEmail,
-    crPhone,
-    setGhFirstName,
-    setGhLastName,
-    setGhEmail,
-    setGhPhone,
-    setCrFirstName,
-    setCrLastName,
-    setCrEmail,
-    setCrPhone,
-  ])
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[95vw] md:max-w-[900px] p-0 max-h-[95vh] overflow-y-auto">
-        {selectedItem && selectedItem.type === "guestHouse" && (
-          <div className="grid lg:grid-cols-2 gap-0">
-            <div className="p-4 sm:p-6 bg-muted/40 flex flex-col justify-between">
-              <DialogHeader className="mb-4">
-                <DialogTitle className="text-xl sm:text-2xl font-bold text-gray-700">
-                  {t.bookGuestHouseTitle.replace("{title}", selectedItem.data.title)}
-                </DialogTitle>
-                <DialogDescription asChild>
-                  <div>
-                    <ImageSlider
-                      images={selectedItem.data.images}
-                      alt={selectedItem.data.title}
-                      className="mb-4"
-                      enableFullscreen={true}
-                    />
-                    <div className="text-sm text-muted-foreground mb-2 leading-relaxed">
-                      {selectedItem.data.description}
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold">
+            {isGuestHouse
+              ? t.bookGuestHouseTitle?.replace("{title}", item.title) || `Book ${item.title}`
+              : t.rentCarTitle?.replace("{title}", item.title) || `Rent ${item.title}`}
+          </DialogTitle>
+        </DialogHeader>
+
+        {/* Item Info */}
+        <div className="bg-muted/50 rounded-lg p-4 mb-6">
+          <div className="flex items-start gap-4">
+            <img
+              src={item.image || "/placeholder.svg?height=80&width=80"}
+              alt={item.title}
+              className="w-20 h-20 rounded-lg object-cover"
+            />
+            <div className="flex-1">
+              <h3 className="font-semibold text-lg">{item.title}</h3>
+              {isGuestHouse ? (
+                <>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                    <MapPin className="h-4 w-4" />
+                    <span>{item.location}</span>
+                  </div>
+                  <div className="flex items-center gap-4 mt-2">
+                    <div className="flex items-center gap-1">
+                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      <span>{item.rating}</span>
                     </div>
-                    <div className="flex items-center gap-1 text-muted-foreground text-sm">
-                      <MapPin className="w-4 h-4 flex-shrink-0" />
-                      <span>{selectedItem.data.location}</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-sm text-yellow-500 mt-1">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`w-4 h-4 ${i < Math.floor(selectedItem.data.rating || 0) ? "fill-yellow-500" : ""}`}
-                        />
-                      ))}
-                      <span className="text-muted-foreground ml-1">({selectedItem.data.rating})</span>
-                    </div>
-                    <div className="text-xl sm:text-2xl font-bold mt-2">
-                      ${selectedItem.data.price}
-                      <span className="text-sm sm:text-base font-normal text-muted-foreground">{t.perNight}</span>
+                    <div className="flex items-center gap-1">
+                      <Users className="h-4 w-4" />
+                      <span>Up to {item.maxGuests} guests</span>
                     </div>
                   </div>
-                </DialogDescription>
-              </DialogHeader>
-            </div>
-            <div className="p-4 sm:p-6">
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
-                  <Label htmlFor="first-name" className="sm:text-right text-sm">
-                    {t.firstName}
-                  </Label>
-                  <Input
-                    id="first-name"
-                    type="text"
-                    value={ghFirstName}
-                    onChange={(e) => setGhFirstName(e.target.value)}
-                    className="sm:col-span-3 text-sm"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
-                  <Label htmlFor="last-name" className="sm:text-right text-sm">
-                    {t.lastName}
-                  </Label>
-                  <Input
-                    id="last-name"
-                    type="text"
-                    value={ghLastName}
-                    onChange={(e) => setGhLastName(e.target.value)}
-                    className="sm:col-span-3 text-sm"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
-                  <Label htmlFor="phone" className="sm:text-right text-sm">
-                    {t.phone}
-                  </Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={ghPhone}
-                    onChange={(e) => setGhPhone(e.target.value)}
-                    className="sm:col-span-3 text-sm"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
-                  <Label htmlFor="email" className="sm:text-right text-sm">
-                    {t.email}
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={ghEmail}
-                    onChange={(e) => setGhEmail(e.target.value)}
-                    className="sm:col-span-3 text-sm"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
-                  <Label htmlFor="check-in" className="sm:text-right text-sm">
-                    {t.checkIn}
-                  </Label>
-                  <Input
-                    id="check-in"
-                    type="date"
-                    value={ghCheckInDate}
-                    onChange={(e) => setGhCheckInDate(e.target.value)}
-                    className="sm:col-span-3 text-sm"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
-                  <Label htmlFor="check-out" className="sm:text-right text-sm">
-                    {t.checkOut}
-                  </Label>
-                  <Input
-                    id="check-out"
-                    type="date"
-                    value={ghCheckOutDate}
-                    onChange={(e) => setGhCheckOutDate(e.target.value)}
-                    className="sm:col-span-3 text-sm"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
-                  <Label htmlFor="guests" className="sm:text-right text-sm">
-                    {t.guests}
-                  </Label>
-                  <Input
-                    id="guests"
-                    type="number"
-                    value={ghNumGuests}
-                    onChange={(e) => setGhNumGuests(Number.parseInt(e.target.value))}
-                    min={1}
-                    className="sm:col-span-3 text-sm"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-4 items-start gap-2 sm:gap-4">
-                  <Label htmlFor="special-requests" className="sm:text-right text-sm">
-                    {t.requests}
-                  </Label>
-                  <textarea
-                    id="special-requests"
-                    rows={3}
-                    value={ghSpecialRequests}
-                    onChange={(e) => setGhSpecialRequests(e.target.value)}
-                    placeholder={t.anySpecialRequests}
-                    className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-3"
-                  ></textarea>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4 font-bold text-base sm:text-lg">
-                  <div className="sm:col-span-1 sm:text-right">{t.total}:</div>
-                  <div className="sm:col-span-3 sm:text-left">${ghTotalPrice.toFixed(2)}</div>
-                </div>
-              </div>
-              <Button type="submit" className="w-full">
-                {t.confirmBooking}
-              </Button>
-            </div>
-          </div>
-        )}
-        {selectedItem && selectedItem.type === "car" && (
-          <div className="grid lg:grid-cols-2 gap-0">
-            <div className="p-4 sm:p-6 bg-muted/40 flex flex-col justify-between">
-              <DialogHeader className="mb-4">
-                <DialogTitle className="text-xl sm:text-2xl font-bold text-gray-700">
-                  {t.rentCarTitle.replace("{title}", selectedItem.data.title)}
-                </DialogTitle>
-                <DialogDescription asChild>
-                  <div>
-                    <ImageSlider
-                      images={selectedItem.data.images}
-                      alt={selectedItem.data.title}
-                      className="mb-4"
-                      enableFullscreen={true}
-                    />
-                    <div className="text-sm text-muted-foreground mb-2 leading-relaxed">
-                      {selectedItem.data.description}
-                    </div>
-                    <div className="flex items-center gap-1 text-muted-foreground text-sm flex-wrap">
-                      <Users className="w-4 h-4 flex-shrink-0" />
+                  <div className="mt-2">
+                    <span className="text-2xl font-bold">${item.price}</span>
+                    <span className="text-muted-foreground">{t.perNight || "/night"}</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
+                    <div className="flex items-center gap-1">
+                      <Users className="h-4 w-4" />
                       <span>
-                        {selectedItem.data.seats} {t.seats}
+                        {item.seats} {t.seats || "seats"}
                       </span>
-                      <span className="mx-1">•</span>
-                      <CalendarDays className="w-4 h-4 flex-shrink-0" />
-                      <span>{selectedItem.data.transmission}</span>
                     </div>
-                    <div className="text-xl sm:text-2xl font-bold mt-2">
-                      ${selectedItem.data.price}
-                      <span className="text-sm sm:text-base font-normal text-muted-foreground">{t.perDay}</span>
+                    <div className="flex items-center gap-1">
+                      <Settings className="h-4 w-4" />
+                      <span>{item.transmission || t.automatic || "Automatic"}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Fuel className="h-4 w-4" />
+                      <span>{item.fuelType || t.petrol || "Petrol"}</span>
                     </div>
                   </div>
-                </DialogDescription>
-              </DialogHeader>
-            </div>
-            <div className="p-4 sm:p-6">
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
-                  <Label htmlFor="cr-first-name" className="sm:text-right text-sm">
-                    {t.firstName}
-                  </Label>
-                  <Input
-                    id="cr-first-name"
-                    type="text"
-                    value={crFirstName}
-                    onChange={(e) => setCrFirstName(e.target.value)}
-                    className="sm:col-span-3 text-sm"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
-                  <Label htmlFor="cr-last-name" className="sm:text-right text-sm">
-                    {t.lastName}
-                  </Label>
-                  <Input
-                    id="cr-last-name"
-                    type="text"
-                    value={crLastName}
-                    onChange={(e) => setCrLastName(e.target.value)}
-                    className="sm:col-span-3 text-sm"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
-                  <Label htmlFor="cr-email" className="sm:text-right text-sm">
-                    {t.email}
-                  </Label>
-                  <Input
-                    id="cr-email"
-                    type="email"
-                    value={crEmail}
-                    onChange={(e) => setCrEmail(e.target.value)}
-                    className="sm:col-span-3 text-sm"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
-                  <Label htmlFor="cr-phone" className="sm:text-right text-sm">
-                    {t.phone}
-                  </Label>
-                  <Input
-                    id="cr-phone"
-                    type="tel"
-                    value={crPhone}
-                    onChange={(e) => setCrPhone(e.target.value)}
-                    className="sm:col-span-3 text-sm"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
-                  <Label htmlFor="pickup-date" className="sm:text-right text-sm">
-                    {t.pickupDate}
-                  </Label>
-                  <Input
-                    id="pickup-date"
-                    type="date"
-                    value={crPickupDate}
-                    onChange={(e) => setCrPickupDate(e.target.value)}
-                    className="sm:col-span-3 text-sm"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
-                  <Label htmlFor="return-date" className="sm:text-right text-sm">
-                    {t.returnDate}
-                  </Label>
-                  <Input
-                    id="return-date"
-                    type="date"
-                    value={crReturnDate}
-                    onChange={(e) => setCrReturnDate(e.target.value)}
-                    className="sm:col-span-3 text-sm"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
-                  <Label htmlFor="pickup-location" className="sm:text-right text-sm">
-                    {t.pickupLocation}
-                  </Label>
-                  <Input
-                    id="pickup-location"
-                    type="text"
-                    value={crPickupLocation}
-                    onChange={(e) => setCrPickupLocation(e.target.value)}
-                    placeholder={t.cityOrAirport}
-                    className="sm:col-span-3 text-sm"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-4 items-start gap-2 sm:gap-4">
-                  <Label htmlFor="cr-special-requests" className="sm:text-right text-sm">
-                    {t.requests}
-                  </Label>
-                  <textarea
-                    id="cr-special-requests"
-                    rows={3}
-                    value={crSpecialRequests}
-                    onChange={(e) => setCrSpecialRequests(e.target.value)}
-                    placeholder={t.anySpecialRequests}
-                    className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-3"
-                  ></textarea>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4 font-bold text-base sm:text-lg">
-                  <div className="sm:col-span-1 sm:text-right">{t.total}:</div>
-                  <div className="sm:col-span-3 sm:text-left">${crTotalPrice.toFixed(2)}</div>
-                </div>
-              </div>
-              <Button type="submit" className="w-full">
-                {t.confirmRental}
-              </Button>
+                  <div className="mt-2">
+                    <span className="text-2xl font-bold">${item.price}</span>
+                    <span className="text-muted-foreground">{t.perDay || "/day"}</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
-        )}
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Personal Information */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="firstName">{t.firstName || "First Name"} *</Label>
+              <Input
+                id="firstName"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                required
+                disabled={isSubmitting}
+              />
+            </div>
+            <div>
+              <Label htmlFor="lastName">{t.lastName || "Last Name"} *</Label>
+              <Input
+                id="lastName"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                required
+                disabled={isSubmitting}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="email">{t.email || "Email"} *</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={isSubmitting}
+              />
+            </div>
+            <div>
+              <Label htmlFor="phone">{t.phone || "Phone"} *</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+                disabled={isSubmitting}
+              />
+            </div>
+          </div>
+
+          {/* Booking/Rental Specific Fields */}
+          <Separator />
+
+          {isGuestHouse ? (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="checkIn">{t.checkIn || "Check-in"} *</Label>
+                  <Input
+                    id="checkIn"
+                    type="date"
+                    value={checkInDate}
+                    onChange={(e) => setCheckInDate(e.target.value)}
+                    min={new Date().toISOString().split("T")[0]}
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="checkOut">{t.checkOut || "Check-out"} *</Label>
+                  <Input
+                    id="checkOut"
+                    type="date"
+                    value={checkOutDate}
+                    onChange={(e) => setCheckOutDate(e.target.value)}
+                    min={checkInDate || new Date().toISOString().split("T")[0]}
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="guests">{t.guests || "Number of Guests"} *</Label>
+                <Input
+                  id="guests"
+                  type="number"
+                  min="1"
+                  max={item.maxGuests}
+                  value={numGuests}
+                  onChange={(e) => setNumGuests(Number.parseInt(e.target.value))}
+                  required
+                  disabled={isSubmitting}
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="pickupDate">{t.pickupDate || "Pickup Date"} *</Label>
+                  <Input
+                    id="pickupDate"
+                    type="date"
+                    value={pickupDate}
+                    onChange={(e) => setPickupDate(e.target.value)}
+                    min={new Date().toISOString().split("T")[0]}
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="returnDate">{t.returnDate || "Return Date"} *</Label>
+                  <Input
+                    id="returnDate"
+                    type="date"
+                    value={returnDate}
+                    onChange={(e) => setReturnDate(e.target.value)}
+                    min={pickupDate || new Date().toISOString().split("T")[0]}
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="pickupLocation">{t.pickupLocation || "Pickup Location"} *</Label>
+                <Input
+                  id="pickupLocation"
+                  value={pickupLocation}
+                  onChange={(e) => setPickupLocation(e.target.value)}
+                  placeholder={t.cityOrAirport || "City or Airport"}
+                  required
+                  disabled={isSubmitting}
+                />
+              </div>
+            </>
+          )}
+
+          <div>
+            <Label htmlFor="requests">{t.requests || "Special Requests"}</Label>
+            <Textarea
+              id="requests"
+              value={specialRequests}
+              onChange={(e) => setSpecialRequests(e.target.value)}
+              placeholder={t.anySpecialRequests || "Any special requests?"}
+              rows={3}
+              disabled={isSubmitting}
+            />
+          </div>
+
+          <Separator />
+
+          {/* Booking Summary */}
+          <div className="bg-muted/50 rounded-lg p-4">
+            <h4 className="font-semibold mb-3">
+              {isGuestHouse ? t.bookingSummary || "Booking Summary" : t.rentalSummary || "Rental Summary"}
+            </h4>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span>{isGuestHouse ? t.pricePerNight || "Price per night" : t.pricePerDay || "Price per day"}:</span>
+                <span>${item.price}</span>
+              </div>
+              {isGuestHouse ? (
+                <>
+                  <div className="flex justify-between">
+                    <span>{t.numberOfNights || "Number of nights"}:</span>
+                    <span>
+                      {checkInDate && checkOutDate
+                        ? Math.ceil(
+                            (new Date(checkOutDate).getTime() - new Date(checkInDate).getTime()) /
+                              (1000 * 60 * 60 * 24),
+                          )
+                        : 0}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>{t.numberOfGuests || "Number of guests"}:</span>
+                    <span>{numGuests}</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex justify-between">
+                    <span>{t.numberOfDays || "Number of days"}:</span>
+                    <span>
+                      {pickupDate && returnDate
+                        ? Math.ceil(
+                            (new Date(returnDate).getTime() - new Date(pickupDate).getTime()) / (1000 * 60 * 60 * 24),
+                          )
+                        : 0}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>{t.pickupLocation || "Pickup location"}:</span>
+                    <span>{pickupLocation || "Not specified"}</span>
+                  </div>
+                </>
+              )}
+              <Separator />
+              <div className="flex justify-between font-semibold text-lg">
+                <span>{t.total || "Total"}:</span>
+                <span>${totalPrice}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <Button type="submit" className="w-full" size="lg" disabled={isSubmitting || totalPrice <= 0}>
+            {isSubmitting ? (
+              <>
+                <Calendar className="mr-2 h-4 w-4 animate-spin" />
+                {t.processing || "Processing..."}
+              </>
+            ) : (
+              <>
+                <Calendar className="mr-2 h-4 w-4" />
+                {isGuestHouse ? t.confirmBooking || "Confirm Booking" : t.confirmRental || "Confirm Rental"}
+              </>
+            )}
+          </Button>
+        </form>
       </DialogContent>
     </Dialog>
   )

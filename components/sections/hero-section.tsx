@@ -1,11 +1,11 @@
-"use client";
+"use client"
 
-import Image from "next/image";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
 
 interface HeroSectionProps {
-  t: any; // Translation object
+  t: any // Translation object
 }
 
 export default function HeroSection({ t }: HeroSectionProps) {
@@ -46,5 +46,5 @@ export default function HeroSection({ t }: HeroSectionProps) {
         </div>
       </div>
     </section>
-  );
+  )
 }

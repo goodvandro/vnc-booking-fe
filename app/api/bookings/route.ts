@@ -1,60 +1,44 @@
-import { NextResponse } from "next/server"
-import { getBookingsData, createBookingData } from "@/lib/strapi-data"
-import type { Booking } from "@/lib/types"
+import { type NextRequest, NextResponse } from "next/server"
+import { auth } from "@clerk/nextjs/server"
+import { strapiAPI } from "@/lib/strapi-api"
 
 export async function GET() {
   try {
-    const bookings = await getBookingsData()
+    const { userId } = auth()
+
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const bookings = await strapiAPI.getAllBookings()
     return NextResponse.json(bookings)
   } catch (error) {
-    console.error("API Error - Bookings:", error)
-    return NextResponse.json({ error: "Failed to fetch bookings" }, { status: 500 })
+    console.error("Error fetching bookings:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const data = await request.json()
+    const { type, ...bookingData } = data
 
-    // Validate required fields
-    const requiredFields = [
-      "type",
-      "itemId",
-      "itemName",
-      "firstName",
-      "lastName",
-      "email",
-      "phone",
-      "startDate",
-      "endDate",
-      "totalPrice",
-    ]
-    for (const field of requiredFields) {
-      if (!body[field]) {
-        return NextResponse.json({ error: `Missing required field: ${field}` }, { status: 400 })
-      }
+    let result
+    if (type === "guest-house") {
+      result = await strapiAPI.createGuestHouseBooking(bookingData)
+    } else if (type === "car-rental") {
+      result = await strapiAPI.createCarRentalBooking(bookingData)
+    } else {
+      return NextResponse.json({ error: "Invalid booking type" }, { status: 400 })
     }
 
-    const newBooking: Omit<Booking, "id" | "createdAt" | "status"> = {
-      type: body.type,
-      itemId: body.itemId,
-      itemName: body.itemName,
-      firstName: body.firstName,
-      lastName: body.lastName,
-      email: body.email,
-      phone: body.phone,
-      startDate: body.startDate,
-      endDate: body.endDate,
-      guestsOrSeats: body.guestsOrSeats,
-      pickupLocation: body.pickupLocation,
-      specialRequests: body.specialRequests,
-      totalPrice: body.totalPrice,
+    if (result.success) {
+      return NextResponse.json(result.data, { status: 201 })
+    } else {
+      return NextResponse.json({ error: result.error }, { status: 400 })
     }
-
-    const booking = await createBookingData(newBooking)
-    return NextResponse.json(booking, { status: 201 })
   } catch (error) {
-    console.error("API Error - Create Booking:", error)
-    return NextResponse.json({ error: "Failed to create booking" }, { status: 500 })
+    console.error("Error creating booking:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

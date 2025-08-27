@@ -1,114 +1,142 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { redirect } from "next/navigation"
-import type { BookingStatus, Car, GuestHouse, GuestHouseOutputDTO } from "@/lib/types"
-import {
-  getBookingsData,
-  getBookingByIdData,
-  updateBookingStatusData,
-  getDashboardStatsData,
-  // stubs below keep other admin imports working
-  getGuestHousesData,
-  getGuestHouseByIdData,
-  createGuestHouseData,
-  updateGuestHouseData,
-  deleteGuestHouseData,
-  getCarsData,
-  getCarByIdData,
-  createCarData,
-  updateCarData,
-  deleteCarData,
-} from "@/lib/strapi-data"
+import { strapiAPI } from "@/lib/strapi-api"
 
-// BOOKINGS
-export async function getBookings() {
-  return await getBookingsData()
-}
-export async function getBookingById(id: string) {
-  return await getBookingByIdData(id)
-}
-export async function updateBookingStatus(id: string, status: BookingStatus) {
-  await updateBookingStatusData(id, status)
-  revalidatePath("/admin/bookings")
-}
-// Keep this export for the client component import to avoid "doesn't provide an export" errors.
-export async function updateBookingStatusAction(id: string, status: BookingStatus) {
-  await updateBookingStatusData(id, status)
-  revalidatePath("/admin/bookings")
-}
-
-// DASHBOARD
-export async function getDashboardStats() {
-  return await getDashboardStatsData()
-}
-
-// GUEST HOUSES (stubs passthrough)
-function extractImagesFromFormData(formData: FormData): string[] {
-  const images: string[] = []
-  let index = 0
-  while (formData.has(`image-${index}`)) {
-    const image = formData.get(`image-${index}`) as string
-    if (image && image.trim()) images.push(image.trim())
-    index++
-  }
-  return images.length > 0 ? images : ["/placeholder.svg?height=300&width=400"]
-}
-
-export async function getGuestHouses() {
-  return await getGuestHousesData() as GuestHouseOutputDTO[]
-}
-export async function getGuestHouse(id: string) {
-  return await getGuestHouseByIdData(id)
-}
-export async function createGuestHouse(payload: any) {
-  return await createGuestHouseData(payload)
-}
-export async function updateGuestHouse(id: string, payload: any) {
-  return await updateGuestHouseData(id, payload)
-}
-export async function deleteGuestHouse(id: string | number) {
-  await deleteGuestHouseData(String(id))
-  revalidatePath("/admin/guest-houses")
-}
-
-// CARS (stubs passthrough)
-export async function getCars() {
-  return await getCarsData()
-}
-export async function getCar(id: string) {
-  return await getCarByIdData(id)
-}
 export async function createCar(formData: FormData) {
-  const images = extractImagesFromFormData(formData)
-  const newCar: Omit<Car, "id"> = {
-    images,
-    carId: new Date().getTime().toString(),
-    title: String(formData.get("title") || ""),
-    seats: Number.parseInt(String(formData.get("seats") || "0")),
-    transmission: String(formData.get("transmission") || ""),
-    price: Number.parseFloat(String(formData.get("price") || "0")),
-    description: String(formData.get("description") || ""),
+  try {
+    const carData = {
+      name: formData.get("name") as string,
+      make: formData.get("make") as string,
+      model: formData.get("model") as string,
+      year: Number.parseInt(formData.get("year") as string),
+      seats: Number.parseInt(formData.get("seats") as string),
+      transmission: formData.get("transmission") as string,
+      fuelType: formData.get("fuelType") as string,
+      pricePerDay: Number.parseFloat(formData.get("pricePerDay") as string),
+      location: formData.get("location") as string,
+      description: formData.get("description") as string,
+      images: JSON.parse((formData.get("images") as string) || "[]"),
+      available: formData.get("available") === "true",
+    }
+
+    const result = await strapiAPI.createCar(carData)
+
+    if (result.success) {
+      revalidatePath("/admin/cars")
+      return { success: true, message: "Car created successfully" }
+    } else {
+      return { success: false, error: result.error }
+    }
+  } catch (error) {
+    console.error("Error creating car:", error)
+    return { success: false, error: "Failed to create car" }
   }
-  await createCarData(newCar)
-  revalidatePath("/admin/cars")
-  redirect("/admin/cars")
 }
+
 export async function updateCar(id: string, formData: FormData) {
-  const images = extractImagesFromFormData(formData)
-  const updatedCar: Partial<Car> = {
-    images,
-    title: String(formData.get("title") || ""),
-    seats: Number.parseInt(String(formData.get("seats") || "0")),
-    transmission: String(formData.get("transmission") || ""),
-    price: Number.parseFloat(String(formData.get("price") || "0")),
-    description: String(formData.get("description") || ""),
+  try {
+    const carData = {
+      name: formData.get("name") as string,
+      make: formData.get("make") as string,
+      model: formData.get("model") as string,
+      year: Number.parseInt(formData.get("year") as string),
+      seats: Number.parseInt(formData.get("seats") as string),
+      transmission: formData.get("transmission") as string,
+      fuelType: formData.get("fuelType") as string,
+      pricePerDay: Number.parseFloat(formData.get("pricePerDay") as string),
+      location: formData.get("location") as string,
+      description: formData.get("description") as string,
+      images: JSON.parse((formData.get("images") as string) || "[]"),
+      available: formData.get("available") === "true",
+    }
+
+    const result = await strapiAPI.updateCar(id, carData)
+
+    if (result.success) {
+      revalidatePath("/admin/cars")
+      return { success: true, message: "Car updated successfully" }
+    } else {
+      return { success: false, error: result.error }
+    }
+  } catch (error) {
+    console.error("Error updating car:", error)
+    return { success: false, error: "Failed to update car" }
   }
-  await updateCarData(id, updatedCar)
-  revalidatePath("/admin/cars")
-  redirect("/admin/cars")
 }
-export async function deleteCar(id: string | number) {
-  await deleteCarData(String(id))
-  revalidatePath("/admin/cars")
+
+export async function createGuestHouse(formData: FormData) {
+  try {
+    const guestHouseData = {
+      name: formData.get("name") as string,
+      location: formData.get("location") as string,
+      pricePerNight: Number.parseFloat(formData.get("pricePerNight") as string),
+      maxGuests: Number.parseInt(formData.get("maxGuests") as string),
+      bedrooms: Number.parseInt(formData.get("bedrooms") as string),
+      bathrooms: Number.parseInt(formData.get("bathrooms") as string),
+      rating: Number.parseFloat(formData.get("rating") as string),
+      description: formData.get("description") as string,
+      amenities: JSON.parse((formData.get("amenities") as string) || "[]"),
+      images: JSON.parse((formData.get("images") as string) || "[]"),
+      available: formData.get("available") === "true",
+    }
+
+    const result = await strapiAPI.createGuestHouse(guestHouseData)
+
+    if (result.success) {
+      revalidatePath("/admin/guest-houses")
+      return { success: true, message: "Guest house created successfully" }
+    } else {
+      return { success: false, error: result.error }
+    }
+  } catch (error) {
+    console.error("Error creating guest house:", error)
+    return { success: false, error: "Failed to create guest house" }
+  }
+}
+
+export async function updateGuestHouse(id: string, formData: FormData) {
+  try {
+    const guestHouseData = {
+      name: formData.get("name") as string,
+      location: formData.get("location") as string,
+      pricePerNight: Number.parseFloat(formData.get("pricePerNight") as string),
+      maxGuests: Number.parseInt(formData.get("maxGuests") as string),
+      bedrooms: Number.parseInt(formData.get("bedrooms") as string),
+      bathrooms: Number.parseInt(formData.get("bathrooms") as string),
+      rating: Number.parseFloat(formData.get("rating") as string),
+      description: formData.get("description") as string,
+      amenities: JSON.parse((formData.get("amenities") as string) || "[]"),
+      images: JSON.parse((formData.get("images") as string) || "[]"),
+      available: formData.get("available") === "true",
+    }
+
+    const result = await strapiAPI.updateGuestHouse(id, guestHouseData)
+
+    if (result.success) {
+      revalidatePath("/admin/guest-houses")
+      return { success: true, message: "Guest house updated successfully" }
+    } else {
+      return { success: false, error: result.error }
+    }
+  } catch (error) {
+    console.error("Error updating guest house:", error)
+    return { success: false, error: "Failed to update guest house" }
+  }
+}
+
+export async function updateBookingStatus(id: string, status: string) {
+  try {
+    const result = await strapiAPI.updateBookingStatus(id, status)
+
+    if (result.success) {
+      revalidatePath("/admin/bookings")
+      return { success: true, message: "Booking status updated successfully" }
+    } else {
+      return { success: false, error: result.error }
+    }
+  } catch (error) {
+    console.error("Error updating booking status:", error)
+    return { success: false, error: "Failed to update booking status" }
+  }
 }
