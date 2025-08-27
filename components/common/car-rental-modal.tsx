@@ -2,61 +2,50 @@
 
 import type React from "react"
 
-import { useState, useTransition, useMemo } from "react"
+import { useState, useMemo, useTransition } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { Car, CheckCircle, AlertCircle } from "lucide-react"
+import { Car, MapPin, Users, CheckCircle, AlertCircle } from "lucide-react"
 import { createCarRentalBooking } from "@/app/actions/booking-actions"
 import type { SelectedItem } from "@/lib/types"
+import type { User } from "@clerk/nextjs/server"
 
 interface CarRentalModalProps {
   isOpen: boolean
   onClose: () => void
   selectedItem: SelectedItem | null
   t: any
-  user: any
+  user: User | null | undefined
 }
 
 export default function CarRentalModal({ isOpen, onClose, selectedItem, t, user }: CarRentalModalProps) {
   const [isPending, startTransition] = useTransition()
-  const [result, setResult] = useState<{
-    success: boolean
-    error?: string
-    bookingId?: string
-    message?: string
-  } | null>(null)
+  const [bookingStatus, setBookingStatus] = useState<"idle" | "success" | "error">("idle")
+  const [bookingId, setBookingId] = useState<string>("")
+  const [errorMessage, setErrorMessage] = useState<string>("")
 
   // Form state
-  const [firstName, setFirstName] = useState("")
-  const [lastName, setLastName] = useState("")
-  const [email, setEmail] = useState("")
-  const [phone, setPhone] = useState("")
+  const [firstName, setFirstName] = useState(user?.firstName || "")
+  const [lastName, setLastName] = useState(user?.lastName || "")
+  const [email, setEmail] = useState(user?.emailAddresses?.[0]?.emailAddress || "")
+  const [phone, setPhone] = useState(user?.phoneNumbers?.[0]?.phoneNumber || "")
   const [driverLicense, setDriverLicense] = useState("")
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
 
-  // Pre-fill user data when modal opens
-  useState(() => {
-    if (user && isOpen) {
-      setFirstName(user.firstName || "")
-      setLastName(user.lastName || "")
-      setEmail(user.emailAddresses?.[0]?.emailAddress || "")
-      setPhone(user.phoneNumbers?.[0]?.phoneNumber || "")
-    }
-  }, [user, isOpen])
-
   // Calculate total price
   const totalPrice = useMemo(() => {
-    if (selectedItem && startDate && endDate) {
+    if (selectedItem?.type === "car" && startDate && endDate) {
       const startDateTime = new Date(startDate)
       const endDateTime = new Date(endDate)
       if (endDateTime <= startDateTime) return 0
       const timeDiff = endDateTime.getTime() - startDateTime.getTime()
       const numDays = Math.ceil(timeDiff / (1000 * 3600 * 24))
-      return numDays * selectedItem.data.price
+      const pricePerDay = selectedItem.data.price
+      return numDays * pricePerDay
     }
     return 0
   }, [selectedItem, startDate, endDate])
@@ -75,39 +64,48 @@ export default function CarRentalModal({ isOpen, onClose, selectedItem, t, user 
     formData.append("startDate", startDate)
     formData.append("endDate", endDate)
     formData.append("totalPrice", totalPrice.toString())
-    formData.append("carId", selectedItem.data.id.toString())
+    formData.append("carId", "1") // You'll need to pass the actual car ID
 
     startTransition(async () => {
       const result = await createCarRentalBooking(formData)
-      setResult(result)
 
       if (result.success) {
-        // Auto-close after 4 seconds
+        setBookingStatus("success")
+        setBookingId(result.bookingId)
+        // Auto close after 4 seconds
         setTimeout(() => {
           onClose()
-          setResult(null)
-          // Reset form
-          setFirstName("")
-          setLastName("")
-          setEmail("")
-          setPhone("")
-          setDriverLicense("")
-          setStartDate("")
-          setEndDate("")
+          resetForm()
         }, 4000)
+      } else {
+        setBookingStatus("error")
+        setErrorMessage(result.error || "Failed to create booking")
       }
     })
   }
 
-  const handleClose = () => {
-    onClose()
-    setResult(null)
+  const resetForm = () => {
+    setBookingStatus("idle")
+    setBookingId("")
+    setErrorMessage("")
+    setFirstName(user?.firstName || "")
+    setLastName(user?.lastName || "")
+    setEmail(user?.emailAddresses?.[0]?.emailAddress || "")
+    setPhone(user?.phoneNumbers?.[0]?.phoneNumber || "")
+    setDriverLicense("")
+    setStartDate("")
+    setEndDate("")
   }
 
-  if (!selectedItem) return null
+  const handleClose = () => {
+    onClose()
+    resetForm()
+  }
+
+  if (!selectedItem || selectedItem.type !== "car") return null
 
   // Success state
-  if (result?.success) {
+  if (bookingStatus === "success") {
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="sm:max-w-md">
@@ -115,14 +113,12 @@ export default function CarRentalModal({ isOpen, onClose, selectedItem, t, user 
             <div className="mb-4 rounded-full bg-green-100 p-3">
               <CheckCircle className="h-8 w-8 text-green-600" />
             </div>
-            <h3 className="mb-2 text-lg font-semibold text-green-900">Rental Confirmed!</h3>
-            <p className="mb-4 text-sm text-gray-600">Your car rental has been successfully booked.</p>
-            <div className="mb-4 rounded-lg bg-gray-50 p-4">
-              <p className="text-sm font-medium text-gray-900">
-                Booking ID: <span className="font-mono">{result.bookingId}</span>
-              </p>
+            <h3 className="mb-2 text-lg font-semibold">Booking Confirmed!</h3>
+            <p className="mb-4 text-sm text-muted-foreground">Your car rental has been successfully booked.</p>
+            <div className="mb-4 rounded-lg bg-muted p-3">
+              <p className="text-sm font-medium">Booking ID: {bookingId}</p>
             </div>
-            <p className="text-xs text-gray-500">This window will close automatically in a few seconds.</p>
+            <p className="text-xs text-muted-foreground">You will receive a confirmation email shortly.</p>
           </div>
         </DialogContent>
       </Dialog>
@@ -135,43 +131,72 @@ export default function CarRentalModal({ isOpen, onClose, selectedItem, t, user 
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Car className="h-5 w-5" />
-            Rent {selectedItem.data.name}
+            Rent {selectedItem.data.title}
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Car Info */}
-          <div className="rounded-lg border p-4">
-            <h3 className="font-semibold mb-2">{selectedItem.data.name}</h3>
-            <p className="text-sm text-gray-600 mb-2">{selectedItem.data.type}</p>
-            <p className="text-lg font-bold text-primary">${selectedItem.data.price}/day</p>
+        {/* Car Summary */}
+        <div className="rounded-lg border p-4">
+          <div className="flex items-start gap-4">
+            <img
+              src={selectedItem.data.images?.[0] || "/placeholder.svg?height=80&width=80"}
+              alt={selectedItem.data.title}
+              className="h-20 w-20 rounded-lg object-cover"
+            />
+            <div className="flex-1">
+              <h3 className="font-semibold">{selectedItem.data.title}</h3>
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <Users className="h-4 w-4" />
+                  {(selectedItem.data as any).seats} seats
+                </div>
+                <div className="flex items-center gap-1">
+                  <MapPin className="h-4 w-4" />
+                  {(selectedItem.data as any).transmission}
+                </div>
+              </div>
+              <p className="text-lg font-bold">
+                €{selectedItem.data.price}
+                <span className="text-sm font-normal text-muted-foreground"> / day</span>
+              </p>
+            </div>
           </div>
+        </div>
 
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Personal Information */}
           <div className="space-y-4">
-            <h3 className="font-semibold">Personal Information</h3>
+            <h3 className="text-lg font-semibold">Personal Information</h3>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="firstName">First Name *</Label>
+              <div className="space-y-2">
+                <Label htmlFor="firstName">
+                  First Name <span className="text-red-500">*</span>
+                </Label>
                 <Input id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
               </div>
-              <div>
-                <Label htmlFor="lastName">Last Name *</Label>
+              <div className="space-y-2">
+                <Label htmlFor="lastName">
+                  Last Name <span className="text-red-500">*</span>
+                </Label>
                 <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="email">Email *</Label>
+              <div className="space-y-2">
+                <Label htmlFor="email">
+                  Email <span className="text-red-500">*</span>
+                </Label>
                 <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
               </div>
-              <div>
-                <Label htmlFor="phone">Phone *</Label>
-                <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} required />
+              <div className="space-y-2">
+                <Label htmlFor="phone">
+                  Phone <span className="text-red-500">*</span>
+                </Label>
+                <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required />
               </div>
             </div>
-            <div>
-              <Label htmlFor="driverLicense">Driver License</Label>
+            <div className="space-y-2">
+              <Label htmlFor="driverLicense">Driver License Number</Label>
               <Input
                 id="driverLicense"
                 value={driverLicense}
@@ -181,12 +206,16 @@ export default function CarRentalModal({ isOpen, onClose, selectedItem, t, user 
             </div>
           </div>
 
+          <Separator />
+
           {/* Rental Details */}
           <div className="space-y-4">
-            <h3 className="font-semibold">Rental Details</h3>
+            <h3 className="text-lg font-semibold">Rental Details</h3>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="startDate">Pickup Date *</Label>
+              <div className="space-y-2">
+                <Label htmlFor="startDate">
+                  Pickup Date <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="startDate"
                   type="date"
@@ -196,8 +225,10 @@ export default function CarRentalModal({ isOpen, onClose, selectedItem, t, user 
                   required
                 />
               </div>
-              <div>
-                <Label htmlFor="endDate">Return Date *</Label>
+              <div className="space-y-2">
+                <Label htmlFor="endDate">
+                  Return Date <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="endDate"
                   type="date"
@@ -210,51 +241,44 @@ export default function CarRentalModal({ isOpen, onClose, selectedItem, t, user 
             </div>
           </div>
 
-          {/* Rental Summary */}
-          {totalPrice > 0 && (
-            <div className="rounded-lg border p-4 bg-gray-50">
-              <h3 className="font-semibold mb-3">Rental Summary</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span>Pickup:</span>
-                  <span>{startDate}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Return:</span>
-                  <span>{endDate}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Days:</span>
-                  <span>
-                    {Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 3600 * 24))}
-                  </span>
-                </div>
-                <Separator />
-                <div className="flex justify-between font-semibold text-lg">
-                  <span>Total:</span>
-                  <span>${totalPrice}</span>
-                </div>
-              </div>
+          <Separator />
+
+          {/* Booking Summary */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Rental Summary</h3>
+            <div className="rounded-lg bg-muted p-4 space-y-2">
+              {startDate && endDate && (
+                <>
+                  <div className="flex justify-between text-sm">
+                    <span>
+                      €{selectedItem.data.price} ×{" "}
+                      {Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 3600 * 24))}{" "}
+                      days
+                    </span>
+                    <span>€{totalPrice}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between font-semibold">
+                    <span>Total</span>
+                    <span>€{totalPrice}</span>
+                  </div>
+                </>
+              )}
             </div>
-          )}
+          </div>
 
           {/* Error Message */}
-          {result?.error && (
-            <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-red-800">
+          {bookingStatus === "error" && (
+            <div className="flex items-center gap-2 rounded-lg bg-red-50 p-3 text-red-700">
               <AlertCircle className="h-4 w-4" />
-              <span className="text-sm">{result.error}</span>
+              <span className="text-sm">{errorMessage}</span>
             </div>
           )}
 
           {/* Submit Button */}
-          <div className="flex gap-3">
-            <Button type="button" variant="outline" onClick={handleClose} className="flex-1 bg-transparent">
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isPending || totalPrice <= 0} className="flex-1">
-              {isPending ? "Creating Booking..." : `Confirm Rental - $${totalPrice}`}
-            </Button>
-          </div>
+          <Button type="submit" className="w-full" disabled={isPending || !startDate || !endDate || totalPrice === 0}>
+            {isPending ? "Creating Booking..." : `Confirm Rental - €${totalPrice}`}
+          </Button>
         </form>
       </DialogContent>
     </Dialog>

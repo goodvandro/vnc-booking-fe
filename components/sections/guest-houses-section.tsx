@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button"
 import ImageSlider from "@/components/common/image-slider"
 import type { GuestHouseOutputDTO, SelectedItem } from "@/lib/types"
-import { getGuestHouses } from "@/app/admin/actions"
 import { useEffect, useState } from "react"
 
 interface GuestHousesSectionProps {
@@ -18,9 +17,11 @@ export default function GuestHousesSection({ t, handleBookNowClick }: GuestHouse
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getGuestHouses()
-      .then((guestHouses) => {
-        setGuestHouses(guestHouses)
+    // Fetch guest houses from API
+    fetch("/api/guest-houses")
+      .then((response) => response.json())
+      .then((data) => {
+        setGuestHouses(data)
       })
       .catch((error) => {
         console.error("Failed to fetch guest houses:", error)

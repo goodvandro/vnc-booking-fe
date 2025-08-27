@@ -5,11 +5,11 @@ import { strapiAPI } from "@/lib/strapi-api"
 import { auth } from "@clerk/nextjs/server"
 
 // Generate unique booking ID
-function generateBookingId(type: "guest-house" | "car-rental"): string {
+function generateBookingId(type: "guest-house" | "car"): string {
+  const timestamp = Date.now()
+  const random = Math.random().toString(36).substring(2, 8).toUpperCase()
   const prefix = type === "guest-house" ? "GH" : "CR"
-  const timestamp = Date.now().toString(36)
-  const random = Math.random().toString(36).substring(2, 8)
-  return `${prefix}-${timestamp}-${random}`.toUpperCase()
+  return `${prefix}-${timestamp}-${random}`
 }
 
 // Guest House Booking Action
@@ -30,16 +30,8 @@ export async function createGuestHouseBooking(formData: FormData) {
     const guestHouseId = formData.get("guestHouseId") as string
 
     // Validation
-    if (!firstName || !lastName || !email || !phone || !checkIn || !checkOut || !guestHouseId) {
-      return { success: false, error: "Missing required fields" }
-    }
-
-    if (guests < 1) {
-      return { success: false, error: "Number of guests must be at least 1" }
-    }
-
-    if (totalPrice <= 0) {
-      return { success: false, error: "Invalid total price" }
+    if (!firstName || !lastName || !email || !phone || !checkIn || !checkOut || !totalPrice) {
+      throw new Error("Missing required fields")
     }
 
     // Date validation
@@ -49,18 +41,18 @@ export async function createGuestHouseBooking(formData: FormData) {
     today.setHours(0, 0, 0, 0)
 
     if (checkInDate < today) {
-      return { success: false, error: "Check-in date cannot be in the past" }
+      throw new Error("Check-in date cannot be in the past")
     }
 
     if (checkOutDate <= checkInDate) {
-      return { success: false, error: "Check-out date must be after check-in date" }
+      throw new Error("Check-out date must be after check-in date")
     }
 
-    // Generate booking ID
+    // Generate unique booking ID
     const bookingId = generateBookingId("guest-house")
 
-    // Prepare booking data for Strapi
-    const bookingData = {
+    // Create booking payload matching Strapi structure
+    const bookingPayload = {
       bookingId,
       firstName,
       lastName,
@@ -72,19 +64,16 @@ export async function createGuestHouseBooking(formData: FormData) {
       checkOut,
       totalPrice,
       bookingStatus: "pending",
-      ...(userId && { user: userId }),
-      guest_house: Number.parseInt(guestHouseId),
+      user: userId ? Number.parseInt(userId) : null,
+      guest_house: guestHouseId ? Number.parseInt(guestHouseId) : null,
     }
 
     // Create booking in Strapi
-    const result = await strapiAPI.createGuestHouseBooking(bookingData)
-
-    if (!result) {
-      return { success: false, error: "Failed to create booking" }
-    }
+    const response = await strapiAPI.createGuestHouseBooking(bookingPayload)
 
     // Revalidate admin pages
     revalidatePath("/admin/bookings")
+    revalidatePath("/admin")
 
     return {
       success: true,
@@ -117,12 +106,8 @@ export async function createCarRentalBooking(formData: FormData) {
     const carId = formData.get("carId") as string
 
     // Validation
-    if (!firstName || !lastName || !email || !phone || !startDate || !endDate || !carId) {
-      return { success: false, error: "Missing required fields" }
-    }
-
-    if (totalPrice <= 0) {
-      return { success: false, error: "Invalid total price" }
+    if (!firstName || !lastName || !email || !phone || !startDate || !endDate || !totalPrice) {
+      throw new Error("Missing required fields")
     }
 
     // Date validation
@@ -132,18 +117,18 @@ export async function createCarRentalBooking(formData: FormData) {
     today.setHours(0, 0, 0, 0)
 
     if (startDateTime < today) {
-      return { success: false, error: "Start date cannot be in the past" }
+      throw new Error("Start date cannot be in the past")
     }
 
     if (endDateTime <= startDateTime) {
-      return { success: false, error: "End date must be after start date" }
+      throw new Error("End date must be after start date")
     }
 
-    // Generate booking ID
-    const bookingId = generateBookingId("car-rental")
+    // Generate unique booking ID
+    const bookingId = generateBookingId("car")
 
-    // Prepare booking data for Strapi
-    const bookingData = {
+    // Create booking payload matching Strapi structure
+    const bookingPayload = {
       bookingId,
       firstName,
       lastName,
@@ -154,19 +139,16 @@ export async function createCarRentalBooking(formData: FormData) {
       endDate,
       totalPrice,
       bookingStatus: "pending",
-      ...(userId && { user: userId }),
-      car: Number.parseInt(carId),
+      user: userId ? Number.parseInt(userId) : null,
+      car: carId ? Number.parseInt(carId) : null,
     }
 
     // Create booking in Strapi
-    const result = await strapiAPI.createCarRentalBooking(bookingData)
-
-    if (!result) {
-      return { success: false, error: "Failed to create booking" }
-    }
+    const response = await strapiAPI.createCarRentalBooking(bookingPayload)
 
     // Revalidate admin pages
     revalidatePath("/admin/bookings")
+    revalidatePath("/admin")
 
     return {
       success: true,
