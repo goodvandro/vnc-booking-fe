@@ -5,6 +5,8 @@ import { getBookings } from "../actions"
 import BookingStatusSelect from "./booking-status-select"
 import { Eye } from "lucide-react"
 import Link from "next/link"
+import { Home } from "lucide-react"
+import { Car } from "lucide-react"
 
 export default async function BookingsPage() {
   const bookings = await getBookings()
@@ -12,8 +14,22 @@ export default async function BookingsPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Bookings</CardTitle>
-        <CardDescription>Manage all guest house and car rental bookings.</CardDescription>
+        <CardTitle>All Bookings</CardTitle>
+        <CardDescription>View and manage all guest house and car rental bookings in one place.</CardDescription>
+        <div className="flex gap-2 mt-4">
+          <Button asChild variant="outline" size="sm">
+            <Link href="/admin/guest-house-bookings">
+              <Home className="h-4 w-4 mr-2" />
+              Guest House Bookings
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/admin/car-rental-bookings">
+              <Car className="h-4 w-4 mr-2" />
+              Car Rental Bookings
+            </Link>
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <Table>

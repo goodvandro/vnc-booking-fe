@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
-import type { BookingStatus, Car, GuestHouse, GuestHouseOutputDTO } from "@/lib/types"
+import type { BookingStatus, Car, GuestHouseOutputDTO } from "@/lib/types"
 import {
   getBookingsData,
   getBookingByIdData,
@@ -38,6 +38,18 @@ export async function updateBookingStatusAction(id: string, status: BookingStatu
   revalidatePath("/admin/bookings")
 }
 
+// GUEST HOUSE BOOKINGS
+export async function getGuestHouseBookings() {
+  const allBookings = await getBookingsData()
+  return allBookings.filter((booking) => booking.type === "guestHouse")
+}
+
+// CAR RENTAL BOOKINGS
+export async function getCarRentalBookings() {
+  const allBookings = await getBookingsData()
+  return allBookings.filter((booking) => booking.type === "car")
+}
+
 // DASHBOARD
 export async function getDashboardStats() {
   return await getDashboardStatsData()
@@ -56,7 +68,7 @@ function extractImagesFromFormData(formData: FormData): string[] {
 }
 
 export async function getGuestHouses() {
-  return await getGuestHousesData() as GuestHouseOutputDTO[]
+  return (await getGuestHousesData()) as GuestHouseOutputDTO[]
 }
 export async function getGuestHouse(id: string) {
   return await getGuestHouseByIdData(id)
