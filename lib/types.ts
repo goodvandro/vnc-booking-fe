@@ -59,6 +59,7 @@ export interface SelectedCar {
   type: "car";
   data: {
     id?: string | number;
+    carId: string;
     images: string[];
     title: string;
     seats: number;

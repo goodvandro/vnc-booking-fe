@@ -1,138 +1,171 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useRef } from "react"
-import { useActionState } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Car, Users, Settings, Calendar, Loader2, CheckCircle } from "lucide-react"
-import { createCarRentalBooking } from "@/app/actions/booking-actions"
-import type { SelectedCar } from "@/lib/types"
-import type { User } from "@clerk/nextjs/server"
-import ImageSlider from "./image-slider"
+import { useState, useEffect, useRef } from "react";
+import { useActionState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import {
+  Car,
+  Users,
+  Settings,
+  Calendar,
+  Loader2,
+  CheckCircle,
+} from "lucide-react";
+import { createCarRentalBooking } from "@/app/actions/booking-actions";
+import type { SelectedCar } from "@/lib/types";
+import type { User } from "@clerk/nextjs/server";
+import ImageSlider from "./image-slider";
 
 interface CarRentalModalProps {
-  isOpen: boolean
-  onClose: () => void
-  selectedCar: SelectedCar | null
-  t: any
-  user: User | null | undefined
+  isOpen: boolean;
+  onClose: () => void;
+  selectedCar: SelectedCar | null;
+  t: any;
+  user: User | null | undefined;
 }
 
-export default function CarRentalModal({ isOpen, onClose, selectedCar, t, user }: CarRentalModalProps) {
-  const [state, formAction, isPending] = useActionState(createCarRentalBooking, null)
-  const [firstName, setFirstName] = useState("")
-  const [lastName, setLastName] = useState("")
-  const [email, setEmail] = useState("")
-  const [phone, setPhone] = useState("")
-  const [driverLicense, setDriverLicense] = useState("")
-  const [startDate, setStartDate] = useState("")
-  const [endDate, setEndDate] = useState("")
-  const [specialRequests, setSpecialRequests] = useState("")
-  const [totalPrice, setTotalPrice] = useState(0)
-  const [showSuccess, setShowSuccess] = useState(false)
-  const [canShowSuccess, setCanShowSuccess] = useState(false)
-  const lastBookingIdRef = useRef<string | null>(null)
+export default function CarRentalModal({
+  isOpen,
+  onClose,
+  selectedCar,
+  t,
+  user,
+}: CarRentalModalProps) {
+  const [state, formAction, isPending] = useActionState(
+    createCarRentalBooking,
+    null
+  );
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [driverLicense, setDriverLicense] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [specialRequests, setSpecialRequests] = useState("");
+  const [totalPrice, setTotalPrice] = useState(0);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [canShowSuccess, setCanShowSuccess] = useState(false);
+  const lastBookingIdRef = useRef<string | null>(null);
 
   // Reset form and success state when modal opens with a new selection
   useEffect(() => {
     if (isOpen && selectedCar) {
-      setShowSuccess(false)
-      setCanShowSuccess(true) // Allow showing success for new bookings in this session
+      setShowSuccess(false);
+      setCanShowSuccess(true); // Allow showing success for new bookings in this session
       // Reset form fields
-      setStartDate("")
-      setEndDate("")
-      setSpecialRequests("")
-      setDriverLicense("")
-      setTotalPrice(0)
+      setStartDate("");
+      setEndDate("");
+      setSpecialRequests("");
+      setDriverLicense("");
+      setTotalPrice(0);
 
       // Set user data if available
       if (user) {
-        setFirstName(user?.firstName || "")
-        setLastName(user?.lastName || "")
-        setEmail(user.emailAddresses?.[0]?.emailAddress || "")
-        setPhone(user.phoneNumbers?.[0]?.phoneNumber || "")
+        setFirstName(user?.firstName || "");
+        setLastName(user?.lastName || "");
+        setEmail(user.emailAddresses?.[0]?.emailAddress || "");
+        setPhone(user.phoneNumbers?.[0]?.phoneNumber || "");
       } else {
-        setFirstName("")
-        setLastName("")
-        setEmail("")
-        setPhone("")
+        setFirstName("");
+        setLastName("");
+        setEmail("");
+        setPhone("");
       }
     }
-  }, [isOpen, selectedCar, user])
+  }, [isOpen, selectedCar, user]);
 
   // Calculate total price when dates change
   useEffect(() => {
     if (startDate && endDate && selectedCar) {
-      const pickup = new Date(startDate)
-      const returnDate = new Date(endDate)
-      const days = Math.ceil((returnDate.getTime() - pickup.getTime()) / (1000 * 60 * 60 * 24))
+      const pickup = new Date(startDate);
+      const returnDate = new Date(endDate);
+      const days = Math.ceil(
+        (returnDate.getTime() - pickup.getTime()) / (1000 * 60 * 60 * 24)
+      );
 
       if (days > 0) {
-        setTotalPrice(days * selectedCar.data.price)
+        setTotalPrice(days * selectedCar.data.price);
       } else {
-        setTotalPrice(0)
+        setTotalPrice(0);
       }
     }
-  }, [startDate, endDate, selectedCar])
+  }, [startDate, endDate, selectedCar]);
 
   // Handle successful booking - only show success for new bookings
   useEffect(() => {
     if (state?.success && canShowSuccess && !showSuccess) {
       // Check if this is a new booking (different booking ID)
       if (state.bookingId && state.bookingId !== lastBookingIdRef.current) {
-        setShowSuccess(true)
-        lastBookingIdRef.current = state.bookingId
-        setCanShowSuccess(false) // Prevent showing success again until modal reopens
+        setShowSuccess(true);
+        lastBookingIdRef.current = state.bookingId;
+        setCanShowSuccess(false); // Prevent showing success again until modal reopens
       }
     }
-  }, [state?.success, state?.bookingId, canShowSuccess, showSuccess])
+  }, [state?.success, state?.bookingId, canShowSuccess, showSuccess]);
 
   const handleCloseModal = () => {
-    setShowSuccess(false)
-    setCanShowSuccess(false)
-    onClose()
+    setShowSuccess(false);
+    setCanShowSuccess(false);
+    onClose();
     // Reset form
-    setStartDate("")
-    setEndDate("")
-    setTotalPrice(0)
-    setFirstName("")
-    setLastName("")
-    setEmail("")
-    setPhone("")
-    setDriverLicense("")
-    setSpecialRequests("")
-  }
+    setStartDate("");
+    setEndDate("");
+    setTotalPrice(0);
+    setFirstName("");
+    setLastName("");
+    setEmail("");
+    setPhone("");
+    setDriverLicense("");
+    setSpecialRequests("");
+  };
 
-  if (!selectedCar) return null
+  if (!selectedCar) return null;
 
-  const car = selectedCar.data
-  const today = new Date().toISOString().split("T")[0]
+  const car = selectedCar.data;
+  const today = new Date().toISOString().split("T")[0];
   const days =
     startDate && endDate
-      ? Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24))
-      : 0
+      ? Math.ceil(
+          (new Date(endDate).getTime() - new Date(startDate).getTime()) /
+            (1000 * 60 * 60 * 24)
+        )
+      : 0;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleCloseModal}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">{t?.rentCar || "Rent Car"}</DialogTitle>
+          <DialogTitle className="text-2xl font-bold">
+            {t?.rentCar || "Rent Car"}
+          </DialogTitle>
         </DialogHeader>
 
         {showSuccess ? (
           <div className="text-center py-12">
             <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
-            <h3 className="text-2xl font-bold text-green-600 mb-2">{t?.rentalConfirmed || "Rental Confirmed!"}</h3>
+            <h3 className="text-2xl font-bold text-green-600 mb-2">
+              {t?.rentalConfirmed || "Rental Confirmed!"}
+            </h3>
             <p className="text-muted-foreground mb-4">{state?.message}</p>
             {state?.bookingId && (
               <p className="text-sm text-muted-foreground mb-6">
-                Booking ID: <span className="font-mono font-semibold">{state.bookingId}</span>
+                Booking ID:{" "}
+                <span className="font-mono font-semibold">
+                  {state.bookingId}
+                </span>
               </p>
             )}
             <Button onClick={handleCloseModal} className="px-8">
@@ -145,14 +178,21 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t, user }
             <div className="space-y-4">
               {/* Image Slider */}
               {car.images && car.images.length > 0 && (
-                <ImageSlider images={car.images} alt={car.title} className="w-full" enableFullscreen={true} />
+                <ImageSlider
+                  images={car.images}
+                  alt={car.title}
+                  className="w-full"
+                  enableFullscreen={true}
+                />
               )}
 
               {/* Car Details */}
               <Card>
                 <CardContent className="p-4">
                   <h3 className="font-semibold text-xl mb-2">{car.title}</h3>
-                  <p className="text-sm text-muted-foreground mb-3">{car.description}</p>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    {car.description}
+                  </p>
                   <div className="flex items-center gap-4 flex-wrap mb-4">
                     <div className="flex items-center gap-1">
                       <Users className="h-4 w-4" />
@@ -166,13 +206,20 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t, user }
                     </div>
                     <div className="flex items-center gap-1">
                       <Car className="h-4 w-4" />
-                      <span className="text-sm">{t?.automatic || "Automatic"}</span>
+                      <span className="text-sm">
+                        {t?.automatic || "Automatic"}
+                      </span>
                     </div>
                     <Badge variant="secondary">
                       €{car.price}/{t?.day || "day"}
                     </Badge>
                   </div>
-                  {car.features && car.features.length > 0 && (
+                  {car.description && (
+                    <p className="text-sm text-muted-foreground">
+                      {car.description}
+                    </p>
+                  )}
+                  {/* {car.features && car.features.length > 0 && (
                     <div>
                       <h5 className="font-medium mb-2">{t?.features || "Features"}:</h5>
                       <div className="flex flex-wrap gap-1">
@@ -183,7 +230,7 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t, user }
                         ))}
                       </div>
                     </div>
-                  )}
+                  )} */}
                 </CardContent>
               </Card>
 
@@ -232,13 +279,16 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t, user }
 
                 <Card>
                   <CardContent className="p-4">
-                    <h4 className="font-semibold mb-4">{t?.personalInformation || "Personal Information"}</h4>
+                    <h4 className="font-semibold mb-4">
+                      {t?.personalInformation || "Personal Information"}
+                    </h4>
 
                     {/* Personal Information */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                       <div>
                         <Label htmlFor="firstName">
-                          {t?.firstName || "First Name"} <span className="text-red-500">*</span>
+                          {t?.firstName || "First Name"}{" "}
+                          <span className="text-red-500">*</span>
                         </Label>
                         <Input
                           id="firstName"
@@ -251,7 +301,8 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t, user }
                       </div>
                       <div>
                         <Label htmlFor="lastName">
-                          {t?.lastName || "Last Name"} <span className="text-red-500">*</span>
+                          {t?.lastName || "Last Name"}{" "}
+                          <span className="text-red-500">*</span>
                         </Label>
                         <Input
                           id="lastName"
@@ -267,7 +318,8 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t, user }
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                       <div>
                         <Label htmlFor="email">
-                          {t?.email || "Email"} <span className="text-red-500">*</span>
+                          {t?.email || "Email"}{" "}
+                          <span className="text-red-500">*</span>
                         </Label>
                         <Input
                           id="email"
@@ -281,7 +333,8 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t, user }
                       </div>
                       <div>
                         <Label htmlFor="phone">
-                          {t?.phone || "Phone"} <span className="text-red-500">*</span>
+                          {t?.phone || "Phone"}{" "}
+                          <span className="text-red-500">*</span>
                         </Label>
                         <Input
                           id="phone"
@@ -297,11 +350,16 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t, user }
 
                     {/* Driver License */}
                     <div>
-                      <Label htmlFor="driverLicense">{t?.driverLicense || "Driver License"}</Label>
+                      <Label htmlFor="driverLicense">
+                        {t?.driverLicense || "Driver License"}
+                      </Label>
                       <Input
                         id="driverLicense"
                         name="driverLicense"
-                        placeholder={t?.driverLicensePlaceholder || "Enter your driver license number (optional)"}
+                        placeholder={
+                          t?.driverLicensePlaceholder ||
+                          "Enter your driver license number (optional)"
+                        }
                         value={driverLicense}
                         onChange={(e) => setDriverLicense(e.target.value)}
                         disabled={isPending}
@@ -312,13 +370,16 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t, user }
 
                 <Card>
                   <CardContent className="p-4">
-                    <h4 className="font-semibold mb-4">{t?.rentalDetails || "Rental Details"}</h4>
+                    <h4 className="font-semibold mb-4">
+                      {t?.rentalDetails || "Rental Details"}
+                    </h4>
 
                     {/* Rental Details */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                       <div>
                         <Label htmlFor="startDate">
-                          {t?.pickupDate || "Pickup Date"} <span className="text-red-500">*</span>
+                          {t?.pickupDate || "Pickup Date"}{" "}
+                          <span className="text-red-500">*</span>
                         </Label>
                         <Input
                           id="startDate"
@@ -333,7 +394,8 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t, user }
                       </div>
                       <div>
                         <Label htmlFor="endDate">
-                          {t?.returnDate || "Return Date"} <span className="text-red-500">*</span>
+                          {t?.returnDate || "Return Date"}{" "}
+                          <span className="text-red-500">*</span>
                         </Label>
                         <Input
                           id="endDate"
@@ -350,11 +412,16 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t, user }
 
                     {/* Special Requests */}
                     <div>
-                      <Label htmlFor="specialRequests">{t?.specialRequests || "Special Requests"}</Label>
+                      <Label htmlFor="specialRequests">
+                        {t?.specialRequests || "Special Requests"}
+                      </Label>
                       <Textarea
                         id="specialRequests"
                         name="specialRequests"
-                        placeholder={t?.specialRequestsPlaceholder || "Any special requests or requirements..."}
+                        placeholder={
+                          t?.specialRequestsPlaceholder ||
+                          "Any special requests or requirements..."
+                        }
                         value={specialRequests}
                         onChange={(e) => setSpecialRequests(e.target.value)}
                         disabled={isPending}
@@ -375,7 +442,11 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t, user }
                   >
                     {t?.cancel || "Cancel"}
                   </Button>
-                  <Button type="submit" disabled={isPending || totalPrice <= 0} className="flex-1">
+                  <Button
+                    type="submit"
+                    disabled={isPending || totalPrice <= 0}
+                    className="flex-1"
+                  >
                     {isPending ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -392,5 +463,5 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t, user }
         )}
       </DialogContent>
     </Dialog>
-  )
+  );
 }

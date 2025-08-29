@@ -165,7 +165,7 @@ export async function createCarRentalBooking(prevState: any, formData: FormData)
         endDate,
         totalPrice,
         bookingStatus: "pending",
-        user: userId,
+        // user: userId,
         car: carId,
       },
     }

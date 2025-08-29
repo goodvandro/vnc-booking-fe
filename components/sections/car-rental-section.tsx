@@ -142,6 +142,7 @@ export default function CarRentalSection({ t, handleRentNowClick }: CarRentalSec
                     onClick={() =>
                       handleRentNowClick({
                         id: car.id,
+                        carId: car.carId,
                         images,
                         title: car.title,
                         seats: car.seats,
