@@ -8,20 +8,28 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Car, MapPin, Star, Clock } from "lucide-react"
+import { Car, Clock, CheckCircle } from "lucide-react"
 import { createCarRentalBooking } from "@/app/actions/booking-actions"
-import type { SelectedCar } from "@/lib/types"
+import { useLanguage } from "@/hooks/use-language"
+
+interface SelectedCar {
+  id: number
+  carId: number
+  name: string
+  type: string
+  pricePerDay: number
+  images: string[]
+}
 
 interface CarRentalModalProps {
   isOpen: boolean
   onClose: () => void
   selectedCar: SelectedCar | null
-  t: any
 }
 
-export default function CarRentalModal({ isOpen, onClose, selectedCar, t }: CarRentalModalProps) {
+export function CarRentalModal({ isOpen, onClose, selectedCar }: CarRentalModalProps) {
   const { user } = useUser()
-  const [state, formAction, isPending] = useActionState(createCarRentalBooking, null)
+  const { t } = useLanguage()
 
   // Form state
   const [pickupDate, setPickupDate] = useState("")
@@ -33,35 +41,26 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t }: CarR
   const [phone, setPhone] = useState("")
   const [driverLicense, setDriverLicense] = useState("")
   const [specialRequests, setSpecialRequests] = useState("")
+  const [totalPrice, setTotalPrice] = useState(0)
 
   // Success state management
   const [showSuccess, setShowSuccess] = useState(false)
   const [canShowSuccess, setCanShowSuccess] = useState(false)
   const lastBookingIdRef = useRef<string | null>(null)
 
-  // Calculate total price
-  const calculateTotalPrice = () => {
-    if (!selectedCar || !pickupDate || !returnDate) return 0
+  const [state, action, isPending] = useActionState(createCarRentalBooking, null)
 
-    const pickup = new Date(pickupDate)
-    const returnD = new Date(returnDate)
-    const days = Math.ceil((returnD.getTime() - pickup.getTime()) / (1000 * 60 * 60 * 24))
-
-    return days > 0 ? days * selectedCar.pricePerDay : 0
-  }
-
-  const totalPrice = calculateTotalPrice()
-
-  // Reset form when modal opens
+  // Reset modal when opening
   useEffect(() => {
     if (isOpen && selectedCar) {
-      setCanShowSuccess(true)
       setShowSuccess(false)
+      setCanShowSuccess(true)
       setPickupDate("")
       setReturnDate("")
       setPickupLocation("")
-      setSpecialRequests("")
       setDriverLicense("")
+      setSpecialRequests("")
+      setTotalPrice(0)
 
       // Pre-fill user data if available
       if (user) {
@@ -90,18 +89,31 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t }: CarR
     }
   }, [state?.success, state?.bookingId, canShowSuccess, showSuccess])
 
+  // Calculate total price
+  useEffect(() => {
+    if (pickupDate && returnDate && selectedCar) {
+      const pickup = new Date(pickupDate)
+      const returnD = new Date(returnDate)
+      const days = Math.ceil((returnD.getTime() - pickup.getTime()) / (1000 * 60 * 60 * 24))
+      if (days > 0) {
+        setTotalPrice(days * selectedCar.pricePerDay)
+      }
+    }
+  }, [pickupDate, returnDate, selectedCar])
+
   const handleCloseModal = () => {
     setShowSuccess(false)
     setCanShowSuccess(false)
     setPickupDate("")
     setReturnDate("")
     setPickupLocation("")
-    setSpecialRequests("")
-    setDriverLicense("")
     setFirstName("")
     setLastName("")
     setEmail("")
     setPhone("")
+    setDriverLicense("")
+    setSpecialRequests("")
+    setTotalPrice(0)
     onClose()
   }
 
@@ -109,72 +121,44 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t }: CarR
 
   return (
     <Dialog open={isOpen} onOpenChange={handleCloseModal}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Car className="h-5 w-5" />
-            {showSuccess ? t?.bookingConfirmed || "Booking Confirmed!" : t?.rentCar || "Rent Car"}
+            {t?.rentCar || "Rent Car"}
           </DialogTitle>
         </DialogHeader>
 
         {showSuccess ? (
           <div className="text-center py-8">
-            <div className="mb-6">
-              <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-green-800 mb-2">
-                {t?.bookingSuccessful || "Booking Successful!"}
-              </h3>
-              <p className="text-gray-600 mb-4">
-                {t?.carRentalConfirmationMessage || "Your car rental booking has been confirmed."}
+            <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold mb-2">{t?.bookingConfirmed || "Booking Confirmed!"}</h3>
+            <p className="text-gray-600 mb-4">
+              {t?.carRentalConfirmationMessage || "Your car rental booking has been successfully submitted."}
+            </p>
+            {state?.bookingId && (
+              <p className="text-sm text-gray-500 mb-6">
+                {t?.bookingId || "Booking ID"}: {state.bookingId}
               </p>
-              {state?.bookingId && (
-                <p className="text-sm text-gray-500 mb-6">
-                  {t?.bookingId || "Booking ID"}: <span className="font-mono font-semibold">{state.bookingId}</span>
-                </p>
-              )}
-            </div>
+            )}
             <Button onClick={handleCloseModal} className="px-8">
               {t?.done || "Done"}
             </Button>
           </div>
         ) : (
-          <form action={formAction} className="space-y-6">
-            {/* Car Info */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="flex items-start gap-4">
-                <img
-                  src={selectedCar.image || "/placeholder.svg"}
-                  alt={selectedCar.name}
-                  className="w-20 h-20 object-cover rounded-lg"
-                />
-                <div className="flex-1">
-                  <h3 className="font-semibold text-lg">{selectedCar.name}</h3>
-                  <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
-                    <Car className="h-4 w-4" />
-                    <span>{selectedCar.type}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
-                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    <span>{selectedCar.rating}</span>
-                  </div>
-                  <div className="text-lg font-semibold text-primary mt-2">
-                    ${selectedCar.pricePerDay}/{t?.day || "day"}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Hidden fields */}
-            <input type="hidden" name="carId" value={selectedCar.id} />
-            <input type="hidden" name="itemName" value={selectedCar.name} />
+          <form action={action} className="space-y-4">
+            <input type="hidden" name="carId" value={selectedCar.carId} />
             <input type="hidden" name="totalPrice" value={totalPrice} />
 
-            {/* Rental Details */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Car Info */}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="font-semibold">{selectedCar.name}</h3>
+              <p className="text-sm text-gray-600">{selectedCar.type}</p>
+              <p className="text-sm font-medium text-blue-600">${selectedCar.pricePerDay}/day</p>
+            </div>
+
+            {/* Dates */}
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="pickupDate">{t?.pickupDate || "Pickup Date"}</Label>
                 <Input
@@ -199,83 +183,80 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t }: CarR
               </div>
             </div>
 
+            {/* Pickup Location */}
             <div>
               <Label htmlFor="pickupLocation">{t?.pickupLocation || "Pickup Location"}</Label>
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-gray-500" />
-                <Input
-                  id="pickupLocation"
-                  name="pickupLocation"
-                  value={pickupLocation}
-                  onChange={(e) => setPickupLocation(e.target.value)}
-                  placeholder={t?.pickupLocationPlaceholder || "Enter pickup location"}
-                  required
-                />
-              </div>
+              <Input
+                id="pickupLocation"
+                name="pickupLocation"
+                value={pickupLocation}
+                onChange={(e) => setPickupLocation(e.target.value)}
+                placeholder={t?.pickupLocationPlaceholder || "Enter pickup location"}
+                required
+              />
             </div>
 
             {/* Personal Information */}
-            <div className="border-t pt-4">
-              <h4 className="font-semibold mb-4">{t?.personalInformation || "Personal Information"}</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="firstName">{t?.firstName || "First Name"}</Label>
-                  <Input
-                    id="firstName"
-                    name="firstName"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="lastName">{t?.lastName || "Last Name"}</Label>
-                  <Input
-                    id="lastName"
-                    name="lastName"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                <div>
-                  <Label htmlFor="email">{t?.email || "Email"}</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="phone">{t?.phone || "Phone"}</Label>
-                  <Input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-              <div className="mt-4">
-                <Label htmlFor="driverLicense">{t?.driverLicense || "Driver License Number"}</Label>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="firstName">{t?.firstName || "First Name"}</Label>
                 <Input
-                  id="driverLicense"
-                  name="driverLicense"
-                  value={driverLicense}
-                  onChange={(e) => setDriverLicense(e.target.value)}
-                  placeholder={t?.driverLicensePlaceholder || "Enter your driver license number"}
+                  id="firstName"
+                  name="firstName"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="lastName">{t?.lastName || "Last Name"}</Label>
+                <Input
+                  id="lastName"
+                  name="lastName"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
                   required
                 />
               </div>
             </div>
 
+            <div>
+              <Label htmlFor="email">{t?.email || "Email"}</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="phone">{t?.phone || "Phone"}</Label>
+              <Input
+                id="phone"
+                name="phone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="driverLicense">{t?.driverLicense || "Driver License"}</Label>
+              <Input
+                id="driverLicense"
+                name="driverLicense"
+                value={driverLicense}
+                onChange={(e) => setDriverLicense(e.target.value)}
+                placeholder={t?.driverLicensePlaceholder || "Enter driver license number"}
+                required
+              />
+            </div>
+
+            {/* Special Requests */}
             <div>
               <Label htmlFor="specialRequests">{t?.specialRequests || "Special Requests"}</Label>
               <Textarea
@@ -284,26 +265,16 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t }: CarR
                 value={specialRequests}
                 onChange={(e) => setSpecialRequests(e.target.value)}
                 placeholder={t?.specialRequestsPlaceholder || "Any special requests or requirements..."}
-                rows={3}
               />
             </div>
 
-            {/* Price Summary */}
+            {/* Total Price */}
             {totalPrice > 0 && (
-              <div className="bg-primary/5 p-4 rounded-lg">
-                <div className="flex justify-between items-center">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="flex items-center justify-between">
                   <span className="font-semibold">{t?.totalPrice || "Total Price"}:</span>
-                  <span className="text-xl font-bold text-primary">${totalPrice.toFixed(2)}</span>
+                  <span className="text-xl font-bold text-blue-600">${totalPrice.toFixed(2)}</span>
                 </div>
-                {pickupDate && returnDate && (
-                  <div className="text-sm text-gray-600 mt-1">
-                    <Clock className="h-4 w-4 inline mr-1" />
-                    {Math.ceil(
-                      (new Date(returnDate).getTime() - new Date(pickupDate).getTime()) / (1000 * 60 * 60 * 24),
-                    )}{" "}
-                    {t?.days || "days"}
-                  </div>
-                )}
               </div>
             )}
 
@@ -312,17 +283,17 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t }: CarR
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">{state.error}</div>
             )}
 
-            {/* Action Buttons */}
-            <div className="flex gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={handleCloseModal} className="flex-1 bg-transparent">
-                {t?.cancel || "Cancel"}
-              </Button>
-              <Button type="submit" disabled={isPending || totalPrice <= 0} className="flex-1">
-                {isPending
-                  ? t?.booking || "Booking..."
-                  : `${t?.confirmBooking || "Confirm Booking"} - $${totalPrice.toFixed(2)}`}
-              </Button>
-            </div>
+            {/* Submit Button */}
+            <Button type="submit" disabled={isPending || totalPrice === 0} className="w-full">
+              {isPending ? (
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 animate-spin" />
+                  {t?.processing || "Processing..."}
+                </div>
+              ) : (
+                `${t?.confirmBooking || "Confirm Booking"} - $${totalPrice.toFixed(2)}`
+              )}
+            </Button>
           </form>
         )}
       </DialogContent>

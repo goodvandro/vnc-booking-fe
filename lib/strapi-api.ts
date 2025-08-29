@@ -51,6 +51,23 @@ function qs(params: Record<string, string | number | boolean | undefined>) {
 }
 
 export const strapiAPI = {
+  // Health Check
+  async healthCheck() {
+    try {
+      const response = await request("/cars?pagination[limit]=1", "GET")
+      return {
+        status: "connected",
+        timestamp: new Date().toISOString(),
+      }
+    } catch (error) {
+      return {
+        status: "error",
+        timestamp: new Date().toISOString(),
+        error: error instanceof Error ? error.message : "Unknown error",
+      }
+    }
+  },
+
   // Cars
   async getCars() {
     return request(`/cars${qs({ populate: "images" })}`, "GET")
@@ -143,4 +160,5 @@ export const strapiAPI = {
     return res.json()
   },
 }
+
 export type StrapiAPI = typeof strapiAPI
