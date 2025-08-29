@@ -26,10 +26,42 @@ interface CarRentalModalProps {
 
 export default function CarRentalModal({ isOpen, onClose, selectedCar, t, user }: CarRentalModalProps) {
   const [state, formAction, isPending] = useActionState(createCarRentalBooking, null)
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
+  const [email, setEmail] = useState("")
+  const [phone, setPhone] = useState("")
+  const [driverLicense, setDriverLicense] = useState("")
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
+  const [specialRequests, setSpecialRequests] = useState("")
   const [totalPrice, setTotalPrice] = useState(0)
   const [showSuccess, setShowSuccess] = useState(false)
+
+  // Reset form and success state when modal opens with a new selection
+  useEffect(() => {
+    if (isOpen && selectedCar) {
+      setShowSuccess(false)
+      // Reset form fields
+      setStartDate("")
+      setEndDate("")
+      setSpecialRequests("")
+      setDriverLicense("")
+      setTotalPrice(0)
+
+      // Set user data if available
+      if (user) {
+        setFirstName(user?.firstName || "")
+        setLastName(user?.lastName || "")
+        setEmail(user.emailAddresses?.[0]?.emailAddress || "")
+        setPhone(user.phoneNumbers?.[0]?.phoneNumber || "")
+      } else {
+        setFirstName("")
+        setLastName("")
+        setEmail("")
+        setPhone("")
+      }
+    }
+  }, [isOpen, selectedCar, user])
 
   // Calculate total price when dates change
   useEffect(() => {
@@ -60,6 +92,12 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t, user }
     setStartDate("")
     setEndDate("")
     setTotalPrice(0)
+    setFirstName("")
+    setLastName("")
+    setEmail("")
+    setPhone("")
+    setDriverLicense("")
+    setSpecialRequests("")
   }
 
   if (!selectedCar) return null
@@ -197,7 +235,8 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t, user }
                           id="firstName"
                           name="firstName"
                           required
-                          defaultValue={user?.firstName || ""}
+                          value={firstName}
+                          onChange={(e) => setFirstName(e.target.value)}
                           disabled={isPending}
                         />
                       </div>
@@ -209,7 +248,8 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t, user }
                           id="lastName"
                           name="lastName"
                           required
-                          defaultValue={user?.lastName || ""}
+                          value={lastName}
+                          onChange={(e) => setLastName(e.target.value)}
                           disabled={isPending}
                         />
                       </div>
@@ -225,7 +265,8 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t, user }
                           name="email"
                           type="email"
                           required
-                          defaultValue={user?.emailAddresses?.[0]?.emailAddress || ""}
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
                           disabled={isPending}
                         />
                       </div>
@@ -233,7 +274,15 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t, user }
                         <Label htmlFor="phone">
                           {t?.phone || "Phone"} <span className="text-red-500">*</span>
                         </Label>
-                        <Input id="phone" name="phone" type="tel" required disabled={isPending} />
+                        <Input
+                          id="phone"
+                          name="phone"
+                          type="tel"
+                          required
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          disabled={isPending}
+                        />
                       </div>
                     </div>
 
@@ -244,6 +293,8 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t, user }
                         id="driverLicense"
                         name="driverLicense"
                         placeholder={t?.driverLicensePlaceholder || "Enter your driver license number (optional)"}
+                        value={driverLicense}
+                        onChange={(e) => setDriverLicense(e.target.value)}
                         disabled={isPending}
                       />
                     </div>
@@ -295,6 +346,8 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t, user }
                         id="specialRequests"
                         name="specialRequests"
                         placeholder={t?.specialRequestsPlaceholder || "Any special requests or requirements..."}
+                        value={specialRequests}
+                        onChange={(e) => setSpecialRequests(e.target.value)}
                         disabled={isPending}
                         rows={3}
                       />

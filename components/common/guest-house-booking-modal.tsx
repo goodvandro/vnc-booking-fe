@@ -43,14 +43,31 @@ export default function GuestHouseBookingModal({
   const [totalPrice, setTotalPrice] = useState(0)
   const [showSuccess, setShowSuccess] = useState(false)
 
+  // Reset form and success state when modal opens with a new selection
   useEffect(() => {
-    if (user) {
-      setFirstName(user?.firstName || "")
-      setLastName(user?.lastName || "")
-      setEmail(user.emailAddresses?.[0]?.emailAddress || "")
-      setPhone(user.phoneNumbers?.[0]?.phoneNumber || "")
+    if (isOpen && selectedGuestHouse) {
+      setShowSuccess(false)
+      // Reset form fields
+      setCheckInDate("")
+      setCheckOutDate("")
+      setGuests(1)
+      setSpecialRequests("")
+      setTotalPrice(0)
+
+      // Set user data if available
+      if (user) {
+        setFirstName(user?.firstName || "")
+        setLastName(user?.lastName || "")
+        setEmail(user.emailAddresses?.[0]?.emailAddress || "")
+        setPhone(user.phoneNumbers?.[0]?.phoneNumber || "")
+      } else {
+        setFirstName("")
+        setLastName("")
+        setEmail("")
+        setPhone("")
+      }
     }
-  }, [user])
+  }, [isOpen, selectedGuestHouse, user])
 
   // Calculate total price when dates or guests change
   useEffect(() => {
