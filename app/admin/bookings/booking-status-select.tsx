@@ -1,63 +1,43 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import * as React from "react"
+import { updateBookingStatusAction } from "../actions"
+import type { BookingStatus } from "@/lib/types"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { updateBookingStatus } from "../actions"
-import { useToast } from "@/hooks/use-toast"
 
-interface BookingStatusSelectProps {
+export default function BookingStatusSelect({
+  bookingId,
+  currentStatus,
+}: {
   bookingId: string
-  currentStatus: string
-}
+  currentStatus: BookingStatus
+}) {
+  const [value, setValue] = React.useState<BookingStatus>(currentStatus)
+  const [pending, startTransition] = React.useTransition()
 
-const statusOptions = [
-  { value: "pending", label: "Pending", variant: "secondary" as const },
-  { value: "confirmed", label: "Confirmed", variant: "default" as const },
-  { value: "cancelled", label: "Cancelled", variant: "destructive" as const },
-  { value: "completed", label: "Completed", variant: "outline" as const },
-]
-
-export function BookingStatusSelect({ bookingId, currentStatus }: BookingStatusSelectProps) {
-  const [status, setStatus] = useState(currentStatus)
-  const [isPending, startTransition] = useTransition()
-  const { toast } = useToast()
-
-  const handleStatusChange = (newStatus: string) => {
-    setStatus(newStatus)
+  const onChange = (next: BookingStatus) => {
+    setValue(next) // optimistic
     startTransition(async () => {
       try {
-        await updateBookingStatus(bookingId, newStatus)
-        toast({
-          title: "Status Updated",
-          description: `Booking status changed to ${newStatus}`,
-        })
-      } catch (error) {
-        setStatus(currentStatus) // Revert on error
-        toast({
-          title: "Error",
-          description: "Failed to update booking status",
-          variant: "destructive",
-        })
+        await updateBookingStatusAction(bookingId, next)
+      } catch (err) {
+        // revert on failure
+        setValue(currentStatus)
+        console.error("Failed to update booking status", err)
       }
     })
   }
 
-  const currentOption = statusOptions.find((option) => option.value === status)
-
   return (
-    <Select value={status} onValueChange={handleStatusChange} disabled={isPending}>
-      <SelectTrigger className="w-32">
-        <SelectValue>
-          <Badge variant={currentOption?.variant || "secondary"}>{currentOption?.label || status}</Badge>
-        </SelectValue>
+    <Select value={value} onValueChange={(v) => onChange(v as BookingStatus)} disabled={pending}>
+      <SelectTrigger className="w-[140px]">
+        <SelectValue placeholder="Status" />
       </SelectTrigger>
       <SelectContent>
-        {statusOptions.map((option) => (
-          <SelectItem key={option.value} value={option.value}>
-            <Badge variant={option.variant}>{option.label}</Badge>
-          </SelectItem>
-        ))}
+        <SelectItem value="pending">Pending</SelectItem>
+        <SelectItem value="confirmed">Confirmed</SelectItem>
+        <SelectItem value="cancelled">Cancelled</SelectItem>
+        <SelectItem value="completed">Completed</SelectItem>
       </SelectContent>
     </Select>
   )

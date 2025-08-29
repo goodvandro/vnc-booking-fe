@@ -8,6 +8,7 @@ import {
   getBookingByIdData,
   updateBookingStatusData,
   getDashboardStatsData,
+  // stubs below keep other admin imports working
   getGuestHousesData,
   getGuestHouseByIdData,
   createGuestHouseData,
@@ -42,7 +43,7 @@ export async function getDashboardStats() {
   return await getDashboardStatsData()
 }
 
-// GUEST HOUSES
+// GUEST HOUSES (stubs passthrough)
 function extractImagesFromFormData(formData: FormData): string[] {
   const images: string[] = []
   let index = 0
@@ -55,46 +56,23 @@ function extractImagesFromFormData(formData: FormData): string[] {
 }
 
 export async function getGuestHouses() {
-  return (await getGuestHousesData()) as GuestHouseOutputDTO[]
+  return await getGuestHousesData() as GuestHouseOutputDTO[]
 }
 export async function getGuestHouse(id: string) {
   return await getGuestHouseByIdData(id)
 }
-export async function createGuestHouse(formData: FormData) {
-  const images = extractImagesFromFormData(formData)
-  const newGuestHouse: Omit<GuestHouse, "id"> = {
-    images,
-    guestHouseId: new Date().getTime().toString(),
-    title: String(formData.get("title") || ""),
-    location: String(formData.get("location") || ""),
-    rating: Number.parseFloat(String(formData.get("rating") || "0")),
-    price: Number.parseFloat(String(formData.get("price") || "0")),
-    description: String(formData.get("description") || ""),
-  }
-  await createGuestHouseData(newGuestHouse)
-  revalidatePath("/admin/guest-houses")
-  redirect("/admin/guest-houses")
+export async function createGuestHouse(payload: any) {
+  return await createGuestHouseData(payload)
 }
-export async function updateGuestHouse(id: string, formData: FormData) {
-  const images = extractImagesFromFormData(formData)
-  const updatedGuestHouse: Partial<GuestHouse> = {
-    images,
-    title: String(formData.get("title") || ""),
-    location: String(formData.get("location") || ""),
-    rating: Number.parseFloat(String(formData.get("rating") || "0")),
-    price: Number.parseFloat(String(formData.get("price") || "0")),
-    description: String(formData.get("description") || ""),
-  }
-  await updateGuestHouseData(id, updatedGuestHouse)
-  revalidatePath("/admin/guest-houses")
-  redirect("/admin/guest-houses")
+export async function updateGuestHouse(id: string, payload: any) {
+  return await updateGuestHouseData(id, payload)
 }
 export async function deleteGuestHouse(id: string | number) {
   await deleteGuestHouseData(String(id))
   revalidatePath("/admin/guest-houses")
 }
 
-// CARS
+// CARS (stubs passthrough)
 export async function getCars() {
   return await getCarsData()
 }
@@ -133,14 +111,4 @@ export async function updateCar(id: string, formData: FormData) {
 export async function deleteCar(id: string | number) {
   await deleteCarData(String(id))
   revalidatePath("/admin/cars")
-}
-
-export async function getGuestHouseBookings() {
-  const bookings = await getBookingsData()
-  return bookings.filter((booking) => booking.type === "guestHouse")
-}
-
-export async function getCarRentalBookings() {
-  const bookings = await getBookingsData()
-  return bookings.filter((booking) => booking.type === "car")
 }

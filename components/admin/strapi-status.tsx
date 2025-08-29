@@ -1,75 +1,113 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { RefreshCw, CheckCircle, XCircle } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { RefreshCw, CheckCircle, XCircle, AlertCircle } from "lucide-react"
+
+interface StrapiStatus {
+  status: "connected" | "error" | "loading"
+  timestamp: string
+  error?: string
+}
 
 export function StrapiStatus() {
-  const [status, setStatus] = useState<"checking" | "connected" | "disconnected">("checking")
+  const [status, setStatus] = useState<StrapiStatus>({
+    status: "loading",
+    timestamp: new Date().toISOString(),
+  })
   const [isRefreshing, setIsRefreshing] = useState(false)
 
   const checkStrapiHealth = async () => {
+    setIsRefreshing(true)
     try {
       const response = await fetch("/api/strapi-health")
-      if (response.ok) {
-        setStatus("connected")
+      const data = await response.json()
+
+      if (response.ok && data.status === "connected") {
+        setStatus({
+          status: "connected",
+          timestamp: data.timestamp,
+        })
       } else {
-        setStatus("disconnected")
+        setStatus({
+          status: "error",
+          timestamp: data.timestamp,
+          error: data.error || "Connection failed",
+        })
       }
     } catch (error) {
-      setStatus("disconnected")
+      setStatus({
+        status: "error",
+        timestamp: new Date().toISOString(),
+        error: error instanceof Error ? error.message : "Network error",
+      })
+    } finally {
+      setIsRefreshing(false)
     }
-  }
-
-  const handleRefresh = async () => {
-    setIsRefreshing(true)
-    setStatus("checking")
-    await checkStrapiHealth()
-    setIsRefreshing(false)
   }
 
   useEffect(() => {
     checkStrapiHealth()
-    // Check every 30 seconds
-    const interval = setInterval(checkStrapiHealth, 30000)
-    return () => clearInterval(interval)
   }, [])
 
-  const getStatusConfig = () => {
-    switch (status) {
+  const getStatusIcon = () => {
+    switch (status.status) {
       case "connected":
-        return {
-          variant: "default" as const,
-          icon: <CheckCircle className="h-3 w-3" />,
-          text: "Strapi Connected",
-        }
-      case "disconnected":
-        return {
-          variant: "destructive" as const,
-          icon: <XCircle className="h-3 w-3" />,
-          text: "Strapi Disconnected",
-        }
-      default:
-        return {
-          variant: "secondary" as const,
-          icon: <RefreshCw className="h-3 w-3 animate-spin" />,
-          text: "Checking...",
-        }
+        return <CheckCircle className="h-4 w-4" />
+      case "error":
+        return <XCircle className="h-4 w-4" />
+      case "loading":
+        return <AlertCircle className="h-4 w-4" />
     }
   }
 
-  const statusConfig = getStatusConfig()
+  const getStatusVariant = () => {
+    switch (status.status) {
+      case "connected":
+        return "default" as const
+      case "error":
+        return "destructive" as const
+      case "loading":
+        return "secondary" as const
+    }
+  }
+
+  const getStatusText = () => {
+    switch (status.status) {
+      case "connected":
+        return "Connected"
+      case "error":
+        return "Disconnected"
+      case "loading":
+        return "Checking..."
+    }
+  }
 
   return (
     <div className="flex items-center gap-2">
-      <Badge variant={statusConfig.variant} className="flex items-center gap-1">
-        {statusConfig.icon}
-        {statusConfig.text}
+      <Badge variant={getStatusVariant()} className="flex items-center gap-1">
+        {getStatusIcon()}
+        Strapi: {getStatusText()}
       </Badge>
-      <Button variant="ghost" size="sm" onClick={handleRefresh} disabled={isRefreshing} className="h-6 w-6 p-0">
+
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={checkStrapiHealth}
+        disabled={isRefreshing}
+        className="h-6 px-2 bg-transparent"
+      >
         <RefreshCw className={`h-3 w-3 ${isRefreshing ? "animate-spin" : ""}`} />
       </Button>
+
+      {status.error && (
+        <div className="text-xs text-muted-foreground max-w-xs truncate" title={status.error}>
+          Error: {status.error}
+        </div>
+      )}
+
+      <div className="text-xs text-muted-foreground">Last check: {new Date(status.timestamp).toLocaleTimeString()}</div>
     </div>
   )
 }

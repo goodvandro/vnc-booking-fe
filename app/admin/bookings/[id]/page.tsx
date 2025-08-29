@@ -1,40 +1,83 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { getBookingByIdData } from "@/lib/strapi-data"
-import BookingStatusSelect from "../booking-status-select"
-import { ArrowLeft, Calendar, User, Phone, Mail, MapPin, Users, Car, Home } from "lucide-react"
-import Link from "next/link"
+import { getBookingById } from "../../actions"
 import { notFound } from "next/navigation"
+import Link from "next/link"
+import {
+  ArrowLeft,
+  Calendar,
+  MapPin,
+  Phone,
+  Mail,
+  Users,
+  Car,
+  Home,
+  Clock,
+  DollarSign,
+  MessageSquare,
+} from "lucide-react"
+import BookingStatusSelect from "../booking-status-select"
+import { format } from "date-fns"
 
-interface BookingDetailsPageProps {
-  params: Promise<{ id: string }>
-}
-
-export default async function BookingDetailsPage({ params }: BookingDetailsPageProps) {
-  const { id } = await params
-  const booking = await getBookingByIdData(id)
+export default async function BookingDetailsPage({ params }: { params: { id: string } }) {
+  const booking = await getBookingById(params.id)
 
   if (!booking) {
     notFound()
   }
 
-  const isGuestHouse = booking.type === "guestHouse"
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "confirmed":
+        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+      case "pending":
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
+      case "cancelled":
+        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+      case "completed":
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
+      default:
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300"
+    }
+  }
+
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), "PPP")
+    } catch {
+      return dateString
+    }
+  }
+
+  const formatDateTime = (dateString: string) => {
+    try {
+      return format(new Date(dateString), "PPP 'at' p")
+    } catch {
+      return dateString
+    }
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button asChild variant="outline" size="sm">
-          <Link href="/admin/bookings">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Bookings
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold">Booking Details</h1>
-          <p className="text-muted-foreground">#{booking.id}</p>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button asChild variant="outline" size="sm">
+            <Link href="/admin/bookings">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Bookings
+            </Link>
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">Booking Details</h1>
+            <p className="text-muted-foreground">#{booking.id}</p>
+          </div>
         </div>
+        <Badge className={getStatusColor(booking.status)}>
+          {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+        </Badge>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -42,65 +85,74 @@ export default async function BookingDetailsPage({ params }: BookingDetailsPageP
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              {isGuestHouse ? <Home className="h-5 w-5" /> : <Car className="h-5 w-5" />}
-              Booking Information
+              {booking.type === "guestHouse" ? <Home className="h-5 w-5" /> : <Car className="h-5 w-5" />}
+              {booking.type === "guestHouse" ? "Guest House Booking" : "Car Rental"}
             </CardTitle>
+            <CardDescription>Booking information and details</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Type</span>
-              <Badge variant={isGuestHouse ? "default" : "secondary"}>
-                {isGuestHouse ? "Guest House" : "Car Rental"}
-              </Badge>
+            <div>
+              <h3 className="font-semibold text-lg">{booking.itemName}</h3>
+              <p className="text-muted-foreground">{booking.type === "guestHouse" ? "Guest House" : "Vehicle"}</p>
             </div>
 
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Item</span>
-              <span className="text-sm">{booking.itemName || "N/A"}</span>
+            <Separator />
+
+            <div className="grid gap-3">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium">
+                    {booking.type === "guestHouse" ? "Check-in / Check-out" : "Pick-up / Return"}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {formatDate(booking.startDate)} - {formatDate(booking.endDate)}
+                  </p>
+                </div>
+              </div>
+
+              {booking.guestsOrSeats && (
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">{booking.type === "guestHouse" ? "Guests" : "Seats"}</p>
+                    <p className="text-sm text-muted-foreground">{booking.guestsOrSeats}</p>
+                  </div>
+                </div>
+              )}
+
+              {booking.pickupLocation && (
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">Pick-up Location</p>
+                    <p className="text-sm text-muted-foreground">{booking.pickupLocation}</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium">Total Amount</p>
+                  <p className="text-lg font-bold text-green-600">${booking.totalPrice.toFixed(2)}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium">Booking Created</p>
+                  <p className="text-sm text-muted-foreground">{formatDateTime(booking.createdAt)}</p>
+                </div>
+              </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Status</span>
+            <Separator />
+
+            <div>
+              <p className="text-sm font-medium mb-2">Status Management</p>
               <BookingStatusSelect bookingId={booking.id} currentStatus={booking.status} />
-            </div>
-
-            <Separator />
-
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">{isGuestHouse ? "Check-in / Check-out" : "Pick-up / Return"}</p>
-                <p className="text-sm text-muted-foreground">
-                  {booking.startDate} to {booking.endDate}
-                </p>
-              </div>
-            </div>
-
-            {isGuestHouse && booking.guestsOrSeats && (
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium">Guests</p>
-                  <p className="text-sm text-muted-foreground">{booking.guestsOrSeats} guests</p>
-                </div>
-              </div>
-            )}
-
-            {!isGuestHouse && booking.pickupLocation && (
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium">Pickup Location</p>
-                  <p className="text-sm text-muted-foreground">{booking.pickupLocation}</p>
-                </div>
-              </div>
-            )}
-
-            <Separator />
-
-            <div className="flex items-center justify-between">
-              <span className="text-lg font-semibold">Total Price</span>
-              <span className="text-lg font-bold">${booking.totalPrice ? booking.totalPrice.toFixed(2) : "0.00"}</span>
             </div>
           </CardContent>
         </Card>
@@ -109,34 +161,40 @@ export default async function BookingDetailsPage({ params }: BookingDetailsPageP
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
+              <Users className="h-5 w-5" />
               Customer Information
             </CardTitle>
+            <CardDescription>Contact details and special requests</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center gap-2">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">Name</p>
-                <p className="text-sm text-muted-foreground">
-                  {booking.firstName} {booking.lastName}
-                </p>
-              </div>
+            <div>
+              <h3 className="font-semibold text-lg">
+                {booking.firstName} {booking.lastName}
+              </h3>
+              <p className="text-muted-foreground">Customer</p>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Mail className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">Email</p>
-                <p className="text-sm text-muted-foreground">{booking.email}</p>
-              </div>
-            </div>
+            <Separator />
 
-            <div className="flex items-center gap-2">
-              <Phone className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">Phone</p>
-                <p className="text-sm text-muted-foreground">{booking.phone}</p>
+            <div className="grid gap-3">
+              <div className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium">Email</p>
+                  <a href={`mailto:${booking.email}`} className="text-sm text-blue-600 hover:underline">
+                    {booking.email}
+                  </a>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Phone className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium">Phone</p>
+                  <a href={`tel:${booking.phone}`} className="text-sm text-blue-600 hover:underline">
+                    {booking.phone}
+                  </a>
+                </div>
               </div>
             </div>
 
@@ -144,29 +202,105 @@ export default async function BookingDetailsPage({ params }: BookingDetailsPageP
               <>
                 <Separator />
                 <div>
-                  <p className="text-sm font-medium mb-2">Special Requests</p>
-                  <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md">{booking.specialRequests}</p>
+                  <div className="flex items-center gap-2 mb-2">
+                    <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-sm font-medium">Special Requests</p>
+                  </div>
+                  <div className="bg-muted p-3 rounded-md">
+                    <p className="text-sm">{booking.specialRequests}</p>
+                  </div>
                 </div>
               </>
             )}
 
             <Separator />
 
-            <div>
-              <p className="text-sm font-medium">Booking Date</p>
-              <p className="text-sm text-muted-foreground">
-                {new Date(booking.createdAt).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </p>
+            <div className="flex gap-2">
+              <Button asChild variant="outline" size="sm" className="flex-1 bg-transparent">
+                <a href={`mailto:${booking.email}`}>
+                  <Mail className="h-4 w-4 mr-2" />
+                  Send Email
+                </a>
+              </Button>
+              <Button asChild variant="outline" size="sm" className="flex-1 bg-transparent">
+                <a href={`tel:${booking.phone}`}>
+                  <Phone className="h-4 w-4 mr-2" />
+                  Call Customer
+                </a>
+              </Button>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Booking Timeline */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Booking Timeline</CardTitle>
+          <CardDescription>Track the progress of this booking</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <div>
+                <p className="text-sm font-medium">Booking Created</p>
+                <p className="text-xs text-muted-foreground">{formatDateTime(booking.createdAt)}</p>
+              </div>
+            </div>
+
+            {booking.status === "confirmed" && (
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <div>
+                  <p className="text-sm font-medium">Booking Confirmed</p>
+                  <p className="text-xs text-muted-foreground">Status updated to confirmed</p>
+                </div>
+              </div>
+            )}
+
+            {booking.status === "cancelled" && (
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                <div>
+                  <p className="text-sm font-medium">Booking Cancelled</p>
+                  <p className="text-xs text-muted-foreground">Status updated to cancelled</p>
+                </div>
+              </div>
+            )}
+
+            {booking.status === "completed" && (
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <div>
+                  <p className="text-sm font-medium">Booking Completed</p>
+                  <p className="text-xs text-muted-foreground">Customer has completed their stay/rental</p>
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center gap-3 opacity-50">
+              <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+              <div>
+                <p className="text-sm font-medium">
+                  {booking.type === "guestHouse" ? "Check-in Date" : "Pick-up Date"}
+                </p>
+                <p className="text-xs text-muted-foreground">{formatDate(booking.startDate)}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 opacity-50">
+              <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+              <div>
+                <p className="text-sm font-medium">
+                  {booking.type === "guestHouse" ? "Check-out Date" : "Return Date"}
+                </p>
+                <p className="text-xs text-muted-foreground">{formatDate(booking.endDate)}</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
