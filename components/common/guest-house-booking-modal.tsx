@@ -56,7 +56,7 @@ export default function GuestHouseBookingModal({
   const [guests, setGuests] = useState(1);
   const [specialRequests, setSpecialRequests] = useState("");
   const [totalPrice, setTotalPrice] = useState(0);
-  const [showSuccess, setShowSuccess] = useState(true);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
     if (user) {
