@@ -1,19 +1,21 @@
 import { NextResponse } from "next/server"
-import { strapiAPI } from "@/lib/strapi-api"
 
 export async function GET() {
   try {
-    const healthStatus = await strapiAPI.healthCheck()
-    return NextResponse.json(healthStatus)
-  } catch (error) {
-    console.error("Strapi health check failed:", error)
-    return NextResponse.json(
-      {
-        status: "error",
-        timestamp: new Date().toISOString(),
-        error: error instanceof Error ? error.message : "Unknown error",
+    const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337"
+    const response = await fetch(`${strapiUrl}/api/cars?pagination[limit]=1`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${process.env.STRAPI_ADMIN_TOKEN}`,
       },
-      { status: 500 },
-    )
+    })
+
+    if (response.ok) {
+      return NextResponse.json({ status: "connected" })
+    } else {
+      return NextResponse.json({ status: "disconnected" }, { status: 503 })
+    }
+  } catch (error) {
+    return NextResponse.json({ status: "disconnected" }, { status: 503 })
   }
 }

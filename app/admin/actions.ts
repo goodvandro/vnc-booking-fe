@@ -1,106 +1,83 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-
-// Mock data for bookings
-const mockBookings = [
-  {
-    id: "booking-001",
-    type: "guestHouse" as const,
-    itemName: "Cozy Mountain Retreat",
-    firstName: "John",
-    lastName: "Doe",
-    email: "john.doe@example.com",
-    phone: "+1-555-0123",
-    startDate: "2024-02-15",
-    endDate: "2024-02-20",
-    guestsOrSeats: 4,
-    totalPrice: 750.0,
-    status: "confirmed" as const,
-    specialRequests: "Late check-in requested",
-    createdAt: "2024-01-15T10:30:00Z",
-  },
-  {
-    id: "booking-002",
-    type: "carRental" as const,
-    itemName: "Toyota Camry 2023",
-    firstName: "Jane",
-    lastName: "Smith",
-    email: "jane.smith@example.com",
-    phone: "+1-555-0456",
-    startDate: "2024-02-10",
-    endDate: "2024-02-12",
-    guestsOrSeats: 5,
-    pickupLocation: "Airport Terminal 1",
-    totalPrice: 180.0,
-    status: "pending" as const,
-    createdAt: "2024-01-10T14:20:00Z",
-  },
-  {
-    id: "booking-003",
-    type: "guestHouse" as const,
-    itemName: "Seaside Villa",
-    firstName: "Mike",
-    lastName: "Johnson",
-    email: "mike.johnson@example.com",
-    phone: "+1-555-0789",
-    startDate: "2024-03-01",
-    endDate: "2024-03-07",
-    guestsOrSeats: 6,
-    totalPrice: 1200.0,
-    status: "confirmed" as const,
-    createdAt: "2024-01-20T09:15:00Z",
-  },
-]
+import { getBookingsData, updateBookingStatusData, getDashboardStatsData } from "@/lib/strapi-data"
+import type { BookingStatus } from "@/lib/types"
 
 export async function getBookings() {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 100))
-  return mockBookings
+  try {
+    const bookings = await getBookingsData()
+    return bookings
+  } catch (error) {
+    console.error("Failed to fetch bookings:", error)
+    return []
+  }
 }
 
 export async function getGuestHouseBookings() {
-  const bookings = await getBookings()
-  return bookings.filter((booking) => booking.type === "guestHouse")
+  try {
+    const allBookings = await getBookingsData()
+    return allBookings.filter((booking) => booking.type === "guestHouse")
+  } catch (error) {
+    console.error("Failed to fetch guest house bookings:", error)
+    return []
+  }
 }
 
 export async function getCarRentalBookings() {
-  const bookings = await getBookings()
-  return bookings.filter((booking) => booking.type === "carRental")
+  try {
+    const allBookings = await getBookingsData()
+    return allBookings.filter((booking) => booking.type === "car")
+  } catch (error) {
+    console.error("Failed to fetch car rental bookings:", error)
+    return []
+  }
 }
 
-export async function getBookingById(id: string) {
-  const bookings = await getBookings()
-  return bookings.find((booking) => booking.id === id)
+export async function updateBookingStatusAction(bookingId: string, status: BookingStatus) {
+  try {
+    await updateBookingStatusData(bookingId, status)
+    revalidatePath("/admin/bookings")
+    revalidatePath("/admin/guest-house-bookings")
+    revalidatePath("/admin/car-rental-bookings")
+    revalidatePath(`/admin/bookings/${bookingId}`)
+    return { success: true }
+  } catch (error) {
+    console.error("Failed to update booking status:", error)
+    throw new Error("Failed to update booking status")
+  }
 }
 
 export async function updateBookingStatus(bookingId: string, status: string) {
-  // Simulate API call
-  await new Promise((resolve) => setTimeout(resolve, 500))
-
-  // In a real app, this would update the database
-  console.log(`Updating booking ${bookingId} to status: ${status}`)
-
-  revalidatePath("/admin/bookings")
-  revalidatePath("/admin/guest-house-bookings")
-  revalidatePath("/admin/car-rental-bookings")
-  revalidatePath(`/admin/bookings/${bookingId}`)
-
-  return { success: true }
+  return updateBookingStatusAction(bookingId, status as BookingStatus)
 }
 
-// Mock data for dashboard stats
 export async function getDashboardStats() {
-  const bookings = await getBookings()
-  const guestHouseBookings = bookings.filter((b) => b.type === "guestHouse")
-  const carRentalBookings = bookings.filter((b) => b.type === "carRental")
+  try {
+    const stats = await getDashboardStatsData()
+    const allBookings = await getBookingsData()
 
-  return {
-    totalBookings: bookings.length,
-    guestHouseBookings: guestHouseBookings.length,
-    carRentalBookings: carRentalBookings.length,
-    pendingBookings: bookings.filter((b) => b.status === "pending").length,
-    confirmedBookings: bookings.filter((b) => b.status === "confirmed").length,
-    totalRevenue: bookings.reduce((sum, b) => sum + (b.totalPrice || 0), 0),
+    const guestHouseBookings = allBookings.filter((b) => b.type === "guestHouse").length
+    const carRentalBookings = allBookings.filter((b) => b.type === "car").length
+    const totalRevenue = allBookings.reduce((sum, booking) => sum + (booking.totalPrice || 0), 0)
+
+    return {
+      ...stats,
+      guestHouseBookings,
+      carRentalBookings,
+      totalRevenue,
+    }
+  } catch (error) {
+    console.error("Failed to fetch dashboard stats:", error)
+    return {
+      totalGuestHouses: 0,
+      totalCars: 0,
+      totalBookings: 0,
+      pendingBookings: 0,
+      confirmedBookings: 0,
+      guestHouseBookings: 0,
+      carRentalBookings: 0,
+      totalRevenue: 0,
+    }
   }
 }
