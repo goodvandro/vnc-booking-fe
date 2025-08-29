@@ -4,62 +4,52 @@ import { useState, useTransition } from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { updateBookingStatus } from "../actions"
-import type { BookingStatus } from "@/lib/types"
+import { useToast } from "@/hooks/use-toast"
 
 interface BookingStatusSelectProps {
   bookingId: string
-  currentStatus: BookingStatus
+  currentStatus: string
 }
 
 const statusOptions = [
-  {
-    value: "pending" as BookingStatus,
-    label: "Pending",
-    variant: "secondary" as const,
-  },
-  {
-    value: "confirmed" as BookingStatus,
-    label: "Confirmed",
-    variant: "default" as const,
-  },
-  {
-    value: "cancelled" as BookingStatus,
-    label: "Cancelled",
-    variant: "destructive" as const,
-  },
-  {
-    value: "completed" as BookingStatus,
-    label: "Completed",
-    variant: "outline" as const,
-  },
+  { value: "pending", label: "Pending", variant: "secondary" as const },
+  { value: "confirmed", label: "Confirmed", variant: "default" as const },
+  { value: "cancelled", label: "Cancelled", variant: "destructive" as const },
+  { value: "completed", label: "Completed", variant: "outline" as const },
 ]
 
-export default function BookingStatusSelect({ bookingId, currentStatus }: BookingStatusSelectProps) {
-  const [status, setStatus] = useState<BookingStatus>(currentStatus)
+export function BookingStatusSelect({ bookingId, currentStatus }: BookingStatusSelectProps) {
+  const [status, setStatus] = useState(currentStatus)
   const [isPending, startTransition] = useTransition()
+  const { toast } = useToast()
 
   const handleStatusChange = (newStatus: string) => {
-    const newBookingStatus = newStatus as BookingStatus
-    setStatus(newBookingStatus)
-
+    setStatus(newStatus)
     startTransition(async () => {
       try {
-        await updateBookingStatus(bookingId, newBookingStatus)
+        await updateBookingStatus(bookingId, newStatus)
+        toast({
+          title: "Status Updated",
+          description: `Booking status changed to ${newStatus}`,
+        })
       } catch (error) {
-        // Revert on error
-        setStatus(currentStatus)
-        console.error("Failed to update booking status:", error)
+        setStatus(currentStatus) // Revert on error
+        toast({
+          title: "Error",
+          description: "Failed to update booking status",
+          variant: "destructive",
+        })
       }
     })
   }
 
-  const currentStatusOption = statusOptions.find((option) => option.value === status)
+  const currentOption = statusOptions.find((option) => option.value === status)
 
   return (
     <Select value={status} onValueChange={handleStatusChange} disabled={isPending}>
-      <SelectTrigger className="w-[130px]">
+      <SelectTrigger className="w-32">
         <SelectValue>
-          <Badge variant={currentStatusOption?.variant || "secondary"}>{currentStatusOption?.label || status}</Badge>
+          <Badge variant={currentOption?.variant || "secondary"}>{currentOption?.label || status}</Badge>
         </SelectValue>
       </SelectTrigger>
       <SelectContent>

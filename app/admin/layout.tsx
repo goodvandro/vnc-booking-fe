@@ -7,8 +7,9 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Separator } from "@/components/ui/separator"
+import { LayoutDashboard, Home, Car, Calendar, Menu, Building2, CalendarDays } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, Home, Car, Calendar, Menu, Building2, CalendarCheck } from "lucide-react"
 import { StrapiStatus } from "@/components/admin/strapi-status"
 
 const navigation = [
@@ -20,7 +21,7 @@ const navigation = [
   {
     name: "Guest Houses",
     href: "/admin/guest-houses",
-    icon: Building2,
+    icon: Home,
   },
   {
     name: "Cars",
@@ -35,25 +36,18 @@ const navigation = [
   {
     name: "Guest House Bookings",
     href: "/admin/guest-house-bookings",
-    icon: Home,
+    icon: Building2,
   },
   {
     name: "Car Rental Bookings",
     href: "/admin/car-rental-bookings",
-    icon: CalendarCheck,
+    icon: CalendarDays,
   },
 ]
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  const pathname = usePathname()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-
-  const NavItems = () => (
-    <>
+function NavigationItems({ pathname }: { pathname: string }) {
+  return (
+    <nav className="space-y-2">
       {navigation.map((item) => {
         const isActive = pathname === item.href
         return (
@@ -66,72 +60,67 @@ export default function AdminLayout({
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
-            onClick={() => setSidebarOpen(false)}
           >
             <item.icon className="h-4 w-4" />
             {item.name}
           </Link>
         )
       })}
-    </>
+    </nav>
   )
+}
+
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  const pathname = usePathname()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
     <div className="flex min-h-screen">
       {/* Desktop Sidebar */}
-      <div className="hidden w-64 border-r bg-background lg:block">
-        <div className="flex h-full flex-col">
-          <div className="flex h-14 items-center border-b px-4">
-            <Link href="/admin" className="flex items-center gap-2 font-semibold">
-              <Building2 className="h-6 w-6" />
-              Admin Panel
-            </Link>
+      <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
+        <div className="flex flex-col flex-grow bg-background border-r">
+          <div className="flex items-center flex-shrink-0 px-4 py-6">
+            <h1 className="text-xl font-bold">Admin Panel</h1>
           </div>
-          <nav className="flex-1 space-y-1 p-4">
-            <NavItems />
-          </nav>
-          <div className="border-t p-4">
+          <div className="flex flex-col flex-grow px-4 pb-4">
+            <NavigationItems pathname={pathname} />
+            <Separator className="my-4" />
             <StrapiStatus />
           </div>
         </div>
       </div>
 
-      {/* Mobile Layout */}
-      <div className="flex flex-1 flex-col">
-        {/* Mobile Header */}
-        <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:hidden">
-          <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="icon">
-                <Menu className="h-4 w-4" />
-                <span className="sr-only">Toggle navigation menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-64">
-              <div className="flex h-full flex-col">
-                <div className="flex h-14 items-center border-b px-4">
-                  <Link href="/admin" className="flex items-center gap-2 font-semibold">
-                    <Building2 className="h-6 w-6" />
-                    Admin Panel
-                  </Link>
-                </div>
-                <nav className="flex-1 space-y-1 p-4">
-                  <NavItems />
-                </nav>
-                <div className="border-t p-4">
-                  <StrapiStatus />
-                </div>
-              </div>
-            </SheetContent>
-          </Sheet>
-          <div className="flex items-center gap-2 font-semibold">
-            <Building2 className="h-6 w-6" />
-            Admin Panel
+      {/* Mobile Sidebar */}
+      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+        <SheetTrigger asChild>
+          <Button variant="outline" size="icon" className="lg:hidden fixed top-4 left-4 z-50 bg-transparent">
+            <Menu className="h-4 w-4" />
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="left" className="w-64 p-0">
+          <div className="flex flex-col h-full bg-background">
+            <div className="flex items-center flex-shrink-0 px-4 py-6">
+              <h1 className="text-xl font-bold">Admin Panel</h1>
+            </div>
+            <div className="flex flex-col flex-grow px-4 pb-4">
+              <NavigationItems pathname={pathname} />
+              <Separator className="my-4" />
+              <StrapiStatus />
+            </div>
           </div>
-        </header>
+        </SheetContent>
+      </Sheet>
 
-        {/* Main Content */}
-        <main className="flex-1 p-4 lg:p-6">{children}</main>
+      {/* Main Content */}
+      <div className="lg:pl-64 flex flex-col flex-1">
+        <main className="flex-1 p-4 lg:p-8">
+          <div className="lg:hidden mb-16" /> {/* Spacer for mobile menu button */}
+          {children}
+        </main>
       </div>
     </div>
   )
