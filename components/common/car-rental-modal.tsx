@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useActionState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -36,11 +36,14 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t, user }
   const [specialRequests, setSpecialRequests] = useState("")
   const [totalPrice, setTotalPrice] = useState(0)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [canShowSuccess, setCanShowSuccess] = useState(false)
+  const lastBookingIdRef = useRef<string | null>(null)
 
   // Reset form and success state when modal opens with a new selection
   useEffect(() => {
     if (isOpen && selectedCar) {
       setShowSuccess(false)
+      setCanShowSuccess(true) // Allow showing success for new bookings in this session
       // Reset form fields
       setStartDate("")
       setEndDate("")
@@ -78,15 +81,21 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t, user }
     }
   }, [startDate, endDate, selectedCar])
 
-  // Handle successful booking
+  // Handle successful booking - only show success for new bookings
   useEffect(() => {
-    if (state?.success && !showSuccess) {
-      setShowSuccess(true)
+    if (state?.success && canShowSuccess && !showSuccess) {
+      // Check if this is a new booking (different booking ID)
+      if (state.bookingId && state.bookingId !== lastBookingIdRef.current) {
+        setShowSuccess(true)
+        lastBookingIdRef.current = state.bookingId
+        setCanShowSuccess(false) // Prevent showing success again until modal reopens
+      }
     }
-  }, [state?.success, showSuccess])
+  }, [state?.success, state?.bookingId, canShowSuccess, showSuccess])
 
   const handleCloseModal = () => {
     setShowSuccess(false)
+    setCanShowSuccess(false)
     onClose()
     // Reset form
     setStartDate("")
