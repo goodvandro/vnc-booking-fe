@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Home, Car, Building2, Calendar, CarTaxiFront, Menu, Settings, BarChart3 } from "lucide-react"
-import { ProtectedRoute } from "@/components/auth/protected-route"
+import ProtectedRoute from "@/components/auth/protected-route"
 import { StrapiStatus } from "@/components/admin/strapi-status"
 
 const navigation = [
