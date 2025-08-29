@@ -15,6 +15,20 @@ export default async function BookingsPage() {
       <CardHeader>
         <CardTitle>All Bookings</CardTitle>
         <CardDescription>Manage all bookings across guest houses and car rentals.</CardDescription>
+        <div className="flex gap-2 mt-4">
+          <Button asChild variant="outline" size="sm">
+            <Link href="/admin/guest-house-bookings">
+              <Home className="h-4 w-4 mr-2" />
+              Guest House Bookings
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/admin/car-rental-bookings">
+              <Car className="h-4 w-4 mr-2" />
+              Car Rental Bookings
+            </Link>
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <Table>

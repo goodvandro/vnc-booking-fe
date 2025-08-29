@@ -1,8 +1,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { getDashboardStats } from "./actions"
-import { Calendar, Home, Car, TrendingUp, Clock } from "lucide-react"
 import Link from "next/link"
+import { Calendar, Home, Car, Clock, CheckCircle, DollarSign, TrendingUp, Building } from "lucide-react"
 
 export default async function AdminDashboard() {
   const stats = await getDashboardStats()
@@ -23,7 +23,7 @@ export default async function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalBookings}</div>
-            <p className="text-xs text-muted-foreground">All time bookings</p>
+            <p className="text-xs text-muted-foreground">All booking types combined</p>
           </CardContent>
         </Card>
 
@@ -33,8 +33,8 @@ export default async function AdminDashboard() {
             <Home className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{Math.floor(stats.totalBookings * 0.6)}</div>
-            <p className="text-xs text-muted-foreground">Estimated guest house reservations</p>
+            <div className="text-2xl font-bold">{stats.guestHouseBookings}</div>
+            <p className="text-xs text-muted-foreground">Active reservations</p>
           </CardContent>
         </Card>
 
@@ -44,97 +44,48 @@ export default async function AdminDashboard() {
             <Car className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{Math.floor(stats.totalBookings * 0.4)}</div>
-            <p className="text-xs text-muted-foreground">Estimated car rental bookings</p>
+            <div className="text-2xl font-bold">{stats.carRentalBookings}</div>
+            <p className="text-xs text-muted-foreground">Vehicle bookings</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Reviews</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.pendingBookings}</div>
-            <p className="text-xs text-muted-foreground">Awaiting confirmation</p>
+            <div className="text-2xl font-bold">${stats.totalRevenue.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">From all bookings</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {/* Status Overview */}
+      <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              All Bookings
+              <Clock className="h-5 w-5" />
+              Booking Status Overview
             </CardTitle>
-            <CardDescription>View and manage all bookings in one place</CardDescription>
+            <CardDescription>Current status distribution</CardDescription>
           </CardHeader>
-          <CardContent>
-            <Button asChild className="w-full">
-              <Link href="/admin/bookings">View All Bookings</Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Home className="h-5 w-5" />
-              Guest House Bookings
-            </CardTitle>
-            <CardDescription>Manage guest house reservations and check-ins</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild className="w-full">
-              <Link href="/admin/guest-house-bookings">Manage Guest Houses</Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Car className="h-5 w-5" />
-              Car Rental Bookings
-            </CardTitle>
-            <CardDescription>Handle car rental bookings and returns</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild className="w-full">
-              <Link href="/admin/car-rental-bookings">Manage Car Rentals</Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Home className="h-5 w-5" />
-              Guest Houses
-            </CardTitle>
-            <CardDescription>Add, edit, and manage guest house properties</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild variant="outline" className="w-full bg-transparent">
-              <Link href="/admin/guest-houses">Manage Properties</Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Car className="h-5 w-5" />
-              Vehicle Fleet
-            </CardTitle>
-            <CardDescription>Add, edit, and manage your car rental fleet</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild variant="outline" className="w-full bg-transparent">
-              <Link href="/admin/cars">Manage Fleet</Link>
-            </Button>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-yellow-500" />
+                <span>Pending</span>
+              </div>
+              <span className="font-medium">{stats.pendingBookings}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-green-500" />
+                <span>Confirmed</span>
+              </div>
+              <span className="font-medium">{stats.confirmedBookings}</span>
+            </div>
           </CardContent>
         </Card>
 
@@ -142,13 +93,34 @@ export default async function AdminDashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
-              Analytics
+              Quick Actions
             </CardTitle>
-            <CardDescription>View booking trends and performance metrics</CardDescription>
+            <CardDescription>Manage your booking system</CardDescription>
           </CardHeader>
-          <CardContent>
-            <Button variant="outline" className="w-full bg-transparent" disabled>
-              Coming Soon
+          <CardContent className="space-y-3">
+            <Button asChild className="w-full justify-start">
+              <Link href="/admin/guest-house-bookings">
+                <Home className="h-4 w-4 mr-2" />
+                Manage Guest House Bookings
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full justify-start bg-transparent">
+              <Link href="/admin/car-rental-bookings">
+                <Car className="h-4 w-4 mr-2" />
+                Manage Car Rental Bookings
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full justify-start bg-transparent">
+              <Link href="/admin/guest-houses">
+                <Building className="h-4 w-4 mr-2" />
+                Manage Guest Houses
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full justify-start bg-transparent">
+              <Link href="/admin/cars">
+                <Car className="h-4 w-4 mr-2" />
+                Manage Cars
+              </Link>
             </Button>
           </CardContent>
         </Card>

@@ -7,15 +7,15 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { LayoutDashboard, Home, Car, Calendar, Menu } from "lucide-react"
-import { cn } from "@/lib/utils"
 import { StrapiStatus } from "@/components/admin/strapi-status"
+import { Menu, Home, Car, Building, Calendar, BarChart3 } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 const navigation = [
   {
     name: "Dashboard",
     href: "/admin",
-    icon: LayoutDashboard,
+    icon: BarChart3,
   },
   {
     name: "All Bookings",
@@ -35,7 +35,7 @@ const navigation = [
   {
     name: "Guest Houses",
     href: "/admin/guest-houses",
-    icon: Home,
+    icon: Building,
   },
   {
     name: "Cars",
@@ -79,8 +79,8 @@ export default function AdminLayout({
   return (
     <div className="flex min-h-screen">
       {/* Desktop Sidebar */}
-      <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
-        <div className="flex flex-col flex-grow bg-card border-r pt-5 pb-4 overflow-y-auto">
+      <div className="hidden md:flex md:w-64 md:flex-col">
+        <div className="flex flex-col flex-grow pt-5 overflow-y-auto bg-background border-r">
           <div className="flex items-center flex-shrink-0 px-4">
             <h1 className="text-xl font-bold">Admin Panel</h1>
           </div>
@@ -88,47 +88,40 @@ export default function AdminLayout({
             <nav className="flex-1 px-4 space-y-1">
               <NavItems />
             </nav>
-            <div className="px-4 mt-6">
-              <StrapiStatus />
-            </div>
+          </div>
+          <div className="flex-shrink-0 p-4 border-t">
+            <StrapiStatus />
           </div>
         </div>
       </div>
 
       {/* Mobile Sidebar */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+        <SheetTrigger asChild>
+          <Button variant="outline" size="icon" className="md:hidden fixed top-4 left-4 z-40 bg-transparent">
+            <Menu className="h-4 w-4" />
+          </Button>
+        </SheetTrigger>
         <SheetContent side="left" className="w-64 p-0">
-          <div className="flex flex-col h-full bg-card pt-5 pb-4">
-            <div className="flex items-center flex-shrink-0 px-4">
+          <div className="flex flex-col h-full">
+            <div className="flex items-center flex-shrink-0 px-4 py-5">
               <h1 className="text-xl font-bold">Admin Panel</h1>
             </div>
-            <div className="mt-8 flex-grow flex flex-col">
-              <nav className="flex-1 px-4 space-y-1">
+            <div className="flex-grow">
+              <nav className="px-4 space-y-1">
                 <NavItems />
               </nav>
-              <div className="px-4 mt-6">
-                <StrapiStatus />
-              </div>
+            </div>
+            <div className="flex-shrink-0 p-4 border-t">
+              <StrapiStatus />
             </div>
           </div>
         </SheetContent>
       </Sheet>
 
       {/* Main Content */}
-      <div className="lg:pl-64 flex flex-col flex-1">
-        {/* Mobile Header */}
-        <div className="lg:hidden flex items-center justify-between p-4 border-b bg-card">
-          <SheetTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Menu className="h-4 w-4" />
-            </Button>
-          </SheetTrigger>
-          <h1 className="text-lg font-semibold">Admin Panel</h1>
-          <div className="w-8" /> {/* Spacer for centering */}
-        </div>
-
-        {/* Page Content */}
-        <main className="flex-1 p-6">{children}</main>
+      <div className="flex-1 flex flex-col">
+        <main className="flex-1 p-4 md:p-8 pt-16 md:pt-8">{children}</main>
       </div>
     </div>
   )

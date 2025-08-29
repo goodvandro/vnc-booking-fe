@@ -3,7 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { getCarRentalBookings } from "../actions"
 import BookingStatusSelect from "../bookings/booking-status-select"
-import { Eye, Car } from "lucide-react"
+import { Eye, Car, Calendar, MapPin } from "lucide-react"
 import Link from "next/link"
 
 export default async function CarRentalBookingsPage() {
@@ -16,7 +16,7 @@ export default async function CarRentalBookingsPage() {
           <Car className="h-5 w-5" />
           Car Rental Bookings
         </CardTitle>
-        <CardDescription>Manage all car rental bookings and reservations.</CardDescription>
+        <CardDescription>Manage all vehicle rentals and pick-ups.</CardDescription>
       </CardHeader>
       <CardContent>
         <Table>
@@ -26,7 +26,7 @@ export default async function CarRentalBookingsPage() {
               <TableHead>Vehicle</TableHead>
               <TableHead>Customer</TableHead>
               <TableHead>Pick-up / Return</TableHead>
-              <TableHead>Driver License</TableHead>
+              <TableHead>Pick-up Location</TableHead>
               <TableHead>Total</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="w-[100px] text-right">Actions</TableHead>
@@ -45,19 +45,22 @@ export default async function CarRentalBookingsPage() {
                   <TableCell className="font-medium">#{booking.id.slice(0, 8)}</TableCell>
                   <TableCell>
                     <div className="font-medium">{booking.itemName || "N/A"}</div>
-                    <div className="text-xs text-muted-foreground">Car Rental</div>
                   </TableCell>
                   <TableCell>
                     {booking.firstName} {booking.lastName}
                     <div className="text-xs text-muted-foreground">{booking.email}</div>
                   </TableCell>
                   <TableCell>
-                    <div className="text-sm">
+                    <div className="flex items-center gap-1 text-sm">
+                      <Calendar className="h-3 w-3" />
                       {booking.startDate} to {booking.endDate}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="text-sm">{booking.pickupLocation || "N/A"}</div>
+                    <div className="flex items-center gap-1 text-sm">
+                      <MapPin className="h-3 w-3" />
+                      {booking.pickupLocation || "N/A"}
+                    </div>
                   </TableCell>
                   <TableCell className="font-medium">
                     ${booking.totalPrice ? booking.totalPrice.toFixed(2) : "0.00"}
