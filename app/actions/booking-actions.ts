@@ -71,10 +71,12 @@ export async function createGuestHouseBooking(prevState: any, formData: FormData
         checkOut,
         totalPrice,
         bookingStatus: "pending",
-        user: userId,
+        // user: userId,
         guest_house: guestHouseId,
       },
     }
+
+    console.log("bookingData", bookingData)
 
     // Submit to Strapi
     const response = await fetch(`${process.env.NEXT_PUBLIC_STRAPI_URL}/api/guest-house-bookings`, {

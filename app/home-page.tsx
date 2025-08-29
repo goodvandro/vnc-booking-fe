@@ -1,65 +1,71 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import Header from "@/components/layout/header"
-import Footer from "@/components/layout/footer"
-import HeroSection from "@/components/sections/hero-section"
-import GuestHousesSection from "@/components/sections/guest-houses-section"
-import CarRentalSection from "@/components/sections/car-rental-section"
-import MarketingSection from "@/components/sections/marketing-section"
-import AboutUsSection from "@/components/sections/about-us-section"
-import NewsletterSection from "@/components/sections/newsletter-section"
-import ContactSection from "@/components/sections/contact-section"
-import BackToTopButton from "@/components/common/back-to-top-button"
-import GuestHouseBookingModal from "@/components/common/guest-house-booking-modal"
-import CarRentalModal from "@/components/common/car-rental-modal"
-import { translations } from "@/lib/translations"
-import { useLanguage } from "@/hooks/use-language"
-import { useUser } from "@clerk/nextjs"
-import type { SelectedGuestHouse, SelectedCar } from "@/lib/types"
+import { useState, useEffect } from "react";
+import Header from "@/components/layout/header";
+import Footer from "@/components/layout/footer";
+import HeroSection from "@/components/sections/hero-section";
+import GuestHousesSection from "@/components/sections/guest-houses-section";
+import CarRentalSection from "@/components/sections/car-rental-section";
+import MarketingSection from "@/components/sections/marketing-section";
+import AboutUsSection from "@/components/sections/about-us-section";
+import NewsletterSection from "@/components/sections/newsletter-section";
+import ContactSection from "@/components/sections/contact-section";
+import BackToTopButton from "@/components/common/back-to-top-button";
+import GuestHouseBookingModal from "@/components/common/guest-house-booking-modal";
+import CarRentalModal from "@/components/common/car-rental-modal";
+import { translations } from "@/lib/translations";
+import { useLanguage } from "@/hooks/use-language";
+import { useUser } from "@clerk/nextjs";
+import type { SelectedGuestHouse, SelectedCar } from "@/lib/types";
+import { User } from "@clerk/nextjs/server";
 
 export default function HomePage() {
-  const [showBackToTopButton, setShowBackToTopButton] = useState(false)
-  const { user } = useUser()
+  const [showBackToTopButton, setShowBackToTopButton] = useState(false);
+  const { user } = useUser();
 
   // Use the language hook for automatic browser detection
-  const { currentLanguage, setCurrentLanguage, isLoading: isLanguageLoading } = useLanguage()
-  const t = translations[currentLanguage as keyof typeof translations]
+  const {
+    currentLanguage,
+    setCurrentLanguage,
+    isLoading: isLanguageLoading,
+  } = useLanguage();
+  const t = translations[currentLanguage as keyof typeof translations];
 
   // Separate modal states for guest house and car rental
-  const [guestHouseModalOpen, setGuestHouseModalOpen] = useState(false)
-  const [carRentalModalOpen, setCarRentalModalOpen] = useState(false)
-  const [selectedGuestHouse, setSelectedGuestHouse] = useState<SelectedGuestHouse | null>(null)
-  const [selectedCar, setSelectedCar] = useState<SelectedCar | null>(null)
+  const [guestHouseModalOpen, setGuestHouseModalOpen] = useState(false);
+  const [carRentalModalOpen, setCarRentalModalOpen] = useState(false);
+  const [selectedGuestHouse, setSelectedGuestHouse] =
+    useState<SelectedGuestHouse | null>(null);
+  const [selectedCar, setSelectedCar] = useState<SelectedCar | null>(null);
 
   const handleBookNowClick = (itemData: SelectedGuestHouse["data"]) => {
-    setSelectedGuestHouse({ type: "guestHouse", data: itemData })
-    setGuestHouseModalOpen(true)
-  }
+    setSelectedGuestHouse({ type: "guestHouse", data: itemData });
+    setGuestHouseModalOpen(true);
+  };
 
   const handleRentNowClick = (itemData: SelectedCar["data"]) => {
-    setSelectedCar({ type: "car", data: itemData })
-    setCarRentalModalOpen(true)
-  }
+    setSelectedCar({ type: "car", data: itemData });
+    setCarRentalModalOpen(true);
+  };
 
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 300) {
-        setShowBackToTopButton(true)
+        setShowBackToTopButton(true);
       } else {
-        setShowBackToTopButton(false)
+        setShowBackToTopButton(false);
       }
-    }
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
       behavior: "smooth",
-    })
-  }
+    });
+  };
 
   // Show loading state while detecting language
   if (isLanguageLoading) {
@@ -70,7 +76,7 @@ export default function HomePage() {
           <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -97,25 +103,25 @@ export default function HomePage() {
       <GuestHouseBookingModal
         isOpen={guestHouseModalOpen}
         onClose={() => {
-          setGuestHouseModalOpen(false)
-          setSelectedGuestHouse(null)
+          setGuestHouseModalOpen(false);
+          setSelectedGuestHouse(null);
         }}
         selectedGuestHouse={selectedGuestHouse}
         t={t}
-        user={user}
+        user={user as User | null | undefined}
       />
 
       {/* Car Rental Modal */}
       <CarRentalModal
         isOpen={carRentalModalOpen}
         onClose={() => {
-          setCarRentalModalOpen(false)
-          setSelectedCar(null)
+          setCarRentalModalOpen(false);
+          setSelectedCar(null);
         }}
         selectedCar={selectedCar}
         t={t}
-        user={user}
+        user={user as User | null | undefined}
       />
     </div>
-  )
+  );
 }

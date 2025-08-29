@@ -145,6 +145,7 @@ export default function GuestHousesSection({ t, handleBookNowClick }: GuestHouse
                     onClick={() =>
                       handleBookNowClick({
                         id: gh.id,
+                        guestHouseId: gh.guestHouseId,
                         images,
                         title: gh.title,
                         location: gh.location,
