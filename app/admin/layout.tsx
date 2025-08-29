@@ -1,6 +1,6 @@
 import type React from "react"
 import Link from "next/link"
-import { Home, Car, CalendarCheck, LayoutDashboard } from "lucide-react"
+import { Home, Car, CalendarCheck, LayoutDashboard, Building2, Calendar } from "lucide-react"
 import ProtectedRoute from "@/components/auth/protected-route"
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -41,7 +41,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
             >
               <CalendarCheck className="h-4 w-4" />
-              Bookings
+              All Bookings
+            </Link>
+            <Link
+              href="/admin/guest-house-bookings"
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+            >
+              <Building2 className="h-4 w-4" />
+              Guest House Bookings
+            </Link>
+            <Link
+              href="/admin/car-rental-bookings"
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+            >
+              <Calendar className="h-4 w-4" />
+              Car Rental Bookings
             </Link>
           </nav>
         </aside>
