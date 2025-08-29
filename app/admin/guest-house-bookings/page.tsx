@@ -44,7 +44,7 @@ export default async function GuestHouseBookingsPage() {
                 <TableRow key={booking.id}>
                   <TableCell className="font-medium">#{booking.id.slice(0, 8)}</TableCell>
                   <TableCell>
-                    <div className="font-medium">{booking.itemName}</div>
+                    <div className="font-medium">{booking.itemName || "N/A"}</div>
                     <div className="text-xs text-muted-foreground">Guest House</div>
                   </TableCell>
                   <TableCell>
@@ -57,7 +57,9 @@ export default async function GuestHouseBookingsPage() {
                     </div>
                   </TableCell>
                   <TableCell>{booking.guestsOrSeats ? `${booking.guestsOrSeats} guests` : "N/A"}</TableCell>
-                  <TableCell className="font-medium">${booking.totalPrice.toFixed(2)}</TableCell>
+                  <TableCell className="font-medium">
+                    ${booking.totalPrice ? booking.totalPrice.toFixed(2) : "0.00"}
+                  </TableCell>
                   <TableCell>
                     <BookingStatusSelect bookingId={booking.id} currentStatus={booking.status} />
                   </TableCell>

@@ -44,8 +44,8 @@ export default async function CarRentalBookingsPage() {
                 <TableRow key={booking.id}>
                   <TableCell className="font-medium">#{booking.id.slice(0, 8)}</TableCell>
                   <TableCell>
-                    <div className="font-medium">{booking.itemName}</div>
-                    <div className="text-xs text-muted-foreground">Vehicle</div>
+                    <div className="font-medium">{booking.itemName || "N/A"}</div>
+                    <div className="text-xs text-muted-foreground">Car Rental</div>
                   </TableCell>
                   <TableCell>
                     {booking.firstName} {booking.lastName}
@@ -59,7 +59,9 @@ export default async function CarRentalBookingsPage() {
                   <TableCell>
                     <div className="text-sm">{booking.pickupLocation || "N/A"}</div>
                   </TableCell>
-                  <TableCell className="font-medium">${booking.totalPrice.toFixed(2)}</TableCell>
+                  <TableCell className="font-medium">
+                    ${booking.totalPrice ? booking.totalPrice.toFixed(2) : "0.00"}
+                  </TableCell>
                   <TableCell>
                     <BookingStatusSelect bookingId={booking.id} currentStatus={booking.status} />
                   </TableCell>
