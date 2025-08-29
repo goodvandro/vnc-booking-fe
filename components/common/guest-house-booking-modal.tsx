@@ -69,7 +69,6 @@ export default function GuestHouseBookingModal({
 
   // Calculate total price when dates or guests change
   useEffect(() => {
-    console.log("firstName", user?.firstName);
     if (checkInDate && checkOutDate && selectedGuestHouse) {
       const checkIn = new Date(checkInDate);
       const checkOut = new Date(checkOutDate);
