@@ -1,39 +1,27 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import { useActionState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import {
-  MapPin,
-  Star,
-  Users,
-  Calendar,
-  Loader2,
-  CheckCircle,
-} from "lucide-react";
-import { createGuestHouseBooking } from "@/app/actions/booking-actions";
-import type { SelectedGuestHouse } from "@/lib/types";
-import type { User } from "@clerk/nextjs/server";
-import ImageSlider from "./image-slider";
+import { useState, useEffect } from "react"
+import { useActionState } from "react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import { MapPin, Star, Users, Calendar, Loader2, CheckCircle } from "lucide-react"
+import { createGuestHouseBooking } from "@/app/actions/booking-actions"
+import type { SelectedGuestHouse } from "@/lib/types"
+import type { User } from "@clerk/nextjs/server"
+import ImageSlider from "./image-slider"
 
 interface GuestHouseBookingModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  selectedGuestHouse: SelectedGuestHouse | null;
-  t: any;
-  user: User | null | undefined;
+  isOpen: boolean
+  onClose: () => void
+  selectedGuestHouse: SelectedGuestHouse | null
+  t: any
+  user: User | null | undefined
 }
 
 export default function GuestHouseBookingModal({
@@ -43,104 +31,93 @@ export default function GuestHouseBookingModal({
   t,
   user,
 }: GuestHouseBookingModalProps) {
-  const [state, formAction, isPending] = useActionState(
-    createGuestHouseBooking,
-    null
-  );
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [checkInDate, setCheckInDate] = useState("");
-  const [checkOutDate, setCheckOutDate] = useState("");
-  const [guests, setGuests] = useState(1);
-  const [specialRequests, setSpecialRequests] = useState("");
-  const [totalPrice, setTotalPrice] = useState(0);
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [state, formAction, isPending] = useActionState(createGuestHouseBooking, null)
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
+  const [email, setEmail] = useState("")
+  const [phone, setPhone] = useState("")
+  const [checkInDate, setCheckInDate] = useState("")
+  const [checkOutDate, setCheckOutDate] = useState("")
+  const [guests, setGuests] = useState(1)
+  const [specialRequests, setSpecialRequests] = useState("")
+  const [totalPrice, setTotalPrice] = useState(0)
+  const [showSuccess, setShowSuccess] = useState(false)
 
   useEffect(() => {
     if (user) {
-      setFirstName(user?.firstName || "");
-      setLastName(user?.lastName || "");
-      setEmail(user.emailAddresses?.[0]?.emailAddress || "");
-      setPhone(user.phoneNumbers?.[0]?.phoneNumber || "");
+      setFirstName(user?.firstName || "")
+      setLastName(user?.lastName || "")
+      setEmail(user.emailAddresses?.[0]?.emailAddress || "")
+      setPhone(user.phoneNumbers?.[0]?.phoneNumber || "")
     }
-  }, [user]);
+  }, [user])
 
   // Calculate total price when dates or guests change
   useEffect(() => {
     if (checkInDate && checkOutDate && selectedGuestHouse) {
-      const checkIn = new Date(checkInDate);
-      const checkOut = new Date(checkOutDate);
-      const nights = Math.ceil(
-        (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)
-      );
+      const checkIn = new Date(checkInDate)
+      const checkOut = new Date(checkOutDate)
+      const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
 
       if (nights > 0) {
-        setTotalPrice(nights * selectedGuestHouse.data.price);
+        setTotalPrice(nights * selectedGuestHouse.data.price)
       } else {
-        setTotalPrice(0);
+        setTotalPrice(0)
       }
     }
-  }, [checkInDate, checkOutDate, guests, selectedGuestHouse]);
+  }, [checkInDate, checkOutDate, guests, selectedGuestHouse])
 
   // Handle successful booking
   useEffect(() => {
     if (state?.success && !showSuccess) {
-      setShowSuccess(true);
-      // Auto-close modal after 4 seconds
-      setTimeout(() => {
-        setShowSuccess(false);
-        onClose();
-        // Reset form
-        setCheckInDate("");
-        setCheckOutDate("");
-        setGuests(1);
-        setTotalPrice(0);
-      }, 4000);
+      setShowSuccess(true)
     }
-  }, [state?.success, showSuccess, onClose]);
+  }, [state?.success, showSuccess])
 
-  if (!selectedGuestHouse) return null;
+  const handleCloseModal = () => {
+    setShowSuccess(false)
+    onClose()
+    // Reset form
+    setCheckInDate("")
+    setCheckOutDate("")
+    setGuests(1)
+    setTotalPrice(0)
+    setFirstName("")
+    setLastName("")
+    setEmail("")
+    setPhone("")
+    setSpecialRequests("")
+  }
 
-  const guestHouse = selectedGuestHouse.data;
-  const today = new Date().toISOString().split("T")[0];
+  if (!selectedGuestHouse) return null
+
+  const guestHouse = selectedGuestHouse.data
+  const today = new Date().toISOString().split("T")[0]
   const nights =
     checkInDate && checkOutDate
-      ? Math.ceil(
-          (new Date(checkOutDate).getTime() - new Date(checkInDate).getTime()) /
-            (1000 * 60 * 60 * 24)
-        )
-      : 0;
+      ? Math.ceil((new Date(checkOutDate).getTime() - new Date(checkInDate).getTime()) / (1000 * 60 * 60 * 24))
+      : 0
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleCloseModal}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">
-            {t?.bookGuestHouse || "Book Guest House"}
-          </DialogTitle>
+          <DialogTitle className="text-2xl font-bold">{t?.bookGuestHouse || "Book Guest House"}</DialogTitle>
         </DialogHeader>
 
         {showSuccess ? (
           <div className="text-center py-12">
             <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
-            <h3 className="text-2xl font-bold text-green-600 mb-2">
-              {t?.bookingConfirmed || "Booking Confirmed!"}
-            </h3>
+            <h3 className="text-2xl font-bold text-green-600 mb-2">{t?.bookingConfirmed || "Booking Confirmed!"}</h3>
             <p className="text-muted-foreground mb-4">{state?.message}</p>
             {state?.bookingId && (
-              <p className="text-sm text-muted-foreground">
-                Booking ID:{" "}
-                <span className="font-mono font-semibold">
-                  {state.bookingId}
-                </span>
+              <p className="text-sm text-muted-foreground mb-6">
+                Booking ID: <span className="font-mono font-semibold">{state.bookingId}</span>
               </p>
             )}
-            <div className="text-sm text-muted-foreground mt-4">
-              {t?.closingAutomatically ||
-                "This window will close automatically..."}
-            </div>
+            <Button onClick={handleCloseModal} className="px-8">
+              {t?.done || "Done"}
+            </Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -159,9 +136,7 @@ export default function GuestHouseBookingModal({
               {/* Guest House Details */}
               <Card>
                 <CardContent className="p-4">
-                  <h3 className="font-semibold text-xl mb-2">
-                    {guestHouse.title}
-                  </h3>
+                  <h3 className="font-semibold text-xl mb-2">{guestHouse.title}</h3>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
                     <MapPin className="h-4 w-4" />
                     {guestHouse.location}
@@ -173,19 +148,13 @@ export default function GuestHouseBookingModal({
                     </div>
                     <div className="flex items-center gap-1">
                       <Users className="h-4 w-4" />
-                      <span className="text-sm">
-                        {t?.maxGuests || "Max guests"}: 8
-                      </span>
+                      <span className="text-sm">{t?.maxGuests || "Max guests"}: 8</span>
                     </div>
                     <Badge variant="secondary">
                       €{guestHouse.price}/{t?.night || "night"}
                     </Badge>
                   </div>
-                  {guestHouse.description && (
-                    <p className="text-sm text-muted-foreground">
-                      {guestHouse.description}
-                    </p>
-                  )}
+                  {guestHouse.description && <p className="text-sm text-muted-foreground">{guestHouse.description}</p>}
                 </CardContent>
               </Card>
 
@@ -233,25 +202,18 @@ export default function GuestHouseBookingModal({
               {/* Booking Form */}
               <form action={formAction} className="space-y-4">
                 {/* Hidden fields */}
-                <input
-                  type="hidden"
-                  name="guestHouseId"
-                  value={guestHouse.id || ""}
-                />
+                <input type="hidden" name="guestHouseId" value={guestHouse.id || ""} />
                 <input type="hidden" name="totalPrice" value={totalPrice} />
 
                 <Card>
                   <CardContent className="p-4">
-                    <h4 className="font-semibold mb-4">
-                      {t?.personalInformation || "Personal Information"}
-                    </h4>
+                    <h4 className="font-semibold mb-4">{t?.personalInformation || "Personal Information"}</h4>
 
                     {/* Personal Information */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                       <div>
                         <Label htmlFor="firstName">
-                          {t?.firstName || "First Name"}{" "}
-                          <span className="text-red-500">*</span>
+                          {t?.firstName || "First Name"} <span className="text-red-500">*</span>
                         </Label>
                         <Input
                           id="firstName"
@@ -264,8 +226,7 @@ export default function GuestHouseBookingModal({
                       </div>
                       <div>
                         <Label htmlFor="lastName">
-                          {t?.lastName || "Last Name"}{" "}
-                          <span className="text-red-500">*</span>
+                          {t?.lastName || "Last Name"} <span className="text-red-500">*</span>
                         </Label>
                         <Input
                           id="lastName"
@@ -281,8 +242,7 @@ export default function GuestHouseBookingModal({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="email">
-                          {t?.email || "Email"}{" "}
-                          <span className="text-red-500">*</span>
+                          {t?.email || "Email"} <span className="text-red-500">*</span>
                         </Label>
                         <Input
                           id="email"
@@ -296,8 +256,7 @@ export default function GuestHouseBookingModal({
                       </div>
                       <div>
                         <Label htmlFor="phone">
-                          {t?.phone || "Phone"}{" "}
-                          <span className="text-red-500">*</span>
+                          {t?.phone || "Phone"} <span className="text-red-500">*</span>
                         </Label>
                         <Input
                           id="phone"
@@ -315,16 +274,13 @@ export default function GuestHouseBookingModal({
 
                 <Card>
                   <CardContent className="p-4">
-                    <h4 className="font-semibold mb-4">
-                      {t?.bookingDetails || "Booking Details"}
-                    </h4>
+                    <h4 className="font-semibold mb-4">{t?.bookingDetails || "Booking Details"}</h4>
 
                     {/* Booking Details */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                       <div>
                         <Label htmlFor="checkIn">
-                          {t?.checkIn || "Check-in"}{" "}
-                          <span className="text-red-500">*</span>
+                          {t?.checkIn || "Check-in"} <span className="text-red-500">*</span>
                         </Label>
                         <Input
                           id="checkIn"
@@ -339,8 +295,7 @@ export default function GuestHouseBookingModal({
                       </div>
                       <div>
                         <Label htmlFor="checkOut">
-                          {t?.checkOut || "Check-out"}{" "}
-                          <span className="text-red-500">*</span>
+                          {t?.checkOut || "Check-out"} <span className="text-red-500">*</span>
                         </Label>
                         <Input
                           id="checkOut"
@@ -355,8 +310,7 @@ export default function GuestHouseBookingModal({
                       </div>
                       <div>
                         <Label htmlFor="guests">
-                          {t?.guests || "Guests"}{" "}
-                          <span className="text-red-500">*</span>
+                          {t?.guests || "Guests"} <span className="text-red-500">*</span>
                         </Label>
                         <Input
                           id="guests"
@@ -366,9 +320,7 @@ export default function GuestHouseBookingModal({
                           max="8"
                           required
                           value={guests}
-                          onChange={(e) =>
-                            setGuests(Number.parseInt(e.target.value) || 1)
-                          }
+                          onChange={(e) => setGuests(Number.parseInt(e.target.value) || 1)}
                           disabled={isPending}
                         />
                       </div>
@@ -376,16 +328,11 @@ export default function GuestHouseBookingModal({
 
                     {/* Special Requests */}
                     <div>
-                      <Label htmlFor="specialRequests">
-                        {t?.specialRequests || "Special Requests"}
-                      </Label>
+                      <Label htmlFor="specialRequests">{t?.specialRequests || "Special Requests"}</Label>
                       <Textarea
                         id="specialRequests"
                         name="specialRequests"
-                        placeholder={
-                          t?.specialRequestsPlaceholder ||
-                          "Any special requests or requirements..."
-                        }
+                        placeholder={t?.specialRequestsPlaceholder || "Any special requests or requirements..."}
                         value={specialRequests}
                         onChange={(e) => setSpecialRequests(e.target.value)}
                         disabled={isPending}
@@ -400,26 +347,20 @@ export default function GuestHouseBookingModal({
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={onClose}
+                    onClick={handleCloseModal}
                     disabled={isPending}
                     className="flex-1 bg-transparent"
                   >
                     {t?.cancel || "Cancel"}
                   </Button>
-                  <Button
-                    type="submit"
-                    disabled={isPending || totalPrice <= 0}
-                    className="flex-1"
-                  >
+                  <Button type="submit" disabled={isPending || totalPrice <= 0} className="flex-1">
                     {isPending ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         {t?.processing || "Processing..."}
                       </>
                     ) : (
-                      `${
-                        t?.confirmBooking || "Confirm Booking"
-                      } - €${totalPrice}`
+                      `${t?.confirmBooking || "Confirm Booking"} - €${totalPrice}`
                     )}
                   </Button>
                 </div>
@@ -429,5 +370,5 @@ export default function GuestHouseBookingModal({
         )}
       </DialogContent>
     </Dialog>
-  );
+  )
 }

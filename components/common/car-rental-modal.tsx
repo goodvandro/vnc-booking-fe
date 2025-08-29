@@ -50,17 +50,17 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t, user }
   useEffect(() => {
     if (state?.success && !showSuccess) {
       setShowSuccess(true)
-      // Auto-close modal after 4 seconds
-      setTimeout(() => {
-        setShowSuccess(false)
-        onClose()
-        // Reset form
-        setStartDate("")
-        setEndDate("")
-        setTotalPrice(0)
-      }, 4000)
     }
-  }, [state?.success, showSuccess, onClose])
+  }, [state?.success, showSuccess])
+
+  const handleCloseModal = () => {
+    setShowSuccess(false)
+    onClose()
+    // Reset form
+    setStartDate("")
+    setEndDate("")
+    setTotalPrice(0)
+  }
 
   if (!selectedCar) return null
 
@@ -72,7 +72,7 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t, user }
       : 0
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleCloseModal}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">{t?.rentCar || "Rent Car"}</DialogTitle>
@@ -84,13 +84,13 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t, user }
             <h3 className="text-2xl font-bold text-green-600 mb-2">{t?.rentalConfirmed || "Rental Confirmed!"}</h3>
             <p className="text-muted-foreground mb-4">{state?.message}</p>
             {state?.bookingId && (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground mb-6">
                 Booking ID: <span className="font-mono font-semibold">{state.bookingId}</span>
               </p>
             )}
-            <div className="text-sm text-muted-foreground mt-4">
-              {t?.closingAutomatically || "This window will close automatically..."}
-            </div>
+            <Button onClick={handleCloseModal} className="px-8">
+              {t?.done || "Done"}
+            </Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -307,7 +307,7 @@ export default function CarRentalModal({ isOpen, onClose, selectedCar, t, user }
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={onClose}
+                    onClick={handleCloseModal}
                     disabled={isPending}
                     className="flex-1 bg-transparent"
                   >
