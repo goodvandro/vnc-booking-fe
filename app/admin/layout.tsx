@@ -1,74 +1,95 @@
 import type React from "react"
 import Link from "next/link"
-import { Home, Car, CalendarCheck, LayoutDashboard, Building2, Calendar } from "lucide-react"
-import ProtectedRoute from "@/components/auth/protected-route"
+import { Building2, Car, Calendar, Home, Menu } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { StrapiStatus } from "@/components/admin/strapi-status"
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+const navigation = [
+  { name: "Dashboard", href: "/admin", icon: Home },
+  { name: "Guest Houses", href: "/admin/guest-houses", icon: Building2 },
+  { name: "Cars", href: "/admin/cars", icon: Car },
+  { name: "All Bookings", href: "/admin/bookings", icon: Calendar },
+  { name: "Guest House Bookings", href: "/admin/guest-house-bookings", icon: Building2 },
+  { name: "Car Rental Bookings", href: "/admin/car-rental-bookings", icon: Car },
+]
+
+function NavigationItems({ currentPath }: { currentPath: string }) {
   return (
-    <ProtectedRoute>
-      <div className="flex min-h-screen w-full flex-col bg-muted/40">
-        <aside className="fixed inset-y-0 left-0 z-10 hidden w-64 flex-col border-r bg-background sm:flex">
-          <div className="flex h-16 items-center border-b px-4 lg:px-6">
+    <>
+      {navigation.map((item) => {
+        const Icon = item.icon
+        const isActive = currentPath === item.href
+        return (
+          <Link
+            key={item.name}
+            href={item.href}
+            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary ${
+              isActive ? "bg-muted text-primary" : "text-muted-foreground"
+            }`}
+          >
+            <Icon className="h-4 w-4" />
+            {item.name}
+          </Link>
+        )
+      })}
+    </>
+  )
+}
+
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+      <div className="hidden border-r bg-muted/40 md:block">
+        <div className="flex h-full max-h-screen flex-col gap-2">
+          <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <Link href="/admin" className="flex items-center gap-2 font-semibold">
-              <LayoutDashboard className="h-6 w-6" />
-              <span>Admin Dashboard</span>
+              <Building2 className="h-6 w-6" />
+              <span>Admin Panel</span>
             </Link>
           </div>
-          <nav className="flex flex-col gap-2 p-4 lg:p-6">
-            <Link
-              href="/admin"
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-            >
-              <LayoutDashboard className="h-4 w-4" />
-              Dashboard
-            </Link>
-            <Link
-              href="/admin/guest-houses"
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-            >
-              <Home className="h-4 w-4" />
-              Guest Houses
-            </Link>
-            <Link
-              href="/admin/cars"
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-            >
-              <Car className="h-4 w-4" />
-              Cars
-            </Link>
-            <Link
-              href="/admin/bookings"
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-            >
-              <CalendarCheck className="h-4 w-4" />
-              All Bookings
-            </Link>
-            <Link
-              href="/admin/guest-house-bookings"
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-            >
-              <Building2 className="h-4 w-4" />
-              Guest House Bookings
-            </Link>
-            <Link
-              href="/admin/car-rental-bookings"
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-            >
-              <Calendar className="h-4 w-4" />
-              Car Rental Bookings
-            </Link>
-          </nav>
-        </aside>
-        <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-64">
-          <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-            <Link href="/" className="ml-auto flex items-center gap-2 text-sm font-medium">
-              <Home className="h-4 w-4" />
-              Back to Main Site
-            </Link>
-          </header>
-          <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">{children}</main>
+          <div className="flex-1">
+            <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
+              <NavigationItems currentPath="/admin" />
+            </nav>
+          </div>
+          <div className="mt-auto p-4">
+            <StrapiStatus />
+          </div>
         </div>
       </div>
-    </ProtectedRoute>
+      <div className="flex flex-col">
+        <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon" className="shrink-0 md:hidden bg-transparent">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle navigation menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="flex flex-col">
+              <nav className="grid gap-2 text-lg font-medium">
+                <Link href="/admin" className="flex items-center gap-2 text-lg font-semibold">
+                  <Building2 className="h-6 w-6" />
+                  <span>Admin Panel</span>
+                </Link>
+                <NavigationItems currentPath="/admin" />
+              </nav>
+              <div className="mt-auto">
+                <StrapiStatus />
+              </div>
+            </SheetContent>
+          </Sheet>
+          <div className="w-full flex-1">
+            <h1 className="text-lg font-semibold">Admin Dashboard</h1>
+          </div>
+        </header>
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">{children}</main>
+      </div>
+    </div>
   )
 }
