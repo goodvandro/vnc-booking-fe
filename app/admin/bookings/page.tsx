@@ -1,151 +1,97 @@
-"use client"
-
-import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Eye, Plus } from "lucide-react"
-import { getBookingsData } from "../actions"
-import BookingStatusSelect from "./booking-status-select"
-import type { Booking } from "@/lib/types"
+import { getBookings } from "../actions"
+import { Eye } from "lucide-react"
 
-export default function BookingsPage() {
-  const [bookings, setBookings] = useState<Booking[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    async function fetchBookings() {
-      try {
-        const data = await getBookingsData()
-        setBookings(data)
-      } catch (error) {
-        console.error("Error fetching bookings:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchBookings()
-  }, [])
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    )
-  }
+export default async function BookingsPage() {
+  const bookings = await getBookings()
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">All Bookings</h1>
-          <p className="text-muted-foreground">Manage all reservations</p>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div className="space-y-1">
+          <CardTitle>All Bookings</CardTitle>
+          <CardDescription>Manage all guest house and car rental bookings.</CardDescription>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" asChild>
-            <Link href="/admin/guest-houses/create">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Guest House
-            </Link>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/admin/guest-house-bookings">Guest House Bookings</Link>
           </Button>
-          <Button asChild>
-            <Link href="/admin/cars/create">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Car
-            </Link>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/admin/car-rental-bookings">Car Rental Bookings</Link>
           </Button>
         </div>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>All Reservations</CardTitle>
-          <CardDescription>{bookings.length} total bookings across all services</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {bookings.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">No bookings found.</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Booking ID</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Item</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Dates</TableHead>
-                  <TableHead>Total</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Type</TableHead>
+              <TableHead>Booking ID</TableHead>
+              <TableHead>Item</TableHead>
+              <TableHead>Customer</TableHead>
+              <TableHead>Dates</TableHead>
+              <TableHead>Total Price</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="w-[100px] text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {bookings.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  No bookings found.
+                </TableCell>
+              </TableRow>
+            ) : (
+              bookings.map((booking) => (
+                <TableRow key={booking.id}>
+                  <TableCell>
+                    <Badge variant="outline">{booking.type === "guestHouse" ? "Guest House" : "Car Rental"}</Badge>
+                  </TableCell>
+                  <TableCell className="font-mono text-sm">{booking.id}</TableCell>
+                  <TableCell className="font-medium">{booking.itemName || "N/A"}</TableCell>
+                  <TableCell>
+                    {booking.firstName} {booking.lastName}
+                  </TableCell>
+                  <TableCell>
+                    {booking.startDate && booking.endDate
+                      ? `${new Date(booking.startDate).toLocaleDateString()} - ${new Date(booking.endDate).toLocaleDateString()}`
+                      : "N/A"}
+                  </TableCell>
+                  <TableCell>€{booking.totalPrice ? booking.totalPrice.toFixed(2) : "0.00"}</TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={
+                        booking.status === "confirmed"
+                          ? "default"
+                          : booking.status === "pending"
+                            ? "secondary"
+                            : booking.status === "cancelled"
+                              ? "destructive"
+                              : "outline"
+                      }
+                    >
+                      {booking.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button asChild variant="outline" size="icon">
+                      <Link href={`/admin/bookings/${booking.id}`}>
+                        <Eye className="h-4 w-4" />
+                        <span className="sr-only">View Details</span>
+                      </Link>
+                    </Button>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {bookings.map((booking) => (
-                  <TableRow key={booking.id}>
-                    <TableCell className="font-mono text-sm">{booking.bookingId || booking.id}</TableCell>
-                    <TableCell>
-                      <Badge variant={booking.type === "guest-house" ? "default" : "secondary"}>
-                        {booking.type === "guest-house" ? "Guest House" : "Car Rental"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{booking.itemName || "N/A"}</TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">
-                          {booking.firstName} {booking.lastName}
-                        </div>
-                        <div className="text-sm text-muted-foreground">{booking.email}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        {booking.type === "guest-house" ? (
-                          <>
-                            <div>
-                              Check-in:{" "}
-                              {booking.checkInDate ? new Date(booking.checkInDate).toLocaleDateString() : "N/A"}
-                            </div>
-                            <div>
-                              Check-out:{" "}
-                              {booking.checkOutDate ? new Date(booking.checkOutDate).toLocaleDateString() : "N/A"}
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <div>
-                              Pick-up: {booking.pickupDate ? new Date(booking.pickupDate).toLocaleDateString() : "N/A"}
-                            </div>
-                            <div>
-                              Return: {booking.returnDate ? new Date(booking.returnDate).toLocaleDateString() : "N/A"}
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>${booking.totalPrice ? booking.totalPrice.toFixed(2) : "0.00"}</TableCell>
-                    <TableCell>
-                      <BookingStatusSelect bookingId={booking.id} currentStatus={booking.status || "pending"} />
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="outline" size="sm" asChild>
-                        <Link href={`/admin/bookings/${booking.id}`}>
-                          <Eye className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   )
 }

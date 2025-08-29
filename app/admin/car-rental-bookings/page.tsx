@@ -1,120 +1,83 @@
-"use client"
-
-import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Eye, Plus } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { getCarRentalBookings } from "../actions"
-import BookingStatusSelect from "../bookings/booking-status-select"
-import type { Booking } from "@/lib/types"
+import { Eye } from "lucide-react"
 
-export default function CarRentalBookingsPage() {
-  const [bookings, setBookings] = useState<Booking[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    async function fetchBookings() {
-      try {
-        const data = await getCarRentalBookings()
-        setBookings(data)
-      } catch (error) {
-        console.error("Error fetching car rental bookings:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchBookings()
-  }, [])
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    )
-  }
+export default async function CarRentalBookingsPage() {
+  const bookings = await getCarRentalBookings()
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Car Rental Bookings</h1>
-          <p className="text-muted-foreground">Manage car rental reservations</p>
-        </div>
-        <Button asChild>
-          <Link href="/admin/cars/create">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Car
-          </Link>
-        </Button>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Car Rental Reservations</CardTitle>
-          <CardDescription>{bookings.length} total car rental bookings</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {bookings.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">No car rental bookings found.</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Booking ID</TableHead>
-                  <TableHead>Car</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Driver License</TableHead>
-                  <TableHead>Pick-up</TableHead>
-                  <TableHead>Return</TableHead>
-                  <TableHead>Total</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
+    <Card>
+      <CardHeader>
+        <CardTitle>Car Rental Bookings</CardTitle>
+        <CardDescription>Manage car rental reservations and bookings.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Booking ID</TableHead>
+              <TableHead>Car</TableHead>
+              <TableHead>Customer Name</TableHead>
+              <TableHead>Pick-up Date</TableHead>
+              <TableHead>Return Date</TableHead>
+              <TableHead>Pickup Location</TableHead>
+              <TableHead>Total Price</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="w-[100px] text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {bookings.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                  No car rental bookings found.
+                </TableCell>
+              </TableRow>
+            ) : (
+              bookings.map((booking) => (
+                <TableRow key={booking.id}>
+                  <TableCell className="font-mono text-sm">{booking.id}</TableCell>
+                  <TableCell className="font-medium">{booking.itemName || "N/A"}</TableCell>
+                  <TableCell>
+                    {booking.firstName} {booking.lastName}
+                  </TableCell>
+                  <TableCell>{booking.startDate ? new Date(booking.startDate).toLocaleDateString() : "N/A"}</TableCell>
+                  <TableCell>{booking.endDate ? new Date(booking.endDate).toLocaleDateString() : "N/A"}</TableCell>
+                  <TableCell>{booking.pickupLocation || "N/A"}</TableCell>
+                  <TableCell>€{booking.totalPrice ? booking.totalPrice.toFixed(2) : "0.00"}</TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={
+                        booking.status === "confirmed"
+                          ? "default"
+                          : booking.status === "pending"
+                            ? "secondary"
+                            : booking.status === "cancelled"
+                              ? "destructive"
+                              : "outline"
+                      }
+                    >
+                      {booking.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button asChild variant="outline" size="icon">
+                      <Link href={`/admin/bookings/${booking.id}`}>
+                        <Eye className="h-4 w-4" />
+                        <span className="sr-only">View Details</span>
+                      </Link>
+                    </Button>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {bookings.map((booking) => (
-                  <TableRow key={booking.id}>
-                    <TableCell className="font-mono text-sm">{booking.bookingId || booking.id}</TableCell>
-                    <TableCell>{booking.itemName || "N/A"}</TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">
-                          {booking.firstName} {booking.lastName}
-                        </div>
-                        <div className="text-sm text-muted-foreground">{booking.email}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{booking.driverLicense || "N/A"}</TableCell>
-                    <TableCell>
-                      {booking.pickupDate ? new Date(booking.pickupDate).toLocaleDateString() : "N/A"}
-                    </TableCell>
-                    <TableCell>
-                      {booking.returnDate ? new Date(booking.returnDate).toLocaleDateString() : "N/A"}
-                    </TableCell>
-                    <TableCell>${booking.totalPrice ? booking.totalPrice.toFixed(2) : "0.00"}</TableCell>
-                    <TableCell>
-                      <BookingStatusSelect bookingId={booking.id} currentStatus={booking.status || "pending"} />
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="outline" size="sm" asChild>
-                        <Link href={`/admin/bookings/${booking.id}`}>
-                          <Eye className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   )
 }

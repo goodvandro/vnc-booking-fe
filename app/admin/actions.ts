@@ -1,128 +1,135 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { strapiAPI } from "@/lib/strapi-api"
-import type { Car, GuestHouse, Booking } from "@/lib/types"
+import { redirect } from "next/navigation"
+import type { BookingStatus, Car } from "@/lib/types"
+import {
+  getBookingsData,
+  getBookingByIdData,
+  updateBookingStatusData,
+  getDashboardStatsData,
+  getGuestHousesData,
+  getGuestHouseByIdData,
+  createGuestHouseData,
+  updateGuestHouseData,
+  deleteGuestHouseData,
+  getCarsData,
+  getCarByIdData,
+  createCarData,
+  updateCarData,
+  deleteCarData,
+} from "@/lib/strapi-data"
 
-// Car actions
-export async function getCars(): Promise<Car[]> {
-  try {
-    const response = await strapiAPI.get("/cars?populate=*")
-    return response.data || []
-  } catch (error) {
-    console.error("Error fetching cars:", error)
-    return []
-  }
+// BOOKINGS
+export async function getBookings() {
+  return await getBookingsData()
 }
 
-export async function getCar(documentId: string): Promise<Car | null> {
-  try {
-    const response = await strapiAPI.get(`/cars/${documentId}?populate=*`)
-    return response.data || null
-  } catch (error) {
-    console.error("Error fetching car:", error)
-    return null
-  }
+export async function getBookingById(id: string) {
+  return await getBookingByIdData(id)
 }
 
-export async function deleteCar(documentId: string): Promise<{ success: boolean; error?: string }> {
-  try {
-    await strapiAPI.delete(`/cars/${documentId}`)
-    revalidatePath("/admin/cars")
-    return { success: true }
-  } catch (error) {
-    console.error("Error deleting car:", error)
-    return { success: false, error: "Failed to delete car" }
-  }
+export async function updateBookingStatus(id: string, status: BookingStatus) {
+  await updateBookingStatusData(id, status)
+  revalidatePath("/admin/bookings")
 }
 
-// Guest House actions
-export async function getGuestHouses(): Promise<GuestHouse[]> {
-  try {
-    const response = await strapiAPI.get("/guest-houses?populate=*")
-    return response.data || []
-  } catch (error) {
-    console.error("Error fetching guest houses:", error)
-    return []
-  }
+export async function updateBookingStatusAction(id: string, status: BookingStatus) {
+  await updateBookingStatusData(id, status)
+  revalidatePath("/admin/bookings")
 }
 
-export async function getGuestHouse(documentId: string): Promise<GuestHouse | null> {
-  try {
-    const response = await strapiAPI.get(`/guest-houses/${documentId}?populate=*`)
-    return response.data || null
-  } catch (error) {
-    console.error("Error fetching guest house:", error)
-    return null
-  }
+// GUEST HOUSE BOOKINGS
+export async function getGuestHouseBookings() {
+  const allBookings = await getBookingsData()
+  return allBookings.filter((booking) => booking.type === "guestHouse")
 }
 
-export async function deleteGuestHouse(documentId: string): Promise<{ success: boolean; error?: string }> {
-  try {
-    await strapiAPI.delete(`/guest-houses/${documentId}`)
-    revalidatePath("/admin/guest-houses")
-    return { success: true }
-  } catch (error) {
-    console.error("Error deleting guest house:", error)
-    return { success: false, error: "Failed to delete guest house" }
-  }
+// CAR RENTAL BOOKINGS
+export async function getCarRentalBookings() {
+  const allBookings = await getBookingsData()
+  return allBookings.filter((booking) => booking.type === "car")
 }
 
-// Booking actions
-export async function getBookingsData(): Promise<Booking[]> {
-  try {
-    const response = await strapiAPI.get("/bookings?populate=*")
-    return response.data || []
-  } catch (error) {
-    console.error("Error fetching bookings:", error)
-    return []
-  }
+// DASHBOARD
+export async function getDashboardStats() {
+  return await getDashboardStatsData()
 }
 
-export async function getGuestHouseBookings(): Promise<Booking[]> {
-  try {
-    const bookings = await getBookingsData()
-    return bookings.filter((booking) => booking.type === "guest-house")
-  } catch (error) {
-    console.error("Error fetching guest house bookings:", error)
-    return []
+// GUEST HOUSES
+function extractImagesFromFormData(formData: FormData): string[] {
+  const images: string[] = []
+  let index = 0
+  while (formData.has(`image-${index}`)) {
+    const image = formData.get(`image-${index}`) as string
+    if (image && image.trim()) images.push(image.trim())
+    index++
   }
+  return images.length > 0 ? images : ["/placeholder.svg?height=300&width=400"]
 }
 
-export async function getCarRentalBookings(): Promise<Booking[]> {
-  try {
-    const bookings = await getBookingsData()
-    return bookings.filter((booking) => booking.type === "car-rental")
-  } catch (error) {
-    console.error("Error fetching car rental bookings:", error)
-    return []
-  }
+export async function getGuestHouses() {
+  return await getGuestHousesData()
 }
 
-export async function getBooking(id: string): Promise<Booking | null> {
-  try {
-    const response = await strapiAPI.get(`/bookings/${id}?populate=*`)
-    return response.data || null
-  } catch (error) {
-    console.error("Error fetching booking:", error)
-    return null
-  }
+export async function getGuestHouse(id: string) {
+  return await getGuestHouseByIdData(id)
 }
 
-export async function updateBookingStatus(
-  bookingId: string,
-  status: string,
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    await strapiAPI.put(`/bookings/${bookingId}`, {
-      data: { status },
-    })
-    revalidatePath("/admin/bookings")
-    revalidatePath("/admin/guest-house-bookings")
-    revalidatePath("/admin/car-rental-bookings")
-    return { success: true }
-  } catch (error) {
-    console.error("Error updating booking status:", error)
-    return { success: false, error: "Failed to update booking status" }
+export async function createGuestHouse(payload: any) {
+  return await createGuestHouseData(payload)
+}
+
+export async function updateGuestHouse(id: string, payload: any) {
+  return await updateGuestHouseData(id, payload)
+}
+
+export async function deleteGuestHouse(id: string | number) {
+  await deleteGuestHouseData(String(id))
+  revalidatePath("/admin/guest-houses")
+}
+
+// CARS
+export async function getCars() {
+  return await getCarsData()
+}
+
+export async function getCar(id: string) {
+  return await getCarByIdData(id)
+}
+
+export async function createCar(formData: FormData) {
+  const images = extractImagesFromFormData(formData)
+  const newCar: Omit<Car, "id"> = {
+    images,
+    carId: new Date().getTime().toString(),
+    title: String(formData.get("title") || ""),
+    seats: Number.parseInt(String(formData.get("seats") || "0")),
+    transmission: String(formData.get("transmission") || ""),
+    price: Number.parseFloat(String(formData.get("price") || "0")),
+    description: String(formData.get("description") || ""),
   }
+  await createCarData(newCar)
+  revalidatePath("/admin/cars")
+  redirect("/admin/cars")
+}
+
+export async function updateCar(id: string, formData: FormData) {
+  const images = extractImagesFromFormData(formData)
+  const updatedCar: Partial<Car> = {
+    images,
+    title: String(formData.get("title") || ""),
+    seats: Number.parseInt(String(formData.get("seats") || "0")),
+    transmission: String(formData.get("transmission") || ""),
+    price: Number.parseFloat(String(formData.get("price") || "0")),
+    description: String(formData.get("description") || ""),
+  }
+  await updateCarData(id, updatedCar)
+  revalidatePath("/admin/cars")
+  redirect("/admin/cars")
+}
+
+export async function deleteCar(id: string | number) {
+  await deleteCarData(String(id))
+  revalidatePath("/admin/cars")
 }

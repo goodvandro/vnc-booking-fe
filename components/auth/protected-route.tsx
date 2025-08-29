@@ -11,24 +11,24 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isLoaded, userId } = useAuth()
+  const { isLoaded, isSignedIn } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (isLoaded && !userId) {
+    if (isLoaded && !isSignedIn) {
       router.push("/sign-in")
     }
-  }, [isLoaded, userId, router])
+  }, [isLoaded, isSignedIn, router])
 
   if (!isLoaded) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
     )
   }
 
-  if (!userId) {
+  if (!isSignedIn) {
     return null
   }
 

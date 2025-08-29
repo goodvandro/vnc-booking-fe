@@ -1,175 +1,156 @@
-"use client"
-
-import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Building2, Calendar, Plus, Eye, BarChart3 } from "lucide-react"
-import { getBookingsData, getCars, getGuestHouses } from "./actions"
-import type { Booking } from "@/lib/types"
+import { getDashboardStats } from "./actions"
+import { Building2, Car, Calendar, Clock, CheckCircle, Euro, Home, CalendarCheck } from "lucide-react"
 
-export default function AdminDashboard() {
-  const [stats, setStats] = useState({
-    totalBookings: 0,
-    guestHouseBookings: 0,
-    carRentalBookings: 0,
-    totalCars: 0,
-    totalGuestHouses: 0,
-    pendingBookings: 0,
-  })
-  const [recentBookings, setRecentBookings] = useState<Booking[]>([])
-  const [loading, setLoading] = useState(true)
+export default async function AdminDashboard() {
+  const stats = await getDashboardStats()
 
-  useEffect(() => {
-    async function fetchDashboardData() {
-      try {
-        const [bookings, cars, guestHouses] = await Promise.all([getBookingsData(), getCars(), getGuestHouses()])
+  const statCards = [
+    {
+      title: "Total Guest Houses",
+      value: stats.totalGuestHouses || 0,
+      icon: Building2,
+      description: "Active guest house listings",
+    },
+    {
+      title: "Total Cars",
+      value: stats.totalCars || 0,
+      icon: Car,
+      description: "Available rental cars",
+    },
+    {
+      title: "Total Bookings",
+      value: stats.totalBookings || 0,
+      icon: Calendar,
+      description: "All time bookings",
+    },
+    {
+      title: "Pending Bookings",
+      value: stats.pendingBookings || 0,
+      icon: Clock,
+      description: "Awaiting confirmation",
+    },
+    {
+      title: "Confirmed Bookings",
+      value: stats.confirmedBookings || 0,
+      icon: CheckCircle,
+      description: "Confirmed reservations",
+    },
+    {
+      title: "Total Revenue",
+      value: `€${(stats.totalRevenue || 0).toFixed(2)}`,
+      icon: Euro,
+      description: "Total earnings",
+    },
+  ]
 
-        const guestHouseBookings = bookings.filter((b) => b.type === "guest-house")
-        const carRentalBookings = bookings.filter((b) => b.type === "car-rental")
-        const pendingBookings = bookings.filter((b) => b.status === "pending")
-
-        setStats({
-          totalBookings: bookings.length,
-          guestHouseBookings: guestHouseBookings.length,
-          carRentalBookings: carRentalBookings.length,
-          totalCars: cars.length,
-          totalGuestHouses: guestHouses.length,
-          pendingBookings: pendingBookings.length,
-        })
-
-        // Get 5 most recent bookings
-        const recent = bookings
-          .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
-          .slice(0, 5)
-        setRecentBookings(recent)
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchDashboardData()
-  }, [])
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    )
-  }
+  const quickActions = [
+    {
+      title: "Guest House Bookings",
+      description: "Manage guest house reservations",
+      href: "/admin/guest-house-bookings",
+      icon: Home,
+      count: stats.guestHouseBookings || 0,
+    },
+    {
+      title: "Car Rental Bookings",
+      description: "Manage car rental bookings",
+      href: "/admin/car-rental-bookings",
+      icon: CalendarCheck,
+      count: stats.carRentalBookings || 0,
+    },
+    {
+      title: "All Bookings",
+      description: "View all bookings together",
+      href: "/admin/bookings",
+      icon: Calendar,
+      count: stats.totalBookings || 0,
+    },
+  ]
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">Overview of your booking system</p>
+        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+        <p className="text-muted-foreground">Overview of your booking management system</p>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalBookings}</div>
-            <p className="text-xs text-muted-foreground">{stats.pendingBookings} pending approval</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Guest House Bookings</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.guestHouseBookings}</div>
-            <p className="text-xs text-muted-foreground">{stats.totalGuestHouses} properties available</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Car Rentals</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" /> {/* Renamed Car to BarChart3 */}
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.carRentalBookings}</div>
-            <p className="text-xs text-muted-foreground">{stats.totalCars} vehicles available</p>
-          </CardContent>
-        </Card>
+        {statCards.map((stat) => (
+          <Card key={stat.title}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+              <stat.icon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stat.value}</div>
+              <p className="text-xs text-muted-foreground">{stat.description}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Quick Actions */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Common administrative tasks</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Button asChild className="w-full justify-start">
-              <Link href="/admin/guest-houses/create">
-                <Plus className="mr-2 h-4 w-4" />
-                Add New Guest House
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="w-full justify-start bg-transparent">
-              <Link href="/admin/cars/create">
-                <Plus className="mr-2 h-4 w-4" />
-                Add New Car
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="w-full justify-start bg-transparent">
-              <Link href="/admin/bookings">
-                <Eye className="mr-2 h-4 w-4" />
-                View All Bookings
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">Quick Actions</h2>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {quickActions.map((action) => (
+            <Card key={action.title} className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <action.icon className="h-8 w-8 text-primary" />
+                  <span className="text-2xl font-bold">{action.count}</span>
+                </div>
+                <CardTitle className="text-lg">{action.title}</CardTitle>
+                <CardDescription>{action.description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button asChild className="w-full">
+                  <Link href={action.href}>Manage {action.title}</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Bookings</CardTitle>
-            <CardDescription>Latest reservation activity</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {recentBookings.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No recent bookings</p>
-            ) : (
-              <div className="space-y-3">
-                {recentBookings.map((booking) => (
-                  <div key={booking.id} className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">
-                        {booking.firstName} {booking.lastName}
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={booking.type === "guest-house" ? "default" : "secondary"} className="text-xs">
-                          {booking.type === "guest-house" ? "Guest House" : "Car Rental"}
-                        </Badge>
-                        <Badge variant="outline" className="text-xs">
-                          {booking.status || "pending"}
-                        </Badge>
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link href={`/admin/bookings/${booking.id}`}>
-                        <Eye className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      {/* Management Links */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">Content Management</h2>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5" />
+                Guest Houses
+              </CardTitle>
+              <CardDescription>Manage your guest house listings and properties</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button asChild className="w-full">
+                <Link href="/admin/guest-houses">Manage Guest Houses</Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Car className="h-5 w-5" />
+                Cars
+              </CardTitle>
+              <CardDescription>Manage your car rental fleet and availability</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button asChild className="w-full">
+                <Link href="/admin/cars">Manage Cars</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   )
