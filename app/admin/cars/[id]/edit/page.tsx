@@ -1,5 +1,6 @@
+import { getCarByIdData } from "@/lib/strapi-data"
 import CarForm from "../../form"
-import { getCar } from "../../../actions"
+// import { getCar } from "../../../actions"
 import { notFound } from "next/navigation"
 
 interface EditCarPageProps {
@@ -10,7 +11,7 @@ export default async function EditCarPage({ params }: EditCarPageProps) {
   const { id } = await params
 
   // The id parameter here is actually the documentId from the cars table
-  const car = await getCar(id)
+  const car = await getCarByIdData(id)
 
   if (!car) {
     notFound()
