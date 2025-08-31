@@ -8,6 +8,7 @@ import type {
   DocumentImage,
   GuestHouseOutputDTO,
   GuestHouseBooking,
+  CarRentalBooking,
 } from "./types";
 
 // Flatten a Strapi v4 entity to a plain object with id, documentId, and attributes
@@ -294,11 +295,11 @@ export async function updateGuestHouseBookingStatus(
 // --------------------
 // Car Rental Bookings
 // --------------------
-export async function getCarRentalBookingsData(): Promise<Booking[]> {
+export async function getCarRentalBookingsData(): Promise<CarRentalBooking[]> {
   try {
     const res = await strapiAPI.getCarRentalBookings();
     const list = (res?.data || []).map((item: any) => {
-      const flat = flattenEntity<Booking>(item);
+      const flat = flattenEntity<CarRentalBooking>(item);
       return flat;
     });
     return list;
@@ -310,11 +311,11 @@ export async function getCarRentalBookingsData(): Promise<Booking[]> {
 
 export async function getCarRentalBookingByIdData(
   id: string
-): Promise<Booking | undefined> {
+): Promise<CarRentalBooking | undefined> {
   try {
     const res = await strapiAPI.getCarRentalBooking(id);
     if (!res?.data) return undefined;
-    const flat = flattenEntity<Booking>(res.data);
+    const flat = flattenEntity<CarRentalBooking>(res.data);
     return flat;
   } catch (e) {
     console.error("Failed to fetch car rental booking:", e);
@@ -359,6 +360,7 @@ export async function getDashboardStatsData() {
     totalCars: 0,
     totalBookings: total,
     pendingBookings: list.filter((b) => b.bookingStatus === "pending").length,
-    confirmedBookings: list.filter((b) => b.bookingStatus === "confirmed").length,
+    confirmedBookings: list.filter((b) => b.bookingStatus === "confirmed")
+      .length,
   };
 }

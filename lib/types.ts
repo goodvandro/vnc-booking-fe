@@ -145,16 +145,19 @@ export type BookingStatus = "pending" | "confirmed" | "cancelled" | "completed";
 
 export interface CarRentalBooking {
   id: string;
+  documentId?: string;
   bookingId: string;
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
   driverLicense?: string;
+  pickupLocation?: string;
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD
   totalPrice: number;
   bookingStatus: BookingStatus;
+  specialRequests?: string;
   createdAt: string; // ISO string
   car?: Car;
   user?: any;
