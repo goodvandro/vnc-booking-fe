@@ -13,15 +13,13 @@ import { format } from "date-fns";
 import {
   ArrowLeft,
   Calendar,
-  Car,
   Clock,
   DollarSign,
   Home,
   Mail,
-  MapPin,
   MessageSquare,
   Phone,
-  Users,
+  Users
 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -35,9 +33,7 @@ export default async function GuestHouseBookingDetailsPage({
   params,
 }: GuestHouseBookingDetailsPageProps) {
   const { id } = await params;
-  console.log("id", id);
   const booking = await getGuestHouseBookingByIdData(id);
-  console.log("booking", booking);
 
   if (!booking) {
     notFound();
@@ -80,15 +76,15 @@ export default async function GuestHouseBookingDetailsPage({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button asChild variant="outline" size="sm">
-            <Link href="/admin/bookings">
+            <Link href="/admin/guest-house-bookings">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Bookings
             </Link>
           </Button>
-          <div>
+          {/* <div>
             <h1 className="text-2xl font-bold">Booking Details</h1>
             <p className="text-muted-foreground">{booking.bookingId}</p>
-          </div>
+          </div> */}
         </div>
         <Badge className={getStatusColor(booking.bookingStatus)}>
           {booking.bookingStatus.charAt(0).toUpperCase() +
@@ -101,7 +97,7 @@ export default async function GuestHouseBookingDetailsPage({
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Home className="h-5 w-5" /> Guest House Booking
+              <Home className="h-5 w-5" /> Guest House Booking Details
             </CardTitle>
             <CardDescription>Booking information and details</CardDescription>
           </CardHeader>
@@ -110,12 +106,21 @@ export default async function GuestHouseBookingDetailsPage({
               <h3 className="font-semibold text-lg">
                 {booking?.guest_house?.title}
               </h3>
-              <p className="text-muted-foreground">Guest House</p>
             </div>
 
             <Separator />
 
             <div className="grid gap-3">
+              <div className="flex items-center gap-2">
+                #
+                <div>
+                  <p className="text-sm font-medium">Booking ID</p>
+                  <p className="text-sm text-muted-foreground">
+                    {booking.bookingId}
+                  </p>
+                </div>
+              </div>
+
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 <div>
