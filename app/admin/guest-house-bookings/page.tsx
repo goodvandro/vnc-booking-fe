@@ -21,8 +21,6 @@ import BookingStatusSelect from "../bookings/booking-status-select";
 
 export default async function GuestHouseBookingsPage() {
   const bookings = await getGuestHouseBookingsData();
-  console.log("bookings_", bookings);
-  // const bookings = await getGuestHouseBookings();
 
   return (
     <Card>
@@ -96,7 +94,8 @@ export default async function GuestHouseBookingsPage() {
                   </TableCell>
                   <TableCell>
                     <BookingStatusSelect
-                      bookingId={booking.id}
+                      bookingType="guest_house"
+                      bookingId={booking.documentId}
                       currentStatus={booking.bookingStatus}
                     />
                   </TableCell>

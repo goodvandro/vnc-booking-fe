@@ -145,7 +145,7 @@ export type BookingStatus = "pending" | "confirmed" | "cancelled" | "completed";
 
 export interface CarRentalBooking {
   id: string;
-  documentId?: string;
+  documentId: string;
   bookingId: string;
   firstName: string;
   lastName: string;
@@ -165,7 +165,7 @@ export interface CarRentalBooking {
 
 export interface GuestHouseBooking {
   id: string;
-  documentId?: string;
+  documentId: string;
   bookingId: string;
   firstName: string;
   lastName: string;

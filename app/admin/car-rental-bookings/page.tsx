@@ -94,7 +94,8 @@ export default async function CarRentalBookingsPage() {
                   </TableCell>
                   <TableCell>
                     <BookingStatusSelect
-                      bookingId={booking.id}
+                      bookingType="car"
+                      bookingId={booking.documentId}
                       currentStatus={booking.bookingStatus}
                     />
                   </TableCell>

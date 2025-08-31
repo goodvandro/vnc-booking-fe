@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -8,12 +8,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { updateBookingStatus } from "../actions";
 import { useToast } from "@/hooks/use-toast";
+import {
+  updateCarRentalBookingStatus,
+  updateGuestHouseBookingStatus,
+} from "@/lib/strapi-data";
 import { BookingStatus } from "@/lib/types";
+import { useState, useTransition } from "react";
 
 interface BookingStatusSelectProps {
+  bookingType: "car" | "guest_house";
   bookingId: string;
   currentStatus: BookingStatus;
 }
@@ -43,6 +47,7 @@ const statusOptions = [
 ];
 
 export default function BookingStatusSelect({
+  bookingType,
   bookingId,
   currentStatus,
 }: BookingStatusSelectProps) {
@@ -53,7 +58,10 @@ export default function BookingStatusSelect({
   const handleStatusChange = (newStatus: BookingStatus) => {
     startTransition(async () => {
       try {
-        await updateBookingStatus(bookingId, newStatus);
+        bookingType === "guest_house"
+          ? await updateGuestHouseBookingStatus(bookingId, newStatus)
+          : await updateCarRentalBookingStatus(bookingId, newStatus);
+
         setStatus(newStatus);
         toast({
           title: "Status Updated",

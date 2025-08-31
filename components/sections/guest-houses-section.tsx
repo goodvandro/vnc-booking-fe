@@ -5,8 +5,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button"
 import ImageSlider from "@/components/common/image-slider"
 import type { GuestHouseOutputDTO, SelectedGuestHouse } from "@/lib/types"
-import { getGuestHouses } from "@/app/admin/actions"
 import { useEffect, useState } from "react"
+import { getGuestHousesData } from "@/lib/strapi-data"
 
 interface GuestHousesSectionProps {
   t: any // Translation object
@@ -18,7 +18,7 @@ export default function GuestHousesSection({ t, handleBookNowClick }: GuestHouse
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getGuestHouses()
+    getGuestHousesData()
       .then((guestHouses) => {
         setGuestHouses(guestHouses)
       })

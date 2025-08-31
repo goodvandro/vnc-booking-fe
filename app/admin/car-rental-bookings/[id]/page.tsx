@@ -182,7 +182,8 @@ export default async function CarRentalBookingDetailsPage({
             <div>
               <p className="text-sm font-medium mb-2">Status Management</p>
               <BookingStatusSelect
-                bookingId={booking.id}
+                bookingType="car"
+                bookingId={booking.documentId}
                 currentStatus={booking.bookingStatus}
               />
             </div>

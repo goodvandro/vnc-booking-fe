@@ -1,9 +1,9 @@
 "use client"
 
-import { getCars } from "@/app/admin/actions"
 import ImageSlider from "@/components/common/image-slider"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { getCarsData } from "@/lib/strapi-data"
 import type { CarOutputDTO, SelectedCar } from "@/lib/types"
 import { CalendarDays, Users } from "lucide-react"
 import { useEffect, useState } from "react"
@@ -18,7 +18,7 @@ export default function CarRentalSection({ t, handleRentNowClick }: CarRentalSec
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getCars()
+    getCarsData()
       .then((carRental) => {
         setCars(carRental)
       })
