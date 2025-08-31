@@ -233,7 +233,9 @@ export async function deleteCarData(id: string): Promise<boolean> {
 // --------------------
 // Guest House Bookings
 // --------------------
-export async function getGuestHouseBookingsData(): Promise<GuestHouseBooking[]> {
+export async function getGuestHouseBookingsData(): Promise<
+  GuestHouseBooking[]
+> {
   try {
     const res = await strapiAPI.getGuestHouseBookings();
     const list = (res?.data || []).map((item: any) => {
@@ -285,6 +287,65 @@ export async function updateGuestHouseBookingStatus(
     return flat;
   } catch (e) {
     console.error("Failed to update guest house booking status:", e);
+    return null;
+  }
+}
+
+// --------------------
+// Car Rental Bookings
+// --------------------
+export async function getCarRentalBookingsData(): Promise<Booking[]> {
+  try {
+    const res = await strapiAPI.getCarRentalBookings();
+    const list = (res?.data || []).map((item: any) => {
+      const flat = flattenEntity<Booking>(item);
+      return flat;
+    });
+    return list;
+  } catch (e) {
+    console.error("Failed to fetch car rental bookings:", e);
+    return [];
+  }
+}
+
+export async function getCarRentalBookingByIdData(
+  id: string
+): Promise<Booking | undefined> {
+  try {
+    const res = await strapiAPI.getCarRentalBooking(id);
+    if (!res?.data) return undefined;
+    const flat = flattenEntity<Booking>(res.data);
+    return flat;
+  } catch (e) {
+    console.error("Failed to fetch car rental booking:", e);
+    return undefined;
+  }
+}
+
+export async function updateCarRentalBookingData(
+  id: string,
+  updatedBooking: Partial<Booking>
+): Promise<Booking | null> {
+  try {
+    const res = await strapiAPI.updateCarRentalBooking(id, updatedBooking);
+    const flat = flattenEntity<Booking>(res?.data);
+    return flat;
+  } catch (e) {
+    console.error("Failed to update car rental booking:", e);
+    return null;
+  }
+}
+
+export async function updateCarRentalBookingStatus(
+  id: string,
+  status: string
+): Promise<Booking | null> {
+  try {
+    const res = await strapiAPI.updateCarRentalBookingStatus(id, status);
+    const flat = flattenEntity<Booking>(res?.data);
+    return flat;
+  } catch (e) {
+    console.error("Failed to update car rental booking status:", e);
     return null;
   }
 }
