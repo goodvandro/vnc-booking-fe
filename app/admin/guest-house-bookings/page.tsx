@@ -1,13 +1,30 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
-import { getGuestHouseBookings } from "../actions"
-import BookingStatusSelect from "../bookings/booking-status-select"
-import { Eye, Home, Calendar, Users } from "lucide-react"
-import Link from "next/link"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { getGuestHouseBookings } from "../actions";
+import BookingStatusSelect from "../bookings/booking-status-select";
+import { Eye, Home, Calendar, Users } from "lucide-react";
+import Link from "next/link";
+import { getGuestHouseBookingsData, updateBookingStatusData } from "@/lib/strapi-data";
+import { BookingStatus } from "@/lib/types";
 
 export default async function GuestHouseBookingsPage() {
-  const bookings = await getGuestHouseBookings()
+  const bookings = await getGuestHouseBookingsData();
+  console.log("bookings_", bookings);
+  // const bookings = await getGuestHouseBookings();
 
   return (
     <Card>
@@ -16,7 +33,9 @@ export default async function GuestHouseBookingsPage() {
           <Home className="h-5 w-5" />
           Guest House Bookings
         </CardTitle>
-        <CardDescription>Manage all guest house reservations and check-ins.</CardDescription>
+        <CardDescription>
+          Manage all guest house reservations and check-ins.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <Table>
@@ -35,38 +54,53 @@ export default async function GuestHouseBookingsPage() {
           <TableBody>
             {bookings.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                <TableCell
+                  colSpan={8}
+                  className="text-center py-8 text-muted-foreground"
+                >
                   No guest house bookings found
                 </TableCell>
               </TableRow>
             ) : (
               bookings.map((booking) => (
                 <TableRow key={booking.id}>
-                  <TableCell className="font-medium">#{booking.id.slice(0, 8)}</TableCell>
+                  <TableCell className="font-medium">
+                    {booking.bookingId}
+                  </TableCell>
                   <TableCell>
-                    <div className="font-medium">{booking.itemName || "N/A"}</div>
+                    <div className="font-medium">
+                      {booking?.guest_house?.title || "N/A"}
+                    </div>
                   </TableCell>
                   <TableCell>
                     {booking.firstName} {booking.lastName}
-                    <div className="text-xs text-muted-foreground">{booking.email}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {booking.email}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1 text-sm">
                       <Calendar className="h-3 w-3" />
-                      {booking.startDate} to {booking.endDate}
+                      {booking.checkIn} to {booking.checkOut}
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
                       <Users className="h-3 w-3" />
-                      {booking.guestsOrSeats || 0}
+                      {booking.guests || 1}
                     </div>
                   </TableCell>
                   <TableCell className="font-medium">
-                    ${booking.totalPrice ? booking.totalPrice.toFixed(2) : "0.00"}
+                    $
+                    {booking.totalPrice
+                      ? booking.totalPrice.toFixed(2)
+                      : "0.00"}
                   </TableCell>
                   <TableCell>
-                    <BookingStatusSelect bookingId={booking.id} currentStatus={booking.status} />
+                    <BookingStatusSelect
+                      bookingId={booking.id}
+                      currentStatus={booking.bookingStatus}
+                    />
                   </TableCell>
                   <TableCell className="text-right">
                     <Button asChild variant="outline" size="sm">
@@ -83,5 +117,5 @@ export default async function GuestHouseBookingsPage() {
         </Table>
       </CardContent>
     </Card>
-  )
+  );
 }

@@ -7,6 +7,7 @@ import type {
   CarOutputDTO,
   DocumentImage,
   GuestHouseOutputDTO,
+  GuestHouseBooking,
 } from "./types";
 
 // Flatten a Strapi v4 entity to a plain object with id, documentId, and attributes
@@ -111,7 +112,7 @@ export async function updateGuestHouseData(
   try {
     const res = await strapiAPI.updateGuestHouse(id, updatedGh);
     // const flat = flattenEntity<GuestHouse>(res?.data);
-    return res.data
+    return res.data;
   } catch (e) {
     console.error("Failed to update guest house:", e);
     return null;
@@ -169,7 +170,7 @@ export async function getCarByIdData(id: string): Promise<Car | undefined> {
 }
 
 export async function createCarData(newCar: Omit<Car, "id">): Promise<Car> {
-  console.log("newCar", newCar)
+  console.log("newCar", newCar);
   const payload: any = {
     carId: (newCar as any).carId || `car-${Date.now()}`,
     title: newCar.title,
@@ -226,6 +227,65 @@ export async function deleteCarData(id: string): Promise<boolean> {
   } catch (e) {
     console.error("Failed to delete car:", e);
     return false;
+  }
+}
+
+// --------------------
+// Guest House Bookings
+// --------------------
+export async function getGuestHouseBookingsData(): Promise<GuestHouseBooking[]> {
+  try {
+    const res = await strapiAPI.getGuestHouseBookings();
+    const list = (res?.data || []).map((item: any) => {
+      const flat = flattenEntity<Booking>(item);
+      return flat;
+    });
+    return list;
+  } catch (e) {
+    console.error("Failed to fetch guest house bookings:", e);
+    return [];
+  }
+}
+
+export async function getGuestHouseBookingByIdData(
+  id: string
+): Promise<Booking | undefined> {
+  try {
+    const res = await strapiAPI.getGuestHouseBooking(id);
+    if (!res?.data) return undefined;
+    const flat = flattenEntity<Booking>(res.data);
+    return flat;
+  } catch (e) {
+    console.error("Failed to fetch guest house booking:", e);
+    return undefined;
+  }
+}
+
+export async function updateGuestHouseBookingData(
+  id: string,
+  updatedBooking: Partial<Booking>
+): Promise<Booking | null> {
+  try {
+    const res = await strapiAPI.updateGuestHouseBooking(id, updatedBooking);
+    const flat = flattenEntity<Booking>(res?.data);
+    return flat;
+  } catch (e) {
+    console.error("Failed to update guest house booking:", e);
+    return null;
+  }
+}
+
+export async function updateGuestHouseBookingStatus(
+  id: string,
+  status: string
+): Promise<Booking | null> {
+  try {
+    const res = await strapiAPI.updateGuestHouseBookingStatus(id, status);
+    const flat = flattenEntity<Booking>(res?.data);
+    return flat;
+  } catch (e) {
+    console.error("Failed to update guest house booking status:", e);
+    return null;
   }
 }
 
