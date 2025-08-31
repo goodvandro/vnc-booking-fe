@@ -251,11 +251,11 @@ export async function getGuestHouseBookingsData(): Promise<
 
 export async function getGuestHouseBookingByIdData(
   id: string
-): Promise<Booking | undefined> {
+): Promise<GuestHouseBooking | undefined> {
   try {
     const res = await strapiAPI.getGuestHouseBooking(id);
     if (!res?.data) return undefined;
-    const flat = flattenEntity<Booking>(res.data);
+    const flat = flattenEntity<GuestHouseBooking>(res.data);
     return flat;
   } catch (e) {
     console.error("Failed to fetch guest house booking:", e);
@@ -350,104 +350,15 @@ export async function updateCarRentalBookingStatus(
   }
 }
 
-// --------------------
-// Bookings (combined)
-// --------------------
-export async function getBookingsData(): Promise<Booking[]> {
-  try {
-    const [carRes, ghRes] = await Promise.all([
-      strapiAPI.getCarRentalBookings(),
-      strapiAPI.getGuestHouseBookings(),
-    ]);
-
-    const cars: Booking[] = (carRes?.data || []).map((item: any) => {
-      const a = item.attributes || {};
-      return {
-        id: String(a.bookingId || item.id),
-        documentId: Number(item.id) as any,
-        type: "car",
-        itemId: String(a.car?.data?.id || ""),
-        itemName: a.car?.data?.attributes?.title || "Car",
-        firstName: a.firstName,
-        lastName: a.lastName,
-        email: a.email,
-        phone: a.phone,
-        startDate: a.startDate,
-        endDate: a.endDate,
-        guestsOrSeats: undefined,
-        pickupLocation: a.driverLicense,
-        specialRequests: "",
-        totalPrice: a.totalPrice,
-        status: a.bookingStatus,
-        createdAt: a.createdAt || new Date().toISOString(),
-      } as Booking;
-    });
-
-    const ghs: Booking[] = (ghRes?.data || []).map((item: any) => {
-      const a = item.attributes || {};
-      return {
-        id: String(a.bookingId || item.id),
-        documentId: Number(item.id) as any,
-        type: "guestHouse",
-        itemId: String(a.guest_house?.data?.id || ""),
-        itemName: a.guest_house?.data?.attributes?.title || "Guest House",
-        firstName: a.firstName,
-        lastName: a.lastName,
-        email: a.email,
-        phone: a.phone,
-        startDate: a.checkIn,
-        endDate: a.checkOut,
-        guestsOrSeats: a.guests,
-        pickupLocation: undefined,
-        specialRequests: a.specialRequests || "",
-        totalPrice: a.totalPrice,
-        status: a.bookingStatus,
-        createdAt: a.createdAt || new Date().toISOString(),
-      } as Booking;
-    });
-
-    const all = [...cars, ...ghs];
-    all.sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
-    return all;
-  } catch (e) {
-    console.error("Failed to fetch bookings:", e);
-    return [];
-  }
-}
-
-export async function getBookingByIdData(id: string): Promise<Booking | null> {
-  const list = await getBookingsData();
-  return list.find((b) => b.id === id) || null;
-}
-
-export async function updateBookingStatusData(
-  id: string,
-  status: BookingStatus
-): Promise<void> {
-  const booking = await getBookingByIdData(id);
-  if (!booking) throw new Error("Booking not found");
-  const docId = Number((booking as any).documentId);
-  if (!docId) throw new Error("Invalid booking reference");
-
-  if (booking.type === "car") {
-    await strapiAPI.updateCarRentalBookingStatus(docId, status);
-  } else {
-    await strapiAPI.updateGuestHouseBookingStatus(docId, status);
-  }
-}
-
 // Basic stats
 export async function getDashboardStatsData() {
-  const list = await getBookingsData();
+  const list = await getGuestHouseBookingsData();
   const total = list.length;
   return {
     totalGuestHouses: 0,
     totalCars: 0,
     totalBookings: total,
-    pendingBookings: list.filter((b) => b.status === "pending").length,
-    confirmedBookings: list.filter((b) => b.status === "confirmed").length,
+    pendingBookings: list.filter((b) => b.bookingStatus === "pending").length,
+    confirmedBookings: list.filter((b) => b.bookingStatus === "confirmed").length,
   };
 }

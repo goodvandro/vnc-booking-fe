@@ -162,6 +162,7 @@ export interface CarRentalBooking {
 
 export interface GuestHouseBooking {
   id: string;
+  documentId?: string;
   bookingId: string;
   firstName: string;
   lastName: string;

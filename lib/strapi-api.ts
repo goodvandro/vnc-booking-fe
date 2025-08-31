@@ -142,5 +142,10 @@ export const strapiAPI = {
 
     return res.json()
   },
+
+  // Health check
+  async healthCheck() {
+    return request("/health", "GET")
+  },
 }
 export type StrapiAPI = typeof strapiAPI

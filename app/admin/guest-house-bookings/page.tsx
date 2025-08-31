@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -13,13 +14,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { getGuestHouseBookings } from "../actions";
-import BookingStatusSelect from "../bookings/booking-status-select";
-import { Eye, Home, Calendar, Users } from "lucide-react";
+import { getGuestHouseBookingsData } from "@/lib/strapi-data";
+import { Calendar, Eye, Home, Users } from "lucide-react";
 import Link from "next/link";
-import { getGuestHouseBookingsData, updateBookingStatusData } from "@/lib/strapi-data";
-import { BookingStatus } from "@/lib/types";
+import BookingStatusSelect from "../bookings/booking-status-select";
 
 export default async function GuestHouseBookingsPage() {
   const bookings = await getGuestHouseBookingsData();
@@ -104,7 +102,7 @@ export default async function GuestHouseBookingsPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <Button asChild variant="outline" size="sm">
-                      <Link href={`/admin/bookings/${booking.id}`}>
+                      <Link href={`/admin/guest-house-bookings/${booking.documentId}`}>
                         <Eye className="h-4 w-4 mr-1" />
                         Details
                       </Link>
