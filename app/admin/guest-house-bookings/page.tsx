@@ -41,7 +41,7 @@ export default async function GuestHouseBookingsPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>ID</TableHead>
+              <TableHead>Booking ID</TableHead>
               <TableHead>Guest House</TableHead>
               <TableHead>Customer</TableHead>
               <TableHead>Check-in / Check-out</TableHead>
