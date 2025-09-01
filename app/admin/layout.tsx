@@ -18,11 +18,6 @@ const navigation = [
     icon: BarChart3,
   },
   {
-    name: "All Bookings",
-    href: "/admin/bookings",
-    icon: Calendar,
-  },
-  {
     name: "Guest House Bookings",
     href: "/admin/guest-house-bookings",
     icon: Home,

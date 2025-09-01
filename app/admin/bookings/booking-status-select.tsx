@@ -65,7 +65,7 @@ export default function BookingStatusSelect({
             : "car-rental";
 
         const response = await fetch(
-          `/admin/bookings/${apiBookingType}/${bookingId}/status`,
+          `/api/bookings/${apiBookingType}/${bookingId}/status`,
           {
             method: "PATCH",
             headers: {
