@@ -100,8 +100,6 @@ export default function BookingStatusSelect({
     (option) => option.value === status
   );
 
-  console.log("currentStatusOption", currentStatusOption);
-
   return (
     <Select
       value={status}
