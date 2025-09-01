@@ -58,9 +58,27 @@ export default function BookingStatusSelect({
   const handleStatusChange = (newStatus: BookingStatus) => {
     startTransition(async () => {
       try {
-        bookingType === "guest_house"
-          ? await updateGuestHouseBookingStatus(bookingId, newStatus)
-          : await updateCarRentalBookingStatus(bookingId, newStatus);
+        // Mapear tipo para o formato esperado pela API
+        const apiBookingType =
+          bookingType === "guest_house"
+            ? "guest-house"
+            : "car-rental";
+
+        const response = await fetch(
+          `/admin/bookings/${apiBookingType}/${bookingId}/status`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ status: newStatus }),
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to update status");
+        }
 
         setStatus(newStatus);
         toast({
@@ -68,6 +86,7 @@ export default function BookingStatusSelect({
           description: `Booking status changed to ${newStatus}`,
         });
       } catch (error) {
+        console.error("Error updating booking status:", error);
         toast({
           title: "Error",
           description: "Failed to update booking status",
@@ -80,6 +99,8 @@ export default function BookingStatusSelect({
   const currentStatusOption = statusOptions.find(
     (option) => option.value === status
   );
+
+  console.log("currentStatusOption", currentStatusOption);
 
   return (
     <Select
