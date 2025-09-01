@@ -6,6 +6,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    env_file:
+      - .env.production
     container_name: vnc-booking-fe
     ports:
       - "3000:3000"
