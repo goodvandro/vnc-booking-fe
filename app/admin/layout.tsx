@@ -1,60 +1,123 @@
-import type React from "react"
-import Link from "next/link"
-import { Home, Car, CalendarCheck, LayoutDashboard } from "lucide-react"
-import ProtectedRoute from "@/components/auth/protected-route"
+"use client"
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+import type React from "react"
+
+import { useState } from "react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { StrapiStatus } from "@/components/admin/strapi-status"
+import { Menu, Home, Car, Building, Calendar, BarChart3 } from "lucide-react"
+import { cn } from "@/lib/utils"
+
+const navigation = [
+  {
+    name: "Dashboard",
+    href: "/admin",
+    icon: BarChart3,
+  },
+  {
+    name: "Guest House Bookings",
+    href: "/admin/guest-house-bookings",
+    icon: Home,
+  },
+  {
+    name: "Car Rental Bookings",
+    href: "/admin/car-rental-bookings",
+    icon: Car,
+  },
+  {
+    name: "Guest Houses",
+    href: "/admin/guest-houses",
+    icon: Building,
+  },
+  {
+    name: "Cars",
+    href: "/admin/cars",
+    icon: Car,
+  },
+]
+
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  const pathname = usePathname()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  const NavItems = () => (
+    <>
+      {navigation.map((item) => {
+        const isActive = pathname === item.href
+        return (
+          <Link
+            key={item.name}
+            href={item.href}
+            className={cn(
+              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+              isActive
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            )}
+            onClick={() => setSidebarOpen(false)}
+          >
+            <item.icon className="h-4 w-4" />
+            {item.name}
+          </Link>
+        )
+      })}
+    </>
+  )
+
   return (
-    <ProtectedRoute>
-      <div className="flex min-h-screen w-full flex-col bg-muted/40">
-        <aside className="fixed inset-y-0 left-0 z-10 hidden w-64 flex-col border-r bg-background sm:flex">
-          <div className="flex h-16 items-center border-b px-4 lg:px-6">
-            <Link href="/admin" className="flex items-center gap-2 font-semibold">
-              <LayoutDashboard className="h-6 w-6" />
-              <span>Admin Dashboard</span>
-            </Link>
+    <div className="flex min-h-screen">
+      {/* Desktop Sidebar */}
+      <div className="hidden md:flex md:w-64 md:flex-col">
+        <div className="flex flex-col flex-grow pt-5 overflow-y-auto bg-background border-r">
+          <div className="flex items-center flex-shrink-0 px-4">
+            <h1 className="text-xl font-bold">Admin Panel</h1>
           </div>
-          <nav className="flex flex-col gap-2 p-4 lg:p-6">
-            <Link
-              href="/admin"
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-            >
-              <LayoutDashboard className="h-4 w-4" />
-              Dashboard
-            </Link>
-            <Link
-              href="/admin/guest-houses"
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-            >
-              <Home className="h-4 w-4" />
-              Guest Houses
-            </Link>
-            <Link
-              href="/admin/cars"
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-            >
-              <Car className="h-4 w-4" />
-              Cars
-            </Link>
-            <Link
-              href="/admin/bookings"
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-            >
-              <CalendarCheck className="h-4 w-4" />
-              Bookings
-            </Link>
-          </nav>
-        </aside>
-        <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-64">
-          <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-            <Link href="/" className="ml-auto flex items-center gap-2 text-sm font-medium">
-              <Home className="h-4 w-4" />
-              Back to Main Site
-            </Link>
-          </header>
-          <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">{children}</main>
+          <div className="mt-8 flex-grow flex flex-col">
+            <nav className="flex-1 px-4 space-y-1">
+              <NavItems />
+            </nav>
+          </div>
+          <div className="flex-shrink-0 p-4 border-t">
+            <StrapiStatus />
+          </div>
         </div>
       </div>
-    </ProtectedRoute>
+
+      {/* Mobile Sidebar */}
+      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+        <SheetTrigger asChild>
+          <Button variant="outline" size="icon" className="md:hidden fixed top-4 left-4 z-40 bg-transparent">
+            <Menu className="h-4 w-4" />
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="left" className="w-64 p-0">
+          <div className="flex flex-col h-full">
+            <div className="flex items-center flex-shrink-0 px-4 py-5">
+              <h1 className="text-xl font-bold">Admin Panel</h1>
+            </div>
+            <div className="flex-grow">
+              <nav className="px-4 space-y-1">
+                <NavItems />
+              </nav>
+            </div>
+            <div className="flex-shrink-0 p-4 border-t">
+              <StrapiStatus />
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col">
+        <main className="flex-1 p-4 md:p-8 pt-16 md:pt-8">{children}</main>
+      </div>
+    </div>
   )
 }

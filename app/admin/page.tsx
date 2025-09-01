@@ -1,45 +1,21 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Building2, Car, Calendar, Clock, CheckCircle, Users } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { getDashboardStats } from "./actions"
-import { StrapiStatus } from "@/components/admin/strapi-status"
+import Link from "next/link"
+import { Calendar, Home, Car, Clock, CheckCircle, DollarSign, TrendingUp, Building } from "lucide-react"
 
 export default async function AdminDashboard() {
   const stats = await getDashboardStats()
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
-          <p className="text-muted-foreground">Manage your guest houses, cars, and bookings</p>
-        </div>
-        <StrapiStatus />
+      <div>
+        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+        <p className="text-muted-foreground">Overview of your booking management system</p>
       </div>
 
+      {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Guest Houses</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalGuestHouses}</div>
-            <p className="text-xs text-muted-foreground">Total properties</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Cars</CardTitle>
-            <Car className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalCars}</div>
-            <p className="text-xs text-muted-foreground">Available vehicles</p>
-          </CardContent>
-        </Card>
-
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
@@ -47,52 +23,68 @@ export default async function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalBookings}</div>
-            <p className="text-xs text-muted-foreground">All time bookings</p>
+            <p className="text-xs text-muted-foreground">All booking types combined</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Guest House Bookings</CardTitle>
+            <Home className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.pendingBookings}</div>
-            <p className="text-xs text-muted-foreground">Awaiting confirmation</p>
+            <div className="text-2xl font-bold">{stats.guestHouseBookings}</div>
+            <p className="text-xs text-muted-foreground">Active reservations</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Car Rentals</CardTitle>
+            <Car className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.carRentalBookings}</div>
+            <p className="text-xs text-muted-foreground">Vehicle bookings</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${stats.totalRevenue.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">From all bookings</p>
           </CardContent>
         </Card>
       </div>
 
+      {/* Status Overview */}
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5" />
+              <Clock className="h-5 w-5" />
               Booking Status Overview
             </CardTitle>
-            <CardDescription>Current booking status distribution</CardDescription>
+            <CardDescription>Current status distribution</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Badge variant="secondary">Pending</Badge>
-                <span className="text-sm text-muted-foreground">Awaiting confirmation</span>
+                <Clock className="h-4 w-4 text-yellow-500" />
+                <span>Pending</span>
               </div>
-              <span className="font-semibold">{stats.pendingBookings}</span>
+              <span className="font-medium">{stats.pendingBookings}</span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Badge variant="default">Confirmed</Badge>
-                <span className="text-sm text-muted-foreground">Ready to go</span>
+                <CheckCircle className="h-4 w-4 text-green-500" />
+                <span>Confirmed</span>
               </div>
-              <span className="font-semibold">{stats.confirmedBookings}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Badge variant="outline">Total</Badge>
-                <span className="text-sm text-muted-foreground">All bookings</span>
-              </div>
-              <span className="font-semibold">{stats.totalBookings}</span>
+              <span className="font-medium">{stats.confirmedBookings}</span>
             </div>
           </CardContent>
         </Card>
@@ -100,35 +92,36 @@ export default async function AdminDashboard() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
+              <TrendingUp className="h-5 w-5" />
               Quick Actions
             </CardTitle>
-            <CardDescription>Common administrative tasks</CardDescription>
+            <CardDescription>Manage your booking system</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="grid gap-2">
-              <a
-                href="/admin/bookings"
-                className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent transition-colors"
-              >
-                <span className="font-medium">Manage Bookings</span>
-                <Badge variant="secondary">{stats.totalBookings}</Badge>
-              </a>
-              <a
-                href="/admin/guest-houses"
-                className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent transition-colors"
-              >
-                <span className="font-medium">Manage Guest Houses</span>
-                <Badge variant="secondary">{stats.totalGuestHouses}</Badge>
-              </a>
-              <a
-                href="/admin/cars"
-                className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent transition-colors"
-              >
-                <span className="font-medium">Manage Cars</span>
-                <Badge variant="secondary">{stats.totalCars}</Badge>
-              </a>
-            </div>
+          <CardContent className="space-y-3">
+            <Button asChild className="w-full justify-start">
+              <Link href="/admin/guest-house-bookings">
+                <Home className="h-4 w-4 mr-2" />
+                Manage Guest House Bookings
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full justify-start bg-transparent">
+              <Link href="/admin/car-rental-bookings">
+                <Car className="h-4 w-4 mr-2" />
+                Manage Car Rental Bookings
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full justify-start bg-transparent">
+              <Link href="/admin/guest-houses">
+                <Building className="h-4 w-4 mr-2" />
+                Manage Guest Houses
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full justify-start bg-transparent">
+              <Link href="/admin/cars">
+                <Car className="h-4 w-4 mr-2" />
+                Manage Cars
+              </Link>
+            </Button>
           </CardContent>
         </Card>
       </div>

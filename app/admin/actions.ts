@@ -1,114 +1,106 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { redirect } from "next/navigation"
-import type { BookingStatus, Car, GuestHouse, GuestHouseOutputDTO } from "@/lib/types"
-import {
-  getBookingsData,
-  getBookingByIdData,
-  updateBookingStatusData,
-  getDashboardStatsData,
-  // stubs below keep other admin imports working
-  getGuestHousesData,
-  getGuestHouseByIdData,
-  createGuestHouseData,
-  updateGuestHouseData,
-  deleteGuestHouseData,
-  getCarsData,
-  getCarByIdData,
-  createCarData,
-  updateCarData,
-  deleteCarData,
-} from "@/lib/strapi-data"
 
-// BOOKINGS
+// Mock data for bookings
+const mockBookings = [
+  {
+    id: "booking-001",
+    type: "guestHouse" as const,
+    itemName: "Cozy Mountain Retreat",
+    firstName: "John",
+    lastName: "Doe",
+    email: "john.doe@example.com",
+    phone: "+1-555-0123",
+    startDate: "2024-02-15",
+    endDate: "2024-02-20",
+    guestsOrSeats: 4,
+    totalPrice: 750.0,
+    status: "confirmed" as const,
+    specialRequests: "Late check-in requested",
+    createdAt: "2024-01-15T10:30:00Z",
+  },
+  {
+    id: "booking-002",
+    type: "carRental" as const,
+    itemName: "Toyota Camry 2023",
+    firstName: "Jane",
+    lastName: "Smith",
+    email: "jane.smith@example.com",
+    phone: "+1-555-0456",
+    startDate: "2024-02-10",
+    endDate: "2024-02-12",
+    guestsOrSeats: 5,
+    pickupLocation: "Airport Terminal 1",
+    totalPrice: 180.0,
+    status: "pending" as const,
+    createdAt: "2024-01-10T14:20:00Z",
+  },
+  {
+    id: "booking-003",
+    type: "guestHouse" as const,
+    itemName: "Seaside Villa",
+    firstName: "Mike",
+    lastName: "Johnson",
+    email: "mike.johnson@example.com",
+    phone: "+1-555-0789",
+    startDate: "2024-03-01",
+    endDate: "2024-03-07",
+    guestsOrSeats: 6,
+    totalPrice: 1200.0,
+    status: "confirmed" as const,
+    createdAt: "2024-01-20T09:15:00Z",
+  },
+]
+
 export async function getBookings() {
-  return await getBookingsData()
+  // Simulate API delay
+  await new Promise((resolve) => setTimeout(resolve, 100))
+  return mockBookings
 }
+
+export async function getGuestHouseBookings() {
+  const bookings = await getBookings()
+  return bookings.filter((booking) => booking.type === "guestHouse")
+}
+
+export async function getCarRentalBookings() {
+  const bookings = await getBookings()
+  return bookings.filter((booking) => booking.type === "carRental")
+}
+
 export async function getBookingById(id: string) {
-  return await getBookingByIdData(id)
-}
-export async function updateBookingStatus(id: string, status: BookingStatus) {
-  await updateBookingStatusData(id, status)
-  revalidatePath("/admin/bookings")
-}
-// Keep this export for the client component import to avoid "doesn't provide an export" errors.
-export async function updateBookingStatusAction(id: string, status: BookingStatus) {
-  await updateBookingStatusData(id, status)
-  revalidatePath("/admin/bookings")
+  const bookings = await getBookings()
+  return bookings.find((booking) => booking.id === id)
 }
 
-// DASHBOARD
+export async function updateBookingStatus(bookingId: string, status: string) {
+  // Simulate API call
+  await new Promise((resolve) => setTimeout(resolve, 500))
+
+  // In a real app, this would update the database
+  console.log(`Updating booking ${bookingId} to status: ${status}`)
+
+  revalidatePath("/admin/bookings")
+  revalidatePath("/admin/guest-house-bookings")
+  revalidatePath("/admin/car-rental-bookings")
+  revalidatePath(`/admin/bookings/${bookingId}`)
+
+  return { success: true }
+}
+
+// Mock data for dashboard stats
 export async function getDashboardStats() {
-  return await getDashboardStatsData()
-}
+  const bookings = await getBookings()
+  const guestHouseBookings = bookings.filter((b) => b.type === "guestHouse")
+  const carRentalBookings = bookings.filter((b) => b.type === "carRental")
 
-// GUEST HOUSES (stubs passthrough)
-function extractImagesFromFormData(formData: FormData): string[] {
-  const images: string[] = []
-  let index = 0
-  while (formData.has(`image-${index}`)) {
-    const image = formData.get(`image-${index}`) as string
-    if (image && image.trim()) images.push(image.trim())
-    index++
+  return {
+    totalBookings: bookings.length,
+    guestHouseBookings: guestHouseBookings.length,
+    carRentalBookings: carRentalBookings.length,
+    pendingBookings: bookings.filter((b) => b.status === "pending").length,
+    confirmedBookings: bookings.filter((b) => b.status === "confirmed").length,
+    totalRevenue: bookings.reduce((sum, b) => sum + (b.totalPrice || 0), 0),
   }
-  return images.length > 0 ? images : ["/placeholder.svg?height=300&width=400"]
-}
-
-export async function getGuestHouses() {
-  return await getGuestHousesData() as GuestHouseOutputDTO[]
-}
-export async function getGuestHouse(id: string) {
-  return await getGuestHouseByIdData(id)
-}
-export async function createGuestHouse(payload: any) {
-  return await createGuestHouseData(payload)
-}
-export async function updateGuestHouse(id: string, payload: any) {
-  return await updateGuestHouseData(id, payload)
-}
-export async function deleteGuestHouse(id: string | number) {
-  await deleteGuestHouseData(String(id))
-  revalidatePath("/admin/guest-houses")
-}
-
-// CARS (stubs passthrough)
-export async function getCars() {
-  return await getCarsData()
-}
-export async function getCar(id: string) {
-  return await getCarByIdData(id)
-}
-export async function createCar(formData: FormData) {
-  const images = extractImagesFromFormData(formData)
-  const newCar: Omit<Car, "id"> = {
-    images,
-    carId: new Date().getTime().toString(),
-    title: String(formData.get("title") || ""),
-    seats: Number.parseInt(String(formData.get("seats") || "0")),
-    transmission: String(formData.get("transmission") || ""),
-    price: Number.parseFloat(String(formData.get("price") || "0")),
-    description: String(formData.get("description") || ""),
-  }
-  await createCarData(newCar)
-  revalidatePath("/admin/cars")
-  redirect("/admin/cars")
-}
-export async function updateCar(id: string, formData: FormData) {
-  const images = extractImagesFromFormData(formData)
-  const updatedCar: Partial<Car> = {
-    images,
-    title: String(formData.get("title") || ""),
-    seats: Number.parseInt(String(formData.get("seats") || "0")),
-    transmission: String(formData.get("transmission") || ""),
-    price: Number.parseFloat(String(formData.get("price") || "0")),
-    description: String(formData.get("description") || ""),
-  }
-  await updateCarData(id, updatedCar)
-  revalidatePath("/admin/cars")
-  redirect("/admin/cars")
-}
-export async function deleteCar(id: string | number) {
-  await deleteCarData(String(id))
-  revalidatePath("/admin/cars")
 }

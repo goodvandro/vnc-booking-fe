@@ -1,4 +1,4 @@
-import { UploadedMedia } from "@/components/common/media-input";
+import type { UploadedMedia } from "@/components/common/media-input";
 
 export interface ImageFormat {
   ext: string;
@@ -12,6 +12,7 @@ export interface ImageFormat {
   url: string;
   width: number;
 }
+
 export interface DocumentImage {
   alternativeText: null;
   caption: null;
@@ -39,10 +40,41 @@ export interface DocumentImage {
   width: number;
 }
 
+// Separated SelectedItem interfaces
+export interface SelectedGuestHouse {
+  type: "guestHouse";
+  data: {
+    guestHouseId: string;
+    id?: string | number;
+    images: string[];
+    title: string;
+    location: string;
+    rating: number;
+    price: number;
+    description: string;
+  };
+}
+
+export interface SelectedCar {
+  type: "car";
+  data: {
+    id?: string | number;
+    carId: string;
+    images: string[];
+    title: string;
+    seats: number;
+    transmission: string;
+    price: number;
+    description: string;
+  };
+}
+
+// Legacy SelectedItem for backward compatibility
 export interface SelectedItem {
   type: "guestHouse" | "car";
   data: {
-    images: string[]; // Changed from imageSrc to images array
+    id?: string | number;
+    images: string[];
     title: string;
     location?: string;
     rating?: number;
@@ -56,7 +88,7 @@ export interface SelectedItem {
 export interface GuestHouse {
   id: string;
   guestHouseId: string;
-  images: UploadedMedia[]; // Changed from imageSrc to images array
+  images: UploadedMedia[];
   title: string;
   location: string;
   rating: number;
@@ -80,7 +112,7 @@ export interface Car {
   id: string;
   documentId?: string;
   carId: string;
-  images: UploadedMedia[]; // Changed from imageSrc to images array
+  images: UploadedMedia[];
   title: string;
   seats: number;
   transmission: string;
@@ -92,7 +124,7 @@ export interface CarOutputDTO {
   id: string;
   documentId?: string;
   carId: string;
-  images: DocumentImage[]; // Changed from imageSrc to images array
+  images: DocumentImage[];
   title: string;
   seats: number;
   transmission: string;
@@ -113,16 +145,19 @@ export type BookingStatus = "pending" | "confirmed" | "cancelled" | "completed";
 
 export interface CarRentalBooking {
   id: string;
+  documentId: string;
   bookingId: string;
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
   driverLicense?: string;
+  pickupLocation?: string;
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD
   totalPrice: number;
   bookingStatus: BookingStatus;
+  specialRequests?: string;
   createdAt: string; // ISO string
   car?: Car;
   user?: any;
@@ -130,6 +165,7 @@ export interface CarRentalBooking {
 
 export interface GuestHouseBooking {
   id: string;
+  documentId: string;
   bookingId: string;
   firstName: string;
   lastName: string;

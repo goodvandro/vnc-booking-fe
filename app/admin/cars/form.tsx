@@ -25,7 +25,8 @@ import {
 } from "@/components/ui/select";
 import type { Car } from "@/lib/types";
 import { useRouter } from "next/navigation";
-import { getCar } from "../actions";
+import { getCarByIdData } from "@/lib/strapi-data";
+// import { getCar } from "../actions";
 
 interface CarFormProps {
   initialData?: Car;
@@ -66,7 +67,7 @@ export default function CarForm({ initialData }: CarFormProps) {
     let cancelled = false;
     (async () => {
       try {
-        const car = await getCar(documentId);
+        const car = await getCarByIdData(documentId);
 
         if (!car) return;
         if (cancelled) return;
@@ -127,7 +128,7 @@ export default function CarForm({ initialData }: CarFormProps) {
 
     try {
       const documentId = (initialData as any)?.documentId;
-      const response = await getCar(documentId);
+      const response = await getCarByIdData(documentId);
       console.log("response", response);
       const res = await fetch(
         documentId ? `/api/admin/cars/${documentId}` : `/api/admin/cars`,

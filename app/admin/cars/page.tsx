@@ -15,12 +15,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getCars, deleteCar } from "../actions";
+// import { getCars, deleteCar } from "../actions";
 import { PlusCircle, Pencil, Trash2 } from "lucide-react";
 import { CarOutputDTO } from "@/lib/types";
+import { getCarsData } from "@/lib/strapi-data";
 
 export default async function CarsPage() {
-  const cars = await getCars();
+  const cars = await getCarsData();
 
   return (
     <Card>
@@ -80,12 +81,12 @@ export default async function CarsPage() {
                           <span className="sr-only">Edit</span>
                         </Link>
                       </Button>
-                      <form action={deleteCar.bind(null, car.documentId || "")}>
+                      {/* <form action={deleteCar.bind(null, car.documentId || "")}>
                         <Button variant="destructive" size="icon" type="submit">
                           <Trash2 className="h-4 w-4" />
                           <span className="sr-only">Delete</span>
                         </Button>
-                      </form>
+                      </form> */}
                     </div>
                   </TableCell>
                 </TableRow>

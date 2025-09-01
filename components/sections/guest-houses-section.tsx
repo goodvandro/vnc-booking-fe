@@ -1,5 +1,3 @@
-"use client";
-
 import { MapPin, Star } from "lucide-react";
 import {
   Card,
@@ -11,27 +9,112 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import ImageSlider from "@/components/common/image-slider";
-import type { GuestHouseOutputDTO, SelectedItem } from "@/lib/types";
-import { getGuestHouses } from "@/app/admin/actions";
+import type {
+  GuestHouse,
+  GuestHouseOutputDTO,
+  SelectedGuestHouse,
+} from "@/lib/types";
 import { useEffect, useState } from "react";
+import { getGuestHousesData } from "@/lib/strapi-data";
+import { useGuestHouses } from "@/lib/use-strapi-data";
 
 interface GuestHousesSectionProps {
   t: any; // Translation object
-  handleBookNowClick: (itemData: SelectedItem["data"]) => void;
+  handleBookNowClick: (itemData: SelectedGuestHouse["data"]) => void;
 }
 
 export default function GuestHousesSection({
   t,
   handleBookNowClick,
 }: GuestHousesSectionProps) {
-  const [guestHouses, setGuestHouses] = useState<GuestHouseOutputDTO[]>([]);
+  // const [guestHouses, setGuestHouses] = useState<GuestHouseOutputDTO[]>([])
+  // const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    getGuestHouses().then((guestHouses) => {
-      setGuestHouses(guestHouses);
-      console.log("guestHouses", JSON.stringify(guestHouses));
-    });
-  }, []);
+  const { guestHouses, loading, error } = useGuestHouses();
+
+  // useEffect(() => {
+  //   getGuestHousesData()
+  //     .then((guestHouses) => {
+  //       setGuestHouses(guestHouses)
+  //       console.log("Guest Houses:", guestHouses)
+  //     })
+  //     .catch((error) => {
+  //       console.error("Failed to fetch guest houses:", error)
+  //     })
+  //     .finally(() => {
+  //       setLoading(false)
+  //     })
+  // }, [])
+
+  if (loading) {
+    return (
+      <section
+        id="guest-houses"
+        className="section-container w-full py-12 md:py-16 lg:py-24 xl:py-32 bg-muted"
+      >
+        <div className="section-content">
+          <div className="flex flex-col items-center justify-center space-y-4 text-center mb-8 md:mb-12">
+            <div className="space-y-2 max-w-4xl mx-auto">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tighter text-gray-700">
+                {t.guestHousesSectionTitle}
+              </h2>
+              <p className="max-w-[900px] mx-auto text-muted-foreground text-sm sm:text-base md:text-lg lg:text-xl leading-relaxed">
+                {t.guestHousesSectionSubtitle}
+              </p>
+            </div>
+          </div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-w-7xl mx-auto">
+            {[...Array(4)].map((_, i) => (
+              <Card
+                key={i}
+                className="flex flex-col overflow-hidden animate-pulse"
+              >
+                <div className="h-48 bg-gray-200"></div>
+                <CardHeader className="pb-2">
+                  <div className="h-6 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                </CardHeader>
+                <CardContent className="flex-1 pt-0">
+                  <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+                  <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+                </CardContent>
+                <CardFooter className="pt-0">
+                  <div className="h-10 bg-gray-200 rounded w-full"></div>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (guestHouses.length === 0) {
+    return (
+      <section
+        id="guest-houses"
+        className="section-container w-full py-12 md:py-16 lg:py-24 xl:py-32 bg-muted"
+      >
+        <div className="section-content">
+          <div className="flex flex-col items-center justify-center space-y-4 text-center mb-8 md:mb-12">
+            <div className="space-y-2 max-w-4xl mx-auto">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tighter text-gray-700">
+                {t.guestHousesSectionTitle}
+              </h2>
+              <p className="max-w-[900px] mx-auto text-muted-foreground text-sm sm:text-base md:text-lg lg:text-xl leading-relaxed">
+                {t.guestHousesSectionSubtitle}
+              </p>
+            </div>
+          </div>
+          <div className="text-center py-12">
+            <p className="text-muted-foreground text-lg">
+              No guest houses available at the moment. Please check back later.
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section
@@ -50,18 +133,22 @@ export default function GuestHousesSection({
           </div>
         </div>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-w-7xl mx-auto">
-          {guestHouses.map((gh: GuestHouseOutputDTO) => {
-            const thumbs: string[] = [];
+          {guestHouses.map((gh: GuestHouse) => {
+            const images: string[] = [];
 
-            Array.isArray(gh.images) && gh.images.length > 0
-              ? thumbs.push(...gh.images.map((i) => i.url)) || thumbs
-              : thumbs.push(
-                  `/placeholder.svg?height=300&width=400&text=${gh.title}`
-                );
+            if (Array.isArray(gh.images) && gh.images.length > 0) {
+              images.push(...gh.images.map((i) => i.url));
+            } else {
+              images.push(
+                `/placeholder.svg?height=300&width=400&text=${encodeURIComponent(
+                  gh.title
+                )}`
+              );
+            }
 
             return (
               <Card key={gh.id} className="flex flex-col overflow-hidden">
-                <ImageSlider images={thumbs} alt="Riverside Retreat" />
+                <ImageSlider images={images} alt={gh.title} />
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg sm:text-xl">
                     {gh.title}
@@ -77,7 +164,9 @@ export default function GuestHousesSection({
                       <Star
                         key={i}
                         className={`w-4 h-4 ${
-                          i < gh.rating ? "fill-yellow-500" : "fill-white"
+                          i < Math.floor(gh.rating)
+                            ? "fill-yellow-500"
+                            : "fill-gray-200"
                         }`}
                       />
                     ))}
@@ -97,18 +186,14 @@ export default function GuestHousesSection({
                     className="w-full"
                     onClick={() =>
                       handleBookNowClick({
-                        images: [
-                          "/placeholder.svg?height=300&width=400&text=Riverside+Retreat+1",
-                          "/placeholder.svg?height=300&width=400&text=Riverside+Retreat+2",
-                          "/placeholder.svg?height=300&width=400&text=Riverside+Retreat+3",
-                          "/placeholder.svg?height=300&width=400&text=Riverside+Retreat+4",
-                        ],
-                        title: "Riverside Retreat",
-                        location: "Kyoto, Japan",
-                        rating: 4.5,
-                        price: 150,
-                        description:
-                          "A serene retreat nestled by the river, offering traditional Japanese aesthetics and modern comforts. Perfect for a peaceful getaway.",
+                        id: gh.id,
+                        guestHouseId: gh.guestHouseId,
+                        images,
+                        title: gh.title,
+                        location: gh.location,
+                        rating: gh.rating,
+                        price: gh.price,
+                        description: gh.description,
                       })
                     }
                   >

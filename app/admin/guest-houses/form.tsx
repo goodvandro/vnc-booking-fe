@@ -18,8 +18,8 @@ import MediaInput, {
 } from "@/components/common/media-input";
 import type { GuestHouse } from "@/lib/types";
 import { useRouter } from "next/navigation";
-import { getGuestHouseByIdData, getGuestHousesData } from "@/lib/strapi-data";
-import { createGuestHouse, getGuestHouse, updateGuestHouse } from "../actions";
+import { getGuestHouseByIdData, getGuestHousesData, updateGuestHouseData } from "@/lib/strapi-data";
+// import { createGuestHouse, getGuestHouse, updateGuestHouse } from "../actions";
 
 interface GuestHouseFormProps {
   initialData?: GuestHouse;
@@ -59,7 +59,7 @@ export default function GuestHouseForm({ initialData }: GuestHouseFormProps) {
     let cancelled = false;
     (async () => {
       try {
-        const guestHouse = await getGuestHouse(documentId);
+        const guestHouse = await getGuestHouseByIdData(documentId);
 
         if (!guestHouse) return;
         if (cancelled) return;
@@ -123,9 +123,9 @@ export default function GuestHouseForm({ initialData }: GuestHouseFormProps) {
     try {
       const documentId = (initialData as any)?.documentId;
 
-      (await documentId)
-        ? updateGuestHouse(documentId, payload)
-        : createGuestHouse(payload);
+      // (await documentId)
+      //   ? updateGuestHouseData(documentId, payload)
+      //   : createGuestHouseData(payload);
 
       setMessage("Saved successfully.");
       setTimeout(() => {

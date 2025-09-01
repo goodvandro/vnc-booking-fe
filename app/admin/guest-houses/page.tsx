@@ -15,12 +15,24 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getGuestHouses, deleteGuestHouse } from "../actions";
+// import { getGuestHouses, deleteGuestHouse } from "../actions";
 import { Pencil, Trash2, PlusCircle } from "lucide-react";
 import { GuestHouseOutputDTO } from "@/lib/types";
+import { deleteGuestHouseData, getGuestHousesData } from "@/lib/strapi-data";
 
 export default async function GuestHousesPage() {
-  const guestHouses = await getGuestHouses();
+  const guestHouses = await getGuestHousesData();
+
+  const handleSubmitDelete = (e: any, id: string) => {
+    e.preventDefault();
+    deleteGuestHouseData(id as string).then((result) => {
+      if (result) {
+        console.log("Guest house deleted successfully");
+      } else {
+        console.error("Failed to delete guest house");
+      }
+    });
+  };
 
   return (
     <Card>
@@ -81,15 +93,12 @@ export default async function GuestHousesPage() {
                         </Link>
                       </Button>
                       <form
-                        action={deleteGuestHouse.bind(
-                          null,
-                          gh.documentId as string
-                        )}
+                        // action={handleSubmitDelete}
                       >
-                        <Button variant="destructive" size="icon" type="submit">
+                        {/* <Button variant="destructive" size="icon" type="submit">
                           <Trash2 className="h-4 w-4" />
                           <span className="sr-only">Delete</span>
-                        </Button>
+                        </Button> */}
                       </form>
                     </div>
                   </TableCell>

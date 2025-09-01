@@ -9,6 +9,12 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-}
+  // Configurações de ambiente
+  env: {
+    CUSTOM_KEY: process.env.CUSTOM_KEY,
+  },
+  output: "standalone",
+  experimental: {},
+};
 
-export default nextConfig
+export default nextConfig;

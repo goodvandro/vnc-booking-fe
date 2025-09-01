@@ -18,6 +18,12 @@ export function StrapiStatus() {
   })
   const [isRefreshing, setIsRefreshing] = useState(false)
 
+  const [formattedTime, setFormattedTime] = useState("")
+
+useEffect(() => {
+  setFormattedTime(new Date(status.timestamp).toLocaleTimeString())
+}, [status.timestamp])
+
   const checkStrapiHealth = async () => {
     setIsRefreshing(true)
     try {
@@ -88,7 +94,7 @@ export function StrapiStatus() {
     <div className="flex items-center gap-2">
       <Badge variant={getStatusVariant()} className="flex items-center gap-1">
         {getStatusIcon()}
-        Strapi: {getStatusText()}
+        Service: {getStatusText()}
       </Badge>
 
       <Button
@@ -107,7 +113,7 @@ export function StrapiStatus() {
         </div>
       )}
 
-      <div className="text-xs text-muted-foreground">Last check: {new Date(status.timestamp).toLocaleTimeString()}</div>
+      <div className="text-xs text-muted-foreground">Last check: {formattedTime}</div>
     </div>
   )
 }

@@ -1,44 +1,125 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { updateBookingStatusAction } from "../actions"
-import type { BookingStatus } from "@/lib/types"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import {
+  updateCarRentalBookingStatus,
+  updateGuestHouseBookingStatus,
+} from "@/lib/strapi-data";
+import { BookingStatus } from "@/lib/types";
+import { useState, useTransition } from "react";
+
+interface BookingStatusSelectProps {
+  bookingType: "car" | "guest_house";
+  bookingId: string;
+  currentStatus: BookingStatus;
+}
+
+const statusOptions = [
+  {
+    value: "pending",
+    label: "Pending",
+    color:
+      "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
+  },
+  {
+    value: "confirmed",
+    label: "Confirmed",
+    color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+  },
+  {
+    value: "cancelled",
+    label: "Cancelled",
+    color: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
+  },
+  {
+    value: "completed",
+    label: "Completed",
+    color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
+  },
+];
 
 export default function BookingStatusSelect({
+  bookingType,
   bookingId,
   currentStatus,
-}: {
-  bookingId: string
-  currentStatus: BookingStatus
-}) {
-  const [value, setValue] = React.useState<BookingStatus>(currentStatus)
-  const [pending, startTransition] = React.useTransition()
+}: BookingStatusSelectProps) {
+  const [status, setStatus] = useState<BookingStatus>(currentStatus);
+  const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
 
-  const onChange = (next: BookingStatus) => {
-    setValue(next) // optimistic
+  const handleStatusChange = (newStatus: BookingStatus) => {
     startTransition(async () => {
       try {
-        await updateBookingStatusAction(bookingId, next)
-      } catch (err) {
-        // revert on failure
-        setValue(currentStatus)
-        console.error("Failed to update booking status", err)
+        // Mapear tipo para o formato esperado pela API
+        const apiBookingType =
+          bookingType === "guest_house"
+            ? "guest-house"
+            : "car-rental";
+
+        const response = await fetch(
+          `/api/bookings/${apiBookingType}/${bookingId}/status`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ status: newStatus }),
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to update status");
+        }
+
+        setStatus(newStatus);
+        toast({
+          title: "Status Updated",
+          description: `Booking status changed to ${newStatus}`,
+        });
+      } catch (error) {
+        console.error("Error updating booking status:", error);
+        toast({
+          title: "Error",
+          description: "Failed to update booking status",
+          variant: "destructive",
+        });
       }
-    })
-  }
+    });
+  };
+
+  const currentStatusOption = statusOptions.find(
+    (option) => option.value === status
+  );
 
   return (
-    <Select value={value} onValueChange={(v) => onChange(v as BookingStatus)} disabled={pending}>
-      <SelectTrigger className="w-[140px]">
-        <SelectValue placeholder="Status" />
+    <Select
+      value={status}
+      onValueChange={handleStatusChange}
+      disabled={isPending}
+    >
+      <SelectTrigger className="w-[130px]">
+        <SelectValue>
+          <Badge className={currentStatusOption?.color}>
+            {currentStatusOption?.label || status}
+          </Badge>
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="pending">Pending</SelectItem>
-        <SelectItem value="confirmed">Confirmed</SelectItem>
-        <SelectItem value="cancelled">Cancelled</SelectItem>
-        <SelectItem value="completed">Completed</SelectItem>
+        {statusOptions.map((option) => (
+          <SelectItem key={option.value} value={option.value}>
+            <Badge className={option.color}>{option.label}</Badge>
+          </SelectItem>
+        ))}
       </SelectContent>
     </Select>
-  )
+  );
 }
