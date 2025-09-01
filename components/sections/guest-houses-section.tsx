@@ -1,38 +1,57 @@
-"use client"
-
-import { MapPin, Star } from "lucide-react"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import ImageSlider from "@/components/common/image-slider"
-import type { GuestHouseOutputDTO, SelectedGuestHouse } from "@/lib/types"
-import { useEffect, useState } from "react"
-import { getGuestHousesData } from "@/lib/strapi-data"
+import { MapPin, Star } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import ImageSlider from "@/components/common/image-slider";
+import type {
+  GuestHouse,
+  GuestHouseOutputDTO,
+  SelectedGuestHouse,
+} from "@/lib/types";
+import { useEffect, useState } from "react";
+import { getGuestHousesData } from "@/lib/strapi-data";
+import { useGuestHouses } from "@/lib/use-strapi-data";
 
 interface GuestHousesSectionProps {
-  t: any // Translation object
-  handleBookNowClick: (itemData: SelectedGuestHouse["data"]) => void
+  t: any; // Translation object
+  handleBookNowClick: (itemData: SelectedGuestHouse["data"]) => void;
 }
 
-export default function GuestHousesSection({ t, handleBookNowClick }: GuestHousesSectionProps) {
-  const [guestHouses, setGuestHouses] = useState<GuestHouseOutputDTO[]>([])
-  const [loading, setLoading] = useState(true)
+export default function GuestHousesSection({
+  t,
+  handleBookNowClick,
+}: GuestHousesSectionProps) {
+  // const [guestHouses, setGuestHouses] = useState<GuestHouseOutputDTO[]>([])
+  // const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    getGuestHousesData()
-      .then((guestHouses) => {
-        setGuestHouses(guestHouses)
-      })
-      .catch((error) => {
-        console.error("Failed to fetch guest houses:", error)
-      })
-      .finally(() => {
-        setLoading(false)
-      })
-  }, [])
+  const { guestHouses, loading, error } = useGuestHouses();
+
+  // useEffect(() => {
+  //   getGuestHousesData()
+  //     .then((guestHouses) => {
+  //       setGuestHouses(guestHouses)
+  //       console.log("Guest Houses:", guestHouses)
+  //     })
+  //     .catch((error) => {
+  //       console.error("Failed to fetch guest houses:", error)
+  //     })
+  //     .finally(() => {
+  //       setLoading(false)
+  //     })
+  // }, [])
 
   if (loading) {
     return (
-      <section id="guest-houses" className="section-container w-full py-12 md:py-16 lg:py-24 xl:py-32 bg-muted">
+      <section
+        id="guest-houses"
+        className="section-container w-full py-12 md:py-16 lg:py-24 xl:py-32 bg-muted"
+      >
         <div className="section-content">
           <div className="flex flex-col items-center justify-center space-y-4 text-center mb-8 md:mb-12">
             <div className="space-y-2 max-w-4xl mx-auto">
@@ -46,7 +65,10 @@ export default function GuestHousesSection({ t, handleBookNowClick }: GuestHouse
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-w-7xl mx-auto">
             {[...Array(4)].map((_, i) => (
-              <Card key={i} className="flex flex-col overflow-hidden animate-pulse">
+              <Card
+                key={i}
+                className="flex flex-col overflow-hidden animate-pulse"
+              >
                 <div className="h-48 bg-gray-200"></div>
                 <CardHeader className="pb-2">
                   <div className="h-6 bg-gray-200 rounded mb-2"></div>
@@ -64,12 +86,15 @@ export default function GuestHousesSection({ t, handleBookNowClick }: GuestHouse
           </div>
         </div>
       </section>
-    )
+    );
   }
 
   if (guestHouses.length === 0) {
     return (
-      <section id="guest-houses" className="section-container w-full py-12 md:py-16 lg:py-24 xl:py-32 bg-muted">
+      <section
+        id="guest-houses"
+        className="section-container w-full py-12 md:py-16 lg:py-24 xl:py-32 bg-muted"
+      >
         <div className="section-content">
           <div className="flex flex-col items-center justify-center space-y-4 text-center mb-8 md:mb-12">
             <div className="space-y-2 max-w-4xl mx-auto">
@@ -88,11 +113,14 @@ export default function GuestHousesSection({ t, handleBookNowClick }: GuestHouse
           </div>
         </div>
       </section>
-    )
+    );
   }
 
   return (
-    <section id="guest-houses" className="section-container w-full py-12 md:py-16 lg:py-24 xl:py-32 bg-muted">
+    <section
+      id="guest-houses"
+      className="section-container w-full py-12 md:py-16 lg:py-24 xl:py-32 bg-muted"
+    >
       <div className="section-content">
         <div className="flex flex-col items-center justify-center space-y-4 text-center mb-8 md:mb-12">
           <div className="space-y-2 max-w-4xl mx-auto">
@@ -105,20 +133,26 @@ export default function GuestHousesSection({ t, handleBookNowClick }: GuestHouse
           </div>
         </div>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-w-7xl mx-auto">
-          {guestHouses.map((gh: GuestHouseOutputDTO) => {
-            const images: string[] = []
+          {guestHouses.map((gh: GuestHouse) => {
+            const images: string[] = [];
 
             if (Array.isArray(gh.images) && gh.images.length > 0) {
-              images.push(...gh.images.map((i) => i.url))
+              images.push(...gh.images.map((i) => i.url));
             } else {
-              images.push(`/placeholder.svg?height=300&width=400&text=${encodeURIComponent(gh.title)}`)
+              images.push(
+                `/placeholder.svg?height=300&width=400&text=${encodeURIComponent(
+                  gh.title
+                )}`
+              );
             }
 
             return (
               <Card key={gh.id} className="flex flex-col overflow-hidden">
                 <ImageSlider images={images} alt={gh.title} />
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-lg sm:text-xl">{gh.title}</CardTitle>
+                  <CardTitle className="text-lg sm:text-xl">
+                    {gh.title}
+                  </CardTitle>
                   <CardDescription className="flex items-center gap-1 text-sm">
                     <MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                     <span>{gh.location}</span>
@@ -129,14 +163,22 @@ export default function GuestHousesSection({ t, handleBookNowClick }: GuestHouse
                     {[...Array(5)].map((_, i) => (
                       <Star
                         key={i}
-                        className={`w-4 h-4 ${i < Math.floor(gh.rating) ? "fill-yellow-500" : "fill-gray-200"}`}
+                        className={`w-4 h-4 ${
+                          i < Math.floor(gh.rating)
+                            ? "fill-yellow-500"
+                            : "fill-gray-200"
+                        }`}
                       />
                     ))}
-                    <span className="text-muted-foreground ml-1">({gh.rating})</span>
+                    <span className="text-muted-foreground ml-1">
+                      ({gh.rating})
+                    </span>
                   </div>
                   <p className="text-xl sm:text-2xl font-bold">
                     €{gh.price}
-                    <span className="text-sm sm:text-base font-normal text-muted-foreground">{t.perNight}</span>
+                    <span className="text-sm sm:text-base font-normal text-muted-foreground">
+                      {t.perNight}
+                    </span>
                   </p>
                 </CardContent>
                 <CardFooter className="pt-0">
@@ -159,10 +201,10 @@ export default function GuestHousesSection({ t, handleBookNowClick }: GuestHouse
                   </Button>
                 </CardFooter>
               </Card>
-            )
+            );
           })}
         </div>
       </div>
     </section>
-  )
+  );
 }
