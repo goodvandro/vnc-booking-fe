@@ -88,7 +88,7 @@ export function StrapiStatus() {
     <div className="flex items-center gap-2">
       <Badge variant={getStatusVariant()} className="flex items-center gap-1">
         {getStatusIcon()}
-        Strapi: {getStatusText()}
+        Service: {getStatusText()}
       </Badge>
 
       <Button
