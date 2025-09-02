@@ -87,6 +87,7 @@ export interface SelectedItem {
 
 export interface GuestHouse {
   id: string;
+  documentId?: string;
   guestHouseId: string;
   images: UploadedMedia[];
   title: string;

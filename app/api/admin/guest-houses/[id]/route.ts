@@ -33,16 +33,6 @@ function toPlainTextFromRichText(blocks: unknown): string {
   return lines.join("\n")
 }
 
-function toRichTextBlocksFromString(input: unknown): any[] {
-  if (Array.isArray(input)) return input
-  const str = typeof input === "string" ? input : ""
-  const paragraphs = str.split(/\r?\n/)
-  return paragraphs.map((line) => ({
-    type: "paragraph",
-    children: [{ type: "text", text: line }],
-  }))
-}
-
 function normalizeNumbers(n: any): number | undefined {
   const v = typeof n === "string" ? n.trim() : n
   const num = Number(v)
@@ -102,12 +92,12 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     const payload = await req.json()
 
     const data: any = {
-      ghId: payload.ghId || undefined,
+      guestHouseId: payload.guestHouseId || undefined,
       title: payload.title ?? "",
       location: payload.location ?? "",
       rating: normalizeNumbers(payload.rating),
       price: normalizeNumbers(payload.price),
-      description: toRichTextBlocksFromString(payload.description),
+      description: payload.description,
       images: Array.isArray(payload.images) ? payload.images : [],
     }
 
