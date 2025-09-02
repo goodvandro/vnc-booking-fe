@@ -89,3 +89,4 @@ jobs:
               -e NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=${{ secrets.NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL }} \
               -e NEXT_PUBLIC_STRAPI_URL=${{ secrets.NEXT_PUBLIC_STRAPI_URL }} \
               -e STRAPI_ADMIN_TOKEN=${{ secrets.STRAPI_ADMIN_TOKEN }} \
+              ${{ secrets.DOCKER_USERNAME }}/vnc-booking-fe:latest
