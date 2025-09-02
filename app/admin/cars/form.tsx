@@ -60,48 +60,6 @@ export default function CarForm({ initialData }: CarFormProps) {
     setMedia(nextMedia);
   }, [isEditing, initialData]);
 
-  useEffect(() => {
-    const documentId = (initialData as any)?.documentId;
-    if (!isEditing || !documentId) return;
-
-    let cancelled = false;
-    (async () => {
-      try {
-        const car = await getCarByIdData(documentId);
-
-        if (!car) return;
-        if (cancelled) return;
-
-        const fromServer = Array.isArray(car.images)
-          ? car.images.map((img: any) => {
-              // Check if img is already a string URL or an object
-              if (typeof img === "string") {
-                return { url: img };
-              }
-              // Handle case where img is a full media object
-              return {
-                id: img.id,
-                url: img.url,
-                name: img.name,
-                width: img.width,
-                height: img.height,
-                mime: img.mime,
-              };
-            })
-          : [];
-
-        if (fromServer.length > 0) {
-          setMedia(fromServer);
-        }
-      } catch {
-        // ignore; keep any existing media
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [isEditing, initialData]);
-
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
@@ -122,15 +80,12 @@ export default function CarForm({ initialData }: CarFormProps) {
         (form.elements.namedItem("description") as HTMLTextAreaElement)
           ?.value || "",
       images: media
-        .filter((m) => typeof m.id === "number")
-        .map((m) => m.id) as number[],
     };
 
     try {
       const documentId = (initialData as any)?.documentId;
-      const response = await getCarByIdData(documentId);
-      console.log("response", response);
-      const res = await fetch(
+
+      const response = await fetch(
         documentId ? `/api/admin/cars/${documentId}` : `/api/admin/cars`,
         {
           method: documentId ? "PUT" : "POST",
@@ -138,8 +93,8 @@ export default function CarForm({ initialData }: CarFormProps) {
           body: JSON.stringify(payload),
         }
       );
-      const j = await res.json();
-      if (!res.ok) throw new Error(j?.error || "Save failed");
+      const j = await response.json();
+      if (!response.ok) throw new Error(j?.error || "Save failed");
       setMessage("Saved successfully.");
       setTimeout(() => {
         router.push("/admin/cars");

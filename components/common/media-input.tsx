@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { X, UploadCloud, Trash2, Plus, GripVertical, ArrowUp, ArrowDown } from "lucide-react"
+import { X, UploadCloud, Trash2, Plus, GripVertical, ArrowUp, ArrowDown, Loader2 } from "lucide-react"
 
 export type UploadedMedia = {
   id?: number
@@ -45,6 +45,7 @@ export default function MediaInput({
   const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const [addUrl, setAddUrl] = useState("")
+  const [isUploadingUrl, setIsUploadingUrl] = useState(false)
   const dragSourceIndex = useRef<number | null>(null)
 
   const countMessage = useMemo(() => {
@@ -99,11 +100,48 @@ export default function MediaInput({
     [items],
   )
 
-  const onAddUrl = () => {
+  const onAddUrl = async () => {
     if (!addUrl.trim()) return
-    const next = [...items, { url: addUrl.trim(), name: addUrl.trim() }]
-    update(next)
-    setAddUrl("")
+    
+    const urlToAdd = addUrl.trim()
+    
+    // Verificar se restaram slots disponíveis
+    if (items.length >= maxFiles) {
+      setError(`Maximum of ${maxFiles} files allowed`)
+      return
+    }
+
+    setError(null)
+    setIsUploadingUrl(true)
+    
+    try {
+      // Fazer upload da URL via API
+      const response = await fetch("/api/upload-url", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ url: urlToAdd }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null)
+        throw new Error(errorData?.error || "Failed to upload image from URL")
+      }
+
+      const { files } = await response.json() as { files: UploadedMedia[] }
+      
+      // Adicionar os arquivos uploadados à lista
+      const next = [...items, ...files]
+      update(next)
+      setAddUrl("")
+      
+    } catch (e: any) {
+      console.error("URL upload error:", e)
+      setError(e?.message || "Failed to upload image from URL")
+    } finally {
+      setIsUploadingUrl(false)
+    }
   }
 
   const removeAt = (index: number) => {
@@ -189,11 +227,37 @@ export default function MediaInput({
         </div>
       </div>
 
-      {/* Add by URL (optional) */}
+      {/* Add by URL */}
       <div className="flex gap-2">
-        <Input placeholder="https://example.com/image.jpg" value={addUrl} onChange={(e) => setAddUrl(e.target.value)} />
-        <Button type="button" variant="outline" onClick={onAddUrl}>
-          <Plus className="h-4 w-4 mr-1" /> Add URL
+        <Input 
+          placeholder="https://example.com/image.jpg" 
+          value={addUrl} 
+          onChange={(e) => setAddUrl(e.target.value)}
+          disabled={isUploadingUrl}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              onAddUrl()
+            }
+          }}
+        />
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={onAddUrl}
+          disabled={isUploadingUrl || !addUrl.trim() || items.length >= maxFiles}
+        >
+          {isUploadingUrl ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-1 animate-spin" /> 
+              Uploading...
+            </>
+          ) : (
+            <>
+              <Plus className="h-4 w-4 mr-1" /> 
+              Add URL
+            </>
+          )}
         </Button>
       </div>
 

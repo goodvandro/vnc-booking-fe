@@ -33,26 +33,18 @@ function toPlainTextFromRichText(blocks: unknown): string {
   return lines.join("\n")
 }
 
-function toRichTextBlocksFromString(input: unknown): any[] {
-  if (Array.isArray(input)) return input
-  const str = typeof input === "string" ? input : ""
-  const paragraphs = str.split(/\r?\n/)
-  return paragraphs.map((line) => ({
-    type: "paragraph",
-    children: [{ type: "text", text: line }],
-  }))
-}
-
 function normalizeNumbers(n: any): number | undefined {
   const v = typeof n === "string" ? n.trim() : n
   const num = Number(v)
   return Number.isFinite(num) ? num : undefined
 }
 
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
+    
     const res = await fetch(
-      `${getStrapiUrl()}/api/guest-houses/${params.id}?populate[images][fields][0]=url&populate[images][fields][1]=name&populate[images][fields][2]=width&populate[images][fields][3]=height&populate[images][fields][4]=mime`,
+      `${getStrapiUrl()}/api/guest-houses/${id}?populate[images][fields][0]=url&populate[images][fields][1]=name&populate[images][fields][2]=width&populate[images][fields][3]=height&populate[images][fields][4]=mime`,
       {
         headers: { Authorization: `Bearer ${STRAPI_ADMIN_TOKEN}` },
         cache: "no-store",
@@ -97,21 +89,22 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   }
 }
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const payload = await req.json()
 
     const data: any = {
-      ghId: payload.ghId || undefined,
+      guestHouseId: payload.guestHouseId || undefined,
       title: payload.title ?? "",
       location: payload.location ?? "",
       rating: normalizeNumbers(payload.rating),
       price: normalizeNumbers(payload.price),
-      description: toRichTextBlocksFromString(payload.description),
+      description: payload.description,
       images: Array.isArray(payload.images) ? payload.images : [],
     }
 
-    const res = await fetch(`${getStrapiUrl()}/api/guest-houses/${params.id}`, {
+    const res = await fetch(`${getStrapiUrl()}/api/guest-houses/${id}`, {
       method: "PUT",
       headers: authHeaders(),
       body: JSON.stringify({ data }),

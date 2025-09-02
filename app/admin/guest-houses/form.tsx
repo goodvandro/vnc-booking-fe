@@ -1,11 +1,9 @@
 "use client";
 
-import type React from "react";
-import { useEffect, useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import MediaInput, {
+  type UploadedMedia,
+} from "@/components/common/media-input";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
@@ -13,12 +11,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import MediaInput, {
-  type UploadedMedia,
-} from "@/components/common/media-input";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import type { GuestHouse } from "@/lib/types";
 import { useRouter } from "next/navigation";
-import { getGuestHouseByIdData, getGuestHousesData, updateGuestHouseData } from "@/lib/strapi-data";
+import type React from "react";
+import { useEffect, useState } from "react";
 // import { createGuestHouse, getGuestHouse, updateGuestHouse } from "../actions";
 
 interface GuestHouseFormProps {
@@ -37,7 +36,7 @@ export default function GuestHouseForm({ initialData }: GuestHouseFormProps) {
     if (!isEditing || !initialData) return;
     setGuestHouse(initialData);
     const nextMedia: UploadedMedia[] = Array.isArray(initialData.images)
-      ? initialData.images.map((image) => {
+      ? initialData.images.map((image: UploadedMedia) => {
           return {
             id: image.id,
             url: image.url,
@@ -49,49 +48,6 @@ export default function GuestHouseForm({ initialData }: GuestHouseFormProps) {
         })
       : [];
     setMedia(nextMedia);
-  }, [isEditing, initialData]);
-
-  // Hydrate existing media and description for editing
-  useEffect(() => {
-    const documentId = (initialData as any)?.documentId;
-    if (!isEditing || !documentId) return;
-
-    let cancelled = false;
-    (async () => {
-      try {
-        const guestHouse = await getGuestHouseByIdData(documentId);
-
-        if (!guestHouse) return;
-        if (cancelled) return;
-
-        const fromServer = Array.isArray(guestHouse.images)
-          ? guestHouse.images.map((img: any) => {
-              // Check if img is already a string URL or an object
-              if (typeof img === "string") {
-                return { url: img };
-              }
-              // Handle case where img is a full media object
-              return {
-                id: img.id,
-                url: img.url,
-                name: img.name,
-                width: img.width,
-                height: img.height,
-                mime: img.mime,
-              };
-            })
-          : [];
-
-        if (fromServer.length > 0) {
-          setMedia(fromServer);
-        }
-      } catch {
-        // ignore; keep any existing media
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
   }, [isEditing, initialData]);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -113,12 +69,11 @@ export default function GuestHouseForm({ initialData }: GuestHouseFormProps) {
       description:
         (form.elements.namedItem("description") as HTMLTextAreaElement)
           ?.value || "",
-      images: media
-        .filter((m) => typeof m.id === "number")
-        .map((m) => m.id) as number[],
+      // images: media
+      //   .filter((m) => typeof m.id === "number")
+      //   .map((m) => m.id) as number[],
+      images: media,
     };
-
-    console.log("payload", payload);
 
     try {
       const documentId = (initialData as any)?.documentId;
@@ -126,6 +81,21 @@ export default function GuestHouseForm({ initialData }: GuestHouseFormProps) {
       // (await documentId)
       //   ? updateGuestHouseData(documentId, payload)
       //   : createGuestHouseData(payload);
+
+      const response = await fetch(
+        documentId
+          ? `/api/admin/guest-houses/${documentId}`
+          : `/api/admin/guest-houses`,
+        {
+          method: documentId ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Request failed with status: ${response.status}`);
+      }
 
       setMessage("Saved successfully.");
       setTimeout(() => {
