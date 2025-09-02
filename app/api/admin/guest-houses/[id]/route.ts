@@ -39,10 +39,12 @@ function normalizeNumbers(n: any): number | undefined {
   return Number.isFinite(num) ? num : undefined
 }
 
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
+    
     const res = await fetch(
-      `${getStrapiUrl()}/api/guest-houses/${params.id}?populate[images][fields][0]=url&populate[images][fields][1]=name&populate[images][fields][2]=width&populate[images][fields][3]=height&populate[images][fields][4]=mime`,
+      `${getStrapiUrl()}/api/guest-houses/${id}?populate[images][fields][0]=url&populate[images][fields][1]=name&populate[images][fields][2]=width&populate[images][fields][3]=height&populate[images][fields][4]=mime`,
       {
         headers: { Authorization: `Bearer ${STRAPI_ADMIN_TOKEN}` },
         cache: "no-store",
@@ -87,8 +89,9 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   }
 }
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const payload = await req.json()
 
     const data: any = {
@@ -101,7 +104,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       images: Array.isArray(payload.images) ? payload.images : [],
     }
 
-    const res = await fetch(`${getStrapiUrl()}/api/guest-houses/${params.id}`, {
+    const res = await fetch(`${getStrapiUrl()}/api/guest-houses/${id}`, {
       method: "PUT",
       headers: authHeaders(),
       body: JSON.stringify({ data }),
