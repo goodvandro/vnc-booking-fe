@@ -1,11 +1,9 @@
 "use client";
 
-import type React from "react";
-import { useEffect, useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import MediaInput, {
+  type UploadedMedia,
+} from "@/components/common/media-input";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
@@ -13,17 +11,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import MediaInput, {
-  type UploadedMedia,
-} from "@/components/common/media-input";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import type { GuestHouse } from "@/lib/types";
 import { useRouter } from "next/navigation";
-import {
-  createGuestHouseData,
-  getGuestHouseByIdData,
-  getGuestHousesData,
-  updateGuestHouseData,
-} from "@/lib/strapi-data";
+import type React from "react";
+import { useEffect, useState } from "react";
 // import { createGuestHouse, getGuestHouse, updateGuestHouse } from "../actions";
 
 interface GuestHouseFormProps {
@@ -94,9 +88,7 @@ export default function GuestHouseForm({ initialData }: GuestHouseFormProps) {
           : `/api/admin/guest-houses`,
         {
           method: documentId ? "PUT" : "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         }
       );
