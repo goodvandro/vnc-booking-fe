@@ -16,16 +16,6 @@ function authHeaders() {
   }
 }
 
-function toRichTextBlocksFromString(input: unknown): any[] {
-  if (Array.isArray(input)) return input
-  const str = typeof input === "string" ? input : ""
-  const paragraphs = str.split(/\r?\n/)
-  return paragraphs.map((line) => ({
-    type: "paragraph",
-    children: [{ type: "text", text: line }],
-  }))
-}
-
 function normalizeNumbers(n: any): number | undefined {
   const v = typeof n === "string" ? n.trim() : n
   const num = Number(v)
@@ -36,12 +26,12 @@ export async function POST(req: Request) {
   try {
     const payload = await req.json()
     const data: any = {
-      ghId: payload.ghId || `gh-${Date.now()}`,
+      guestHouseId: payload.guestHouseId || `gh-${Date.now()}`,
       title: payload.title ?? "",
       location: payload.location ?? "",
       rating: normalizeNumbers(payload.rating),
       price: normalizeNumbers(payload.price),
-      description: toRichTextBlocksFromString(payload.description),
+      description: payload.description,
       images: Array.isArray(payload.images) ? payload.images : [],
     }
 
