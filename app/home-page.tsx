@@ -94,7 +94,7 @@ export default function HomePage() {
         <MarketingSection t={t} />
         <AboutUsSection t={t} />
         <NewsletterSection t={t} />
-        <ContactSection t={t} />
+        <ContactSection t={t} user={user as User | null | undefined} />
       </main>
       <Footer t={t} />
       <BackToTopButton t={t} show={showBackToTopButton} onClick={scrollToTop} />
