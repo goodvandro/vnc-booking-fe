@@ -6,7 +6,6 @@ export async function addClientContact(
   formData: FormData
 ) {
   try {
-    console.log("formData", formData);
     const email = formData.get("email") as string;
 
     // Validation with translated messages
@@ -18,8 +17,6 @@ export async function addClientContact(
     }
 
     const payload = { data: { email } };
-
-    console.log("payload", payload);
 
     // Submit to Strapi
     const response = await fetch(
