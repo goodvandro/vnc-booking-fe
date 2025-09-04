@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { User } from "@clerk/nextjs/server";
 import { useActionState, useState } from "react";
 import { Loader2 } from "lucide-react";
-import { addClientContact } from "@/app/actions/client-contact-actions";
+import { addNewsLetterContact } from "@/app/actions/news-letter-contact-actions";
 
 interface NewsletterSectionProps {
   t: any;
@@ -13,9 +13,12 @@ interface NewsletterSectionProps {
 }
 
 export default function NewsletterSection({ t, user }: NewsletterSectionProps) {
-  const addClientContactWithTranslation = addClientContact.bind(null, t);
+  const addNewsLetterContactWithTranslation = addNewsLetterContact.bind(
+    null,
+    t
+  );
   const [state, formAction, isPending] = useActionState(
-    addClientContactWithTranslation,
+    addNewsLetterContactWithTranslation,
     null
   );
 

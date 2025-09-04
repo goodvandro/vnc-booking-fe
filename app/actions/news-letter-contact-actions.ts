@@ -1,6 +1,6 @@
 "use server";
 
-export async function addClientContact(
+export async function addNewsLetterContact(
   t: any,
   prevState: any,
   formData: FormData
