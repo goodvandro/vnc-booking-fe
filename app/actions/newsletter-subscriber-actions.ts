@@ -1,6 +1,6 @@
 "use server";
 
-export async function addNewsLetterContact(
+export async function addNewsLetterSubscriber(
   t: any,
   prevState: any,
   formData: FormData
@@ -20,7 +20,7 @@ export async function addNewsLetterContact(
 
     // Submit to Strapi
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_STRAPI_URL}/api/client-contacts`,
+      `${process.env.NEXT_PUBLIC_STRAPI_URL}/api/newsletter-subscribers`,
       {
         method: "POST",
         headers: {
@@ -47,10 +47,11 @@ export async function addNewsLetterContact(
 
           if (uniqueError) {
             return {
-              success: false,
+              success: true,
               message:
                 t.duplicateEntry ||
-                "This entry already exists. Please use different information.",
+                // "This entry already exists. Please use different information.",
+                ""
             };
           }
         }

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { User } from "@clerk/nextjs/server";
 import { useActionState, useState, useEffect } from "react";
 import { Loader2, Check, X } from "lucide-react";
-import { addNewsLetterContact } from "@/app/actions/news-letter-contact-actions";
+import { addNewsLetterSubscriber } from "@/app/actions/newsletter-subscriber-actions";
 
 interface NewsletterSectionProps {
   t: any;
@@ -13,7 +13,7 @@ interface NewsletterSectionProps {
 }
 
 export default function NewsletterSection({ t, user }: NewsletterSectionProps) {
-  const addNewsLetterContactWithTranslation = addNewsLetterContact.bind(
+  const addNewsLetterContactWithTranslation = addNewsLetterSubscriber.bind(
     null,
     t
   );
@@ -25,7 +25,7 @@ export default function NewsletterSection({ t, user }: NewsletterSectionProps) {
   const [email, setEmail] = useState(
     user?.emailAddresses[0].emailAddress || ""
   );
-  
+
   // Estados para controlar as mensagens temporárias
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [showErrorMessage, setShowErrorMessage] = useState(false);
@@ -35,25 +35,25 @@ export default function NewsletterSection({ t, user }: NewsletterSectionProps) {
     if (state?.success === true) {
       setShowSuccessMessage(true);
       setShowErrorMessage(false);
-      
+
       // Limpar o email após sucesso
       setEmail("");
-      
+
       // Remover mensagem de sucesso após 5 segundos
       const timer = setTimeout(() => {
         setShowSuccessMessage(false);
       }, 5000);
-      
+
       return () => clearTimeout(timer);
     } else if (state?.success === false) {
       setShowErrorMessage(true);
       setShowSuccessMessage(false);
-      
+
       // Remover mensagem de erro após 5 segundos
       const timer = setTimeout(() => {
         setShowErrorMessage(false);
       }, 5000);
-      
+
       return () => clearTimeout(timer);
     }
   }, [state]);
@@ -68,7 +68,7 @@ export default function NewsletterSection({ t, user }: NewsletterSectionProps) {
         </>
       );
     }
-    
+
     if (showSuccessMessage) {
       return (
         <>
@@ -77,7 +77,7 @@ export default function NewsletterSection({ t, user }: NewsletterSectionProps) {
         </>
       );
     }
-    
+
     if (showErrorMessage) {
       return (
         <>
@@ -86,22 +86,22 @@ export default function NewsletterSection({ t, user }: NewsletterSectionProps) {
         </>
       );
     }
-    
+
     return t.subscribe || "Subscribe";
   };
 
   // Função para determinar a classe do botão baseada no estado
   const getButtonClassName = () => {
     const baseClasses = "w-full sm:w-auto transition-colors duration-300";
-    
+
     if (showSuccessMessage) {
       return `${baseClasses} bg-green-600 hover:bg-green-700 focus:bg-green-700`;
     }
-    
+
     if (showErrorMessage) {
       return `${baseClasses} bg-red-600 hover:bg-red-700 focus:bg-red-700`;
     }
-    
+
     return baseClasses;
   };
 
@@ -131,19 +131,24 @@ export default function NewsletterSection({ t, user }: NewsletterSectionProps) {
             <Button
               type="submit"
               className={getButtonClassName()}
-              disabled={email === "" || isPending || showSuccessMessage || showErrorMessage}
+              disabled={
+                email === "" ||
+                isPending ||
+                showSuccessMessage ||
+                showErrorMessage
+              }
             >
               {getButtonContent()}
             </Button>
           </form>
-          
+
           {/* Mostrar mensagem de erro abaixo do formulário se necessário */}
           {showErrorMessage && state?.message && (
             <p className="text-red-600 dark:text-red-400 text-sm mt-2">
               {state.message}
             </p>
           )}
-          
+
           {/* Mostrar mensagem de sucesso abaixo do formulário se necessário */}
           {showSuccessMessage && state?.message && (
             <p className="text-green-600 dark:text-green-400 text-sm mt-2">
