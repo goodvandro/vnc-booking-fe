@@ -93,7 +93,7 @@ export default function HomePage() {
         <CarRentalSection t={t} handleRentNowClick={handleRentNowClick} />
         <MarketingSection t={t} />
         <AboutUsSection t={t} />
-        <NewsletterSection t={t} />
+        <NewsletterSection t={t} user={user as User | null | undefined} />
         <ContactSection t={t} user={user as User | null | undefined} />
       </main>
       <Footer t={t} />
