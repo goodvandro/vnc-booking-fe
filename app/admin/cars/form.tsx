@@ -159,7 +159,7 @@ export default function CarForm({ initialData }: CarFormProps) {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="transmission">Transmission</Label>
+              <Label htmlFor="transmission">Transmission++</Label>
               <Select 
                 key={`transmission-select-${selectResetKey}`}
                 value={transmission} 
