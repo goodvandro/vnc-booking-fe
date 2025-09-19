@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,6 @@ import {
 import type { Car } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { getCarByIdData } from "@/lib/strapi-data";
-// import { getCar } from "../actions";
 
 interface CarFormProps {
   initialData?: Car;
@@ -40,6 +39,9 @@ export default function CarForm({ initialData }: CarFormProps) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [transmission, setTransmission] = useState<string>("Manual");
+  
+  // Estado para controlar re-render do Select em caso de erro
+  const [selectResetKey, setSelectResetKey] = useState(0);
 
   useEffect(() => {
     if (!isEditing || !initialData) return;
@@ -59,6 +61,18 @@ export default function CarForm({ initialData }: CarFormProps) {
       : [];
     setMedia(nextMedia);
   }, [isEditing, initialData]);
+
+  // Handler com recovery para erros DOM
+  const handleTransmissionChange = useCallback((value: string) => {
+    try {
+      setTransmission(value);
+    } catch (error) {
+      // Incrementa a key para forçar re-mount do componente
+      setSelectResetKey(prev => prev + 1);
+      // Define o valor após um pequeno delay
+      setTimeout(() => setTransmission(value), 10);
+    }
+  }, []);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -146,11 +160,23 @@ export default function CarForm({ initialData }: CarFormProps) {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="transmission">Transmission</Label>
-              <Select value={transmission} onValueChange={setTransmission}>
+              <Select 
+                key={`transmission-select-${selectResetKey}`}
+                value={transmission} 
+                onValueChange={handleTransmissionChange}
+              >
                 <SelectTrigger id="transmission" aria-label="Transmission">
                   <SelectValue placeholder="Select transmission" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent
+                  position="popper"
+                  side="bottom" 
+                  align="start"
+                  className="z-50 min-w-[8rem]"
+                  sideOffset={4}
+                  avoidCollisions={true}
+                  sticky="partial"
+                >
                   <SelectItem value="Manual">Manual</SelectItem>
                   <SelectItem value="Automatic">Automatic</SelectItem>
                 </SelectContent>
