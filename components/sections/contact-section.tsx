@@ -1,39 +1,39 @@
-"use client";
+"use client"
 
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { useActionState, useEffect, useState } from "react";
-import type { User } from "@clerk/nextjs/server";
-import { createGetInTouch } from "@/app/actions/get-in-touch-actions";
-import { Loader2 } from "lucide-react";
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { useActionState, useEffect, useState } from "react"
+import type { User } from "@clerk/nextjs/server"
+import { createGetInTouch } from "@/app/actions/get-in-touch-actions"
+import { Loader2 } from "lucide-react"
+import WhatsAppButton from "@/components/common/whatsapp-button"
 
 interface ContactSectionProps {
-  t: any; // Translation object
-  user: User | null | undefined;
+  t: any // Translation object
+  user: User | null | undefined
 }
 
 export default function ContactSection({ t, user }: ContactSectionProps) {
   // Bind the translation object to the action
-  const createGetInTouchWithTranslation = createGetInTouch.bind(null, t);
-  const [state, formAction, isPending] = useActionState(createGetInTouchWithTranslation, null);
+  const createGetInTouchWithTranslation = createGetInTouch.bind(null, t)
+  const [state, formAction, isPending] = useActionState(createGetInTouchWithTranslation, null)
 
-  const [firstName, setFirstName] = useState("");
-  const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
+  const [firstName, setFirstName] = useState("")
+  const [email, setEmail] = useState("")
+  const [message, setMessage] = useState("")
+
+  const whatsappNumber = "+1234567890" // Replace with actual WhatsApp number
 
   useEffect(() => {
     if (user) {
-      setFirstName(user?.firstName || "");
-      setEmail(user?.emailAddresses[0].emailAddress || "");
+      setFirstName(user?.firstName || "")
+      setEmail(user?.emailAddresses[0].emailAddress || "")
     }
-  }, [user]);
+  }, [user])
 
   return (
-    <section
-      id="contact-form"
-      className="section-container w-full py-12 md:py-16 lg:py-24 xl:py-32"
-    >
+    <section id="contact-form" className="section-container w-full py-12 md:py-16 lg:py-24 xl:py-32">
       <div className="section-content text-center">
         <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tighter text-gray-700">
@@ -43,10 +43,26 @@ export default function ContactSection({ t, user }: ContactSectionProps) {
             {t.getInTouchSubtitle}
           </p>
 
-          <form
-            action={formAction}
-            className="space-y-4 max-w-md mx-auto text-left"
-          >
+          {/* WhatsApp Option */}
+          <div className="flex flex-col items-center gap-4 mb-8">
+            <p className="text-sm text-muted-foreground">
+              {t.whatsappDescription || "Need immediate assistance? Contact us on WhatsApp!"}
+            </p>
+            <WhatsAppButton phoneNumber={whatsappNumber} message={t.whatsappSupportMessage} t={t} />
+          </div>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                {t.orSendMessage || "Or send us a message"}
+              </span>
+            </div>
+          </div>
+
+          <form action={formAction} className="space-y-4 max-w-md mx-auto text-left">
             {/* Error Message */}
             {state?.success === false && (
               <div className="p-4 border border-red-200 rounded-lg">
@@ -60,10 +76,7 @@ export default function ContactSection({ t, user }: ContactSectionProps) {
               </div>
             )}
             <div>
-              <Label
-                htmlFor="name"
-                className="block text-sm font-medium text-foreground mb-1"
-              >
+              <Label htmlFor="name" className="block text-sm font-medium text-foreground mb-1">
                 {t.firstName}
               </Label>
               <Input
@@ -77,10 +90,7 @@ export default function ContactSection({ t, user }: ContactSectionProps) {
               />
             </div>
             <div>
-              <Label
-                htmlFor="email-contact"
-                className="block text-sm font-medium text-foreground mb-1"
-              >
+              <Label htmlFor="email-contact" className="block text-sm font-medium text-foreground mb-1">
                 {t.email}
               </Label>
               <Input
@@ -94,10 +104,7 @@ export default function ContactSection({ t, user }: ContactSectionProps) {
               />
             </div>
             <div>
-              <Label
-                htmlFor="message"
-                className="block text-sm font-medium text-foreground mb-1"
-              >
+              <Label htmlFor="message" className="block text-sm font-medium text-foreground mb-1">
                 {t.message}
               </Label>
               <textarea
@@ -124,5 +131,5 @@ export default function ContactSection({ t, user }: ContactSectionProps) {
         </div>
       </div>
     </section>
-  );
+  )
 }

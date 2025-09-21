@@ -2,12 +2,15 @@
 
 import Link from "next/link"
 import { Home, Facebook, Twitter, Instagram } from "lucide-react"
+import WhatsAppButton from "@/components/common/whatsapp-button"
 
 interface FooterProps {
   t: any // Translation object
 }
 
 export default function Footer({ t }: FooterProps) {
+  const whatsappNumber = "+1234567890" // Replace with actual WhatsApp number
+
   return (
     <footer
       id="footer-contact"
@@ -53,17 +56,28 @@ export default function Footer({ t }: FooterProps) {
           <span className="hidden sm:inline">{t.address}: 123 Booking Lane, Travel City, TC 12345</span>
         </div>
 
-        {/* Social Media Links */}
-        <div className="flex gap-4">
-          <Link href="#" aria-label="Facebook">
-            <Facebook className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
-          </Link>
-          <Link href="#" aria-label="Twitter">
-            <Twitter className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
-          </Link>
-          <Link href="#" aria-label="Instagram">
-            <Instagram className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
-          </Link>
+        {/* Social Media Links and WhatsApp */}
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+          {/* Social Media */}
+          <div className="flex gap-4">
+            <Link href="#" aria-label="Facebook">
+              <Facebook className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
+            </Link>
+            <Link href="#" aria-label="Twitter">
+              <Twitter className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
+            </Link>
+            <Link href="#" aria-label="Instagram">
+              <Instagram className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
+            </Link>
+          </div>
+
+          {/* WhatsApp Button */}
+          <WhatsAppButton
+            phoneNumber={whatsappNumber}
+            message={t.whatsappGeneralMessage}
+            className="text-sm px-4 py-2"
+            t={t}
+          />
         </div>
       </div>
 
